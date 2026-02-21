@@ -1,0 +1,14 @@
+{
+  "name": "efficience-analytics",
+  "version": "1.0.0",
+  "description": "Efficience Analytics - Plateforme d'analyse de cabinets dentaires",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && node server.js",
+    "dev:frontend": "cd frontend && npm run dev",
+    "seed": "cd backend && npm run seed"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
