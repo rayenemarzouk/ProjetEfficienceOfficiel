@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = '/api';
+// En production, utiliser VITE_API_URL si défini (ex: https://ton-backend.onrender.com/api)
+// Sinon, utiliser /api (quand frontend et backend sont sur le même serveur)
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_URL,
