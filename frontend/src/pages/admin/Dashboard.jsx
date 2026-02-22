@@ -35,9 +35,10 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!isDynamic) return;
     const stopLine = startChartAnimation(lineChartRef);
-    const stopDoughnut = startChartAnimation(doughnutChartRef);
+    // Doughnut animation only for Rayan
+    const stopDoughnut = isRayan ? startChartAnimation(doughnutChartRef) : () => {};
     return () => { stopLine(); stopDoughnut(); };
-  }, [loading, isDynamic]);
+  }, [loading, isDynamic, isRayan]);
 
   const fetchDashboard = async () => {
     try {
@@ -693,13 +694,13 @@ export default function AdminDashboard() {
           <div className={`rounded-2xl p-6 transition-all duration-300 ${isRayan ? 'bg-white border border-gray-200 shadow-sm' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700'}`}>
             <div className="flex items-center justify-between mb-1">
               <h3 className={`text-base font-bold ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>Répartition CA par Cabinet</h3>
-              <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-full border ${isRayan ? 'text-green-600 bg-green-50 border-green-200' : 'text-green-600 bg-green-50 border-green-200'}`}>
+              {isRayan && <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-full border text-green-600 bg-green-50 border-green-200`}>
                 <span className="relative flex h-1.5 w-1.5"><span className={`${isDynamic ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75`}></span><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span></span>
                 Live
-              </span>
+              </span>}
             </div>
             <p className={`text-xs mb-4 ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>Part de chaque cabinet dans le CA global</p>
-            <Doughnut ref={doughnutChartRef} data={doughnutData} plugins={isDynamic ? [streamingDoughnutPlugin] : []} options={{
+            <Doughnut ref={doughnutChartRef} data={doughnutData} plugins={(isDynamic && isRayan) ? [streamingDoughnutPlugin] : []} options={{
               responsive: true,
               cutout: '60%',
               plugins: {
