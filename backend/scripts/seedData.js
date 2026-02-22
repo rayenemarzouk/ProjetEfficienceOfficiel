@@ -40,6 +40,16 @@ async function seedDatabase() {
         isVerified: true
       },
       {
+        email: 'maarzoukrayan3@gmail.com',
+        password: 'maarzoukrayan3@gmail',
+        role: 'admin',
+        name: 'Rayan Admin 2',
+        practitionerCode: 'ADMIN',
+        cabinetName: 'Efficience Dentaire',
+        isActive: true,
+        isVerified: true
+      },
+      {
         email: 'jc@efficience.fr',
         password: 'jc@efficience',
         role: 'practitioner',

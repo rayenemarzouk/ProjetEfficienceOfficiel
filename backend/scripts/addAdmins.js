@@ -17,6 +17,16 @@ async function addAdmins() {
         cabinetName: 'Efficience Dentaire',
         isActive: true,
         isVerified: true
+      },
+      {
+        email: 'maarzoukrayan3@gmail.com',
+        password: 'maarzoukrayan3@gmail',
+        role: 'admin',
+        name: 'Rayan Admin 2',
+        practitionerCode: 'ADMIN',
+        cabinetName: 'Efficience Dentaire',
+        isActive: true,
+        isVerified: true
       }
     ];
 

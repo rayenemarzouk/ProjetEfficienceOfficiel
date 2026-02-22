@@ -1,4 +1,4 @@
-/* @refresh reset */
+// @refresh reset
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { getPublicSettings } from '../services/api';
 

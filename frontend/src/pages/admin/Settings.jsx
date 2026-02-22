@@ -264,8 +264,8 @@ export default function Settings() {
       <div className="p-8">
 
         {/* Users List */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-8 transition-colors">
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+        <div className="bg-white dark:bg-[#111c44] rounded-2xl border border-gray-200 dark:border-blue-800/60 overflow-hidden mb-8 transition-colors">
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-blue-800/40 flex items-center justify-between">
             <h3 className="text-lg font-semibold dark:text-white">Utilisateurs</h3>
             <span className="text-sm text-gray-500 dark:text-gray-400">{users.length} utilisateur(s)</span>
           </div>
@@ -341,8 +341,8 @@ export default function Settings() {
         </div>
 
         {/* ═══ Production Controls — Kill Switches ═══ */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-8 transition-colors">
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gradient-to-r from-red-50 to-amber-50 dark:from-red-900/20 dark:to-amber-900/20">
+        <div className="bg-white dark:bg-[#111c44] rounded-2xl border border-gray-200 dark:border-blue-800/60 overflow-hidden mb-8 transition-colors">
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-blue-800/40 flex items-center justify-between bg-gradient-to-r from-red-50 to-amber-50 dark:from-red-900/20 dark:to-amber-900/20">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-lg">
                 <FiAlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -483,7 +483,7 @@ export default function Settings() {
 
         {/* Configuration */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
+          <div className="bg-white dark:bg-[#111c44] rounded-2xl border border-gray-200 dark:border-blue-800/60 p-6 transition-colors">
             <h3 className="text-lg font-semibold dark:text-white mb-4 flex items-center gap-2">
               <FiCalendar className="text-primary-600" /> Automatisation
             </h3>
@@ -532,7 +532,7 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
+          <div className="bg-white dark:bg-[#111c44] rounded-2xl border border-gray-200 dark:border-blue-800/60 p-6 transition-colors">
             <h3 className="text-lg font-semibold dark:text-white mb-4 flex items-center gap-2">
               <FiMail className="text-blue-600" /> Configuration Email
             </h3>
