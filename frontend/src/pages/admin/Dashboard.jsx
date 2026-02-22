@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import { getAdminDashboard } from '../../services/api';
-import { FiTrendingUp, FiUsers, FiFileText, FiMail, FiDollarSign, FiActivity, FiAlertTriangle, FiArrowRight, FiCpu, FiZap, FiShield, FiTarget, FiBarChart2, FiClock, FiCheck, FiStar, FiGlobe, FiLayers } from 'react-icons/fi';
+import { FiTrendingUp, FiTrendingDown, FiUsers, FiFileText, FiMail, FiDollarSign, FiActivity, FiAlertTriangle, FiArrowRight, FiCpu, FiZap, FiShield, FiTarget, FiBarChart2, FiClock, FiCheck, FiStar, FiGlobe, FiLayers } from 'react-icons/fi';
 import { useCountUp } from '../../utils/useCountUp';
 import { useDynamic } from '../../context/DynamicContext';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, Filler } from 'chart.js';
@@ -454,68 +454,136 @@ export default function AdminDashboard() {
 
         {/* KPI Cards — Animated */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-          <div className={`group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isRayan ? 'bg-white border border-gray-200 shadow-sm hover:shadow-blue-100/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-blue-100/50 dark:hover:shadow-blue-900/30'}`}>
-            <div className={`absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isRayan ? 'from-blue-50/50' : 'from-blue-50/50 dark:from-blue-900/20'}`}></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-3">
-                <div className={`p-3 rounded-xl transition-colors ${isRayan ? 'bg-blue-50 text-blue-600 group-hover:bg-blue-100' : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'}`}><FiDollarSign className="w-6 h-6" /></div>
-                {trendCA !== null && (
-                  <span className={`text-xs font-semibold px-2 py-1 rounded-full ${trendCA >= 0 ? 'text-green-500 bg-green-50' : 'text-red-500 bg-red-50'}`}>
-                    {trendCA >= 0 ? '+' : ''}{trendCA}%
-                  </span>
-                )}
-              </div>
-              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(animCA)}</p>
-              <p className={`text-sm mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>CA Total</p>
-              <div className={`mt-3 w-full rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700'}`}>
-                <div className={`h-1.5 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 ${isDynamic ? 'transition-all duration-[2200ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
-              </div>
-            </div>
-          </div>
-          <div className={`group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isRayan ? 'bg-white border border-gray-200 shadow-sm hover:shadow-indigo-100/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-indigo-100/50 dark:hover:shadow-indigo-900/30'}`}>
-            <div className={`absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isRayan ? 'from-indigo-50/50' : 'from-indigo-50/50 dark:from-indigo-900/20'}`}></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-3">
-                <div className={`p-3 rounded-xl transition-colors ${isRayan ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100' : 'bg-blue-50 text-blue-600 group-hover:bg-indigo-100'}`}><FiUsers className="w-6 h-6" /></div>
-                {trendPatients !== null && (
-                  <span className={`text-xs font-semibold px-2 py-1 rounded-full ${trendPatients >= 0 ? 'text-green-500 bg-green-50' : 'text-red-500 bg-red-50'}`}>
-                    {trendPatients >= 0 ? '+' : ''}{trendPatients}%
-                  </span>
-                )}
-              </div>
-              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{animPatients.toLocaleString('fr-FR')}</p>
-              <p className={`text-sm mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>Patients Total</p>
-              <div className={`mt-3 w-full rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700'}`}>
-                <div className={`h-1.5 rounded-full bg-gradient-to-r from-indigo-400 to-indigo-600 ${isDynamic ? 'transition-all duration-[1800ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
+          {/* CA Total */}
+          {isRayan ? (
+            <div className="group rounded-2xl p-5 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 relative overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 shadow-lg shadow-blue-500/25">
+              <svg className="absolute bottom-0 left-0 w-full opacity-20" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M0 60 C50 40, 100 70, 150 50 C200 30, 250 65, 300 45 C350 25, 380 55, 400 40 L400 80 L0 80 Z" fill="white"/><path d="M0 70 C60 50, 120 75, 180 60 C240 45, 300 70, 360 55 C380 48, 390 58, 400 52 L400 80 L0 80 Z" fill="white" opacity="0.5"/></svg>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-bold text-blue-100 uppercase tracking-wider">CA Total</p>
+                  {trendCA !== null && (
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 ${trendCA >= 0 ? 'bg-white/20 text-white' : 'bg-white/20 text-white'}`}>
+                      {trendCA >= 0 ? <FiTrendingUp className="w-3 h-3" /> : <FiTrendingDown className="w-3 h-3" />}
+                      {trendCA >= 0 ? '+' : ''}{trendCA}%
+                    </span>
+                  )}
+                </div>
+                <p className="text-3xl font-black text-white tabular-nums mb-1">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(animCA)}</p>
+                <p className="text-xs text-blue-200">Par rapport à la semaine dernière</p>
               </div>
             </div>
-          </div>
-          <div className={`group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isRayan ? 'bg-white border border-gray-200 shadow-sm hover:shadow-gray-200/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-gray-100/50 dark:hover:shadow-gray-900/30'}`}>
-            <div className={`absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isRayan ? 'from-gray-50/50' : 'from-gray-50/50 dark:from-gray-700/30'}`}></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-3">
-                <div className={`p-3 rounded-xl transition-colors ${isRayan ? 'bg-gray-100 text-gray-600 group-hover:bg-gray-200' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 group-hover:bg-gray-100 dark:group-hover:bg-gray-600'}`}><FiFileText className="w-6 h-6" /></div>
-              </div>
-              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{animRapports}</p>
-              <p className={`text-sm mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>Rapports Générés</p>
-              <div className={`mt-3 w-full rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700'}`}>
-                <div className={`h-1.5 rounded-full bg-gradient-to-r from-gray-400 to-gray-600 ${isDynamic ? 'transition-all duration-[1200ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
-              </div>
-            </div>
-          </div>
-          <div className={`group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isRayan ? 'bg-white border border-gray-200 shadow-sm hover:shadow-emerald-100/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-emerald-100/50 dark:hover:shadow-emerald-900/30'}`}>
-            <div className={`absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isRayan ? 'from-emerald-50/50' : 'from-emerald-50/50 dark:from-emerald-900/20'}`}></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-3">
-                <div className={`p-3 rounded-xl transition-colors ${isRayan ? 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40'}`}><FiMail className="w-6 h-6" /></div>
-              </div>
-              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{animEmails}</p>
-              <p className={`text-sm mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>Emails Envoyés</p>
-              <div className={`mt-3 w-full rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700'}`}>
-                <div className={`h-1.5 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 ${isDynamic ? 'transition-all duration-[1200ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
+          ) : (
+            <div className="group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-blue-100/50 dark:hover:shadow-blue-900/30">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 dark:from-blue-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="p-3 rounded-xl transition-colors bg-blue-50 text-blue-600 group-hover:bg-blue-100"><FiDollarSign className="w-6 h-6" /></div>
+                  {trendCA !== null && (
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${trendCA >= 0 ? 'text-green-500 bg-green-50' : 'text-red-500 bg-red-50'}`}>
+                      {trendCA >= 0 ? '+' : ''}{trendCA}%
+                    </span>
+                  )}
+                </div>
+                <p className="text-2xl font-black tabular-nums text-gray-900 dark:text-white">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(animCA)}</p>
+                <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">CA Total</p>
+                <div className="mt-3 w-full rounded-full h-1.5 overflow-hidden bg-gray-100 dark:bg-gray-700">
+                  <div className={`h-1.5 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 ${isDynamic ? 'transition-all duration-[2200ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
+          {/* Patients Total */}
+          {isRayan ? (
+            <div className="group rounded-2xl p-5 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 relative overflow-hidden bg-gradient-to-br from-rose-400 via-pink-500 to-rose-600 shadow-lg shadow-rose-500/25">
+              <svg className="absolute bottom-0 left-0 w-full opacity-20" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M0 55 C40 35, 80 65, 130 45 C180 25, 230 60, 280 40 C330 20, 370 50, 400 35 L400 80 L0 80 Z" fill="white"/><path d="M0 65 C50 50, 110 72, 170 58 C230 44, 290 68, 350 54 C370 48, 385 56, 400 50 L400 80 L0 80 Z" fill="white" opacity="0.5"/></svg>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-bold text-rose-100 uppercase tracking-wider">Patients Total</p>
+                  {trendPatients !== null && (
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 ${trendPatients >= 0 ? 'bg-white/20 text-white' : 'bg-white/20 text-white'}`}>
+                      {trendPatients >= 0 ? <FiTrendingUp className="w-3 h-3" /> : <FiTrendingDown className="w-3 h-3" />}
+                      {trendPatients >= 0 ? '+' : ''}{trendPatients}%
+                    </span>
+                  )}
+                </div>
+                <p className="text-3xl font-black text-white tabular-nums mb-1">{animPatients.toLocaleString('fr-FR')}</p>
+                <p className="text-xs text-rose-200">Par rapport à la semaine dernière</p>
+              </div>
+            </div>
+          ) : (
+            <div className="group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-indigo-100/50 dark:hover:shadow-indigo-900/30">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 dark:from-indigo-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="p-3 rounded-xl transition-colors bg-blue-50 text-blue-600 group-hover:bg-indigo-100"><FiUsers className="w-6 h-6" /></div>
+                  {trendPatients !== null && (
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${trendPatients >= 0 ? 'text-green-500 bg-green-50' : 'text-red-500 bg-red-50'}`}>
+                      {trendPatients >= 0 ? '+' : ''}{trendPatients}%
+                    </span>
+                  )}
+                </div>
+                <p className="text-2xl font-black tabular-nums text-gray-900 dark:text-white">{animPatients.toLocaleString('fr-FR')}</p>
+                <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">Patients Total</p>
+                <div className="mt-3 w-full rounded-full h-1.5 overflow-hidden bg-gray-100 dark:bg-gray-700">
+                  <div className={`h-1.5 rounded-full bg-gradient-to-r from-indigo-400 to-indigo-600 ${isDynamic ? 'transition-all duration-[1800ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* Rapports Générés */}
+          {isRayan ? (
+            <div className="group rounded-2xl p-5 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 relative overflow-hidden bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-600 shadow-lg shadow-emerald-500/25">
+              <svg className="absolute bottom-0 left-0 w-full opacity-20" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M0 50 C60 30, 100 60, 160 42 C220 24, 260 58, 320 38 C360 22, 385 48, 400 32 L400 80 L0 80 Z" fill="white"/><path d="M0 62 C55 48, 105 70, 165 56 C225 42, 275 66, 335 52 C365 44, 388 54, 400 48 L400 80 L0 80 Z" fill="white" opacity="0.5"/></svg>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-bold text-emerald-100 uppercase tracking-wider">Rapports Générés</p>
+                </div>
+                <p className="text-3xl font-black text-white tabular-nums mb-1">{animRapports}</p>
+                <p className="text-xs text-emerald-200">Rapports créés au total</p>
+              </div>
+            </div>
+          ) : (
+            <div className="group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-gray-100/50 dark:hover:shadow-gray-900/30">
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 dark:from-gray-700/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="p-3 rounded-xl transition-colors bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 group-hover:bg-gray-100 dark:group-hover:bg-gray-600"><FiFileText className="w-6 h-6" /></div>
+                </div>
+                <p className="text-2xl font-black tabular-nums text-gray-900 dark:text-white">{animRapports}</p>
+                <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">Rapports Générés</p>
+                <div className="mt-3 w-full rounded-full h-1.5 overflow-hidden bg-gray-100 dark:bg-gray-700">
+                  <div className={`h-1.5 rounded-full bg-gradient-to-r from-gray-400 to-gray-600 ${isDynamic ? 'transition-all duration-[1200ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* Emails Envoyés */}
+          {isRayan ? (
+            <div className="group rounded-2xl p-5 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 relative overflow-hidden bg-gradient-to-br from-orange-400 via-amber-500 to-orange-600 shadow-lg shadow-orange-500/25">
+              <svg className="absolute bottom-0 left-0 w-full opacity-20" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M0 58 C45 38, 95 62, 145 48 C195 34, 245 60, 295 42 C345 24, 375 52, 400 38 L400 80 L0 80 Z" fill="white"/><path d="M0 68 C52 52, 108 74, 168 60 C228 46, 288 70, 348 56 C372 48, 390 58, 400 52 L400 80 L0 80 Z" fill="white" opacity="0.5"/></svg>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-bold text-orange-100 uppercase tracking-wider">Emails Envoyés</p>
+                </div>
+                <p className="text-3xl font-black text-white tabular-nums mb-1">{animEmails}</p>
+                <p className="text-xs text-orange-200">Communications envoyées</p>
+              </div>
+            </div>
+          ) : (
+            <div className="group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-emerald-100/50 dark:hover:shadow-emerald-900/30">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 dark:from-emerald-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="p-3 rounded-xl transition-colors bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40"><FiMail className="w-6 h-6" /></div>
+                </div>
+                <p className="text-2xl font-black tabular-nums text-gray-900 dark:text-white">{animEmails}</p>
+                <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">Emails Envoyés</p>
+                <div className="mt-3 w-full rounded-full h-1.5 overflow-hidden bg-gray-100 dark:bg-gray-700">
+                  <div className={`h-1.5 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 ${isDynamic ? 'transition-all duration-[1200ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Practitioner Cards */}
