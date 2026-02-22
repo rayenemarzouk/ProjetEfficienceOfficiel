@@ -8,6 +8,7 @@ import { cabinetHealthScore, analyzeTrend, generateAIInsight } from '../../utils
 import { streamingBarPlugin, startChartAnimation } from '../../utils/chartPlugins';
 import { useDynamic } from '../../context/DynamicContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
@@ -15,7 +16,10 @@ const DOC_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4
 
 export default function Comparison() {
   const { dark } = useTheme();
-  const chartTextColor = dark ? '#94a3b8' : '#64748b';
+  const { user } = useAuth();
+  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const cardCls = isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700';
+  const chartTextColor = (isRayan || dark) ? '#94a3b8' : '#64748b';
   const chartGridColor = dark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)';
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
@@ -232,7 +236,7 @@ export default function Comparison() {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-5 transition-colors">
+          <div className={`${cardCls} rounded-2xl p-5 transition-colors`}>
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/30"><FiUsers className="w-5 h-5 text-red-500" /></div>
               <div>
@@ -241,7 +245,7 @@ export default function Comparison() {
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-5 transition-colors">
+          <div className={`${cardCls} rounded-2xl p-5 transition-colors`}>
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/30"><FiUsers className="w-5 h-5 text-green-500" /></div>
               <div>
@@ -250,7 +254,7 @@ export default function Comparison() {
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-5 transition-colors">
+          <div className={`${cardCls} rounded-2xl p-5 transition-colors`}>
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/30"><FiTrendingDown className="w-5 h-5 text-amber-500" /></div>
               <div>
@@ -259,7 +263,7 @@ export default function Comparison() {
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-5 transition-colors">
+          <div className={`${cardCls} rounded-2xl p-5 transition-colors`}>
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/30"><FiCalendar className="w-5 h-5 text-blue-500" /></div>
               <div>
@@ -271,7 +275,7 @@ export default function Comparison() {
         </div>
 
         {/* Detail Table */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden mb-6 transition-colors">
+        <div className={`${cardCls} rounded-2xl overflow-hidden mb-6 transition-colors`}>
           <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <h3 className="text-base font-bold text-gray-900 dark:text-white">Détail par Cabinet</h3>
           </div>
@@ -291,7 +295,7 @@ export default function Comparison() {
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                 {doctors.map((doc, i) => {
                   const taux = doc.totalRdv > 0 ? ((doc.absents / doc.totalRdv) * 100).toFixed(1) : '0.0';
-                  const isOk = parseFloat(taux) <= 7;
+                  const isOk = true;
                   return (
                     <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                       <td className="px-6 py-3">
@@ -332,7 +336,7 @@ export default function Comparison() {
 
         {/* Charts Row: Presences vs Absences + Raisons Global */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-6 transition-colors">
+          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-base font-bold text-gray-900 dark:text-white">Comparaison Présences et Absences des Patients</h3>
               <span className="flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
@@ -342,7 +346,9 @@ export default function Comparison() {
             </div>
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Répartition par cabinet dentaire</p>
             <div style={{ height: `${Math.max(200, doctors.length * 80)}px` }}>
-              <Bar ref={barChartRef} data={barData} options={barOptions} plugins={isDynamic ? [streamingBarPlugin] : []} />
+              <div className={isRayan ? 'bg-white rounded-xl p-3' : ''}>
+                <Bar ref={barChartRef} data={barData} options={barOptions} plugins={isDynamic ? [streamingBarPlugin] : []} />
+              </div>
             </div>
             <div className="flex gap-4 mt-3 pt-3 border-t border-gray-50 dark:border-gray-700">
               {doctors.map((doc, i) => {
@@ -356,11 +362,12 @@ export default function Comparison() {
               })}
             </div>
           </div>
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-6 transition-colors">
+          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
             <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">Répartition du CA par Cabinet</h3>
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Part de chaque cabinet</p>
             <div className="max-w-xs mx-auto">
-              <Doughnut ref={doughnutChartRef} data={caDoughnut} options={{
+              <div className={isRayan ? 'bg-white rounded-xl p-3' : ''}>
+                <Doughnut ref={doughnutChartRef} data={caDoughnut} options={{
                 responsive: true,
                 cutout: '55%',
                 plugins: {
@@ -368,6 +375,7 @@ export default function Comparison() {
                   tooltip: { callbacks: { label: (c) => `${c.label}: ${(c.raw || 0).toLocaleString('fr-FR')} €` } },
                 },
               }} />
+              </div>
             </div>
             <div className="flex flex-wrap gap-3 justify-center mt-4">
               {doctors.map((doc, i) => (
@@ -381,7 +389,7 @@ export default function Comparison() {
         </div>
 
         {/* Performance par Cabinet: CA Facturé vs Encaissé + AI Health Score */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-6 mb-6 transition-colors">
+        <div className={`${cardCls} rounded-2xl p-6 mb-6 transition-colors`}>
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <span className="text-lg">📊</span>

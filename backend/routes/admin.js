@@ -61,10 +61,6 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
     // Encours global
     const encours = await Encours.findOne().sort({ createdAt: -1 });
 
-    // Rapports générés
-    const totalReports = await Report.countDocuments();
-    const reportsEnvoyes = await Report.countDocuments({ emailEnvoye: true });
-
     // CA mensuel (derniers 12 mois)
     const caMensuel = await AnalyseRealisation.aggregate([
       { $match: { praticien: { $in: practitionerCodes } } },
@@ -103,6 +99,13 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
 
     // Compute real trends: compare last 2 months of CA
     const allMois = [...new Set(caMensuel.map(c => c._id.mois))].sort();
+
+    // Rapports générés — filtrer par le dernier mois pour cohérence
+    const lastMonth = allMois.length > 0 ? allMois[allMois.length - 1] : null;
+    const reportFilter = lastMonth ? { mois: lastMonth } : {};
+    const totalReports = await Report.countDocuments(reportFilter);
+    const reportsEnvoyes = await Report.countDocuments({ ...reportFilter, emailEnvoye: true });
+
     let trendCA = null;
     let trendPatients = null;
     if (allMois.length >= 2) {
@@ -545,6 +548,11 @@ router.post('/deactivate-confirm', auth, adminOnly, async (req, res) => {
 // POST /api/admin/ai-toggle-send-code — Préparer l'activation + optionnellement envoyer un code par email
 router.post('/ai-toggle-send-code', auth, adminOnly, async (req, res) => {
   try {
+    // Seul maarzoukrayan3@gmail.com peut contrôler le mode dynamique
+    if (req.user.email !== 'maarzoukrayan3@gmail.com') {
+      return res.status(403).json({ message: 'Seul l\'administrateur principal peut gérer le mode dynamique.' });
+    }
+
     const { targetState, sendEmail } = req.body;
     if (typeof targetState !== 'boolean') return res.status(400).json({ message: 'État cible requis.' });
 
@@ -610,6 +618,11 @@ router.post('/ai-toggle-send-code', auth, adminOnly, async (req, res) => {
 // POST /api/admin/ai-toggle-confirm — Vérifier le code (admin fixe OU email) et activer/désactiver
 router.post('/ai-toggle-confirm', auth, adminOnly, async (req, res) => {
   try {
+    // Seul maarzoukrayan3@gmail.com peut contrôler le mode dynamique
+    if (req.user.email !== 'maarzoukrayan3@gmail.com') {
+      return res.status(403).json({ message: 'Seul l\'administrateur principal peut gérer le mode dynamique.' });
+    }
+
     const { code, type } = req.body; // type = 'admin' ou 'email'
     if (!code) return res.status(400).json({ message: 'Code requis.' });
 

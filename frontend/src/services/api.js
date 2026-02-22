@@ -53,6 +53,8 @@ export const aiToggleConfirm = (code, type = 'admin') => api.post('/admin/ai-tog
 // Practitioner
 export const getPractitionerDashboard = () => api.get('/practitioner/dashboard');
 export const getPractitionerStatistics = () => api.get('/practitioner/statistics');
+export const submitManualEntry = (type, mois, data) => api.post('/practitioner/manual-entry', { type, mois, data });
+export const getManualEntry = (type, mois) => api.get(`/practitioner/manual-entry/${type}/${mois}`);
 
 // Data
 export const getDataSummary = () => api.get('/data/summary');

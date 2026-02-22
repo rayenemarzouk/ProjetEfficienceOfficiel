@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   FiHome, FiBarChart2, FiGitMerge, FiFileText, FiPieChart, 
-  FiSettings, FiLogOut, FiActivity, FiDatabase, FiCpu, FiBriefcase
+  FiSettings, FiLogOut, FiActivity, FiDatabase, FiCpu, FiBriefcase, FiEdit3
 } from 'react-icons/fi';
 
 export default function Sidebar() {
@@ -27,6 +27,7 @@ export default function Sidebar() {
   const practitionerLinks = [
     { to: '/dashboard', icon: FiHome, label: 'MON TABLEAU DE BORD', end: true },
     { to: '/dashboard/stats', icon: FiBarChart2, label: 'MES STATISTIQUES' },
+    { to: '/dashboard/saisie', icon: FiEdit3, label: 'SAISIE MANUELLE' },
     { to: '/dashboard/data', icon: FiDatabase, label: 'GESTION DONNÉES' },
     { to: '/dashboard/ai', icon: FiCpu, label: 'ANALYSE IA' },
     { to: '/dashboard/reports', icon: FiFileText, label: 'MES RAPPORTS' },

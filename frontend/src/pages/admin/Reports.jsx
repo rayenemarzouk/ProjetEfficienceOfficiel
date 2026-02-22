@@ -2,8 +2,12 @@ import { useState, useEffect } from 'react';
 import Header from '../../components/Header';
 import { getReportsList, generateReport, generateAllReports, sendReports, sendReportsNow, downloadReport, getAdminDashboard, getAvailableMonths } from '../../services/api';
 import { FiFileText, FiSend, FiDownload, FiRefreshCw, FiCheck, FiAlertCircle, FiZap } from 'react-icons/fi';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Reports() {
+  const { user } = useAuth();
+  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const cardCls = isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50' : 'bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700';
   const [reports, setReports] = useState([]);
   const [practitioners, setPractitioners] = useState([]);
   const [availableMonths, setAvailableMonths] = useState([]);
@@ -110,9 +114,10 @@ export default function Reports() {
     return `${months[parseInt(m.substring(4, 6)) - 1]} ${m.substring(0, 4)}`;
   };
 
-  // Stats
-  const totalGeneres = reports.length;
-  const totalEnvoyes = reports.filter(r => r.emailEnvoye).length;
+  // Stats — filtrées par le mois sélectionné
+  const reportsForMonth = selectedMonth ? reports.filter(r => r.mois === selectedMonth) : reports;
+  const totalGeneres = reportsForMonth.length;
+  const totalEnvoyes = reportsForMonth.filter(r => r.emailEnvoye).length;
 
   return (
     <div>
@@ -121,7 +126,7 @@ export default function Reports() {
       <div className="p-8">
         {/* Stats rapports */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
+          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
             <div className="flex items-center gap-3">
               <div className="p-3 bg-primary-50 dark:bg-primary-900/30 rounded-xl"><FiFileText className="w-6 h-6 text-primary-600" /></div>
               <div>
@@ -130,7 +135,7 @@ export default function Reports() {
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
+          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
             <div className="flex items-center gap-3">
               <div className="p-3 bg-green-50 dark:bg-green-900/30 rounded-xl"><FiSend className="w-6 h-6 text-green-600" /></div>
               <div>
@@ -139,7 +144,7 @@ export default function Reports() {
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
+          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
             <div className="flex items-center gap-3">
               <div className={`p-3 rounded-xl ${totalGeneres === totalEnvoyes && totalGeneres > 0 ? 'bg-green-50 dark:bg-green-900/30' : 'bg-amber-50 dark:bg-amber-900/30'}`}>
                 <FiCheck className={`w-6 h-6 ${totalGeneres === totalEnvoyes && totalGeneres > 0 ? 'text-green-600' : 'text-amber-600'}`} />
@@ -157,7 +162,7 @@ export default function Reports() {
         </div>
 
         {/* Actions */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 mb-8 transition-colors">
+        <div className={`${cardCls} rounded-2xl p-6 mb-8 transition-colors`}>
           <h3 className="text-lg font-semibold dark:text-white mb-4">Générer & Envoyer des Rapports</h3>
           
           {message && (
@@ -228,7 +233,7 @@ export default function Reports() {
         </div>
 
         {/* Liste des rapports */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
+        <div className={`${cardCls} rounded-2xl overflow-hidden transition-colors`}>
           <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <h3 className="text-lg font-semibold dark:text-white">Historique des Rapports</h3>
           </div>

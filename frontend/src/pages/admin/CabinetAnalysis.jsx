@@ -10,6 +10,7 @@ import { streamingBarPlugin, startChartAnimation } from '../../utils/chartPlugin
 import { useCountUp } from '../../utils/useCountUp';
 import { useDynamic } from '../../context/DynamicContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend);
 
@@ -17,6 +18,9 @@ export default function CabinetAnalysis() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const { dark } = useTheme();
+  const { user } = useAuth();
+  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const cardCls = isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700';
   const [practitioners, setPractitioners] = useState([]);
   const [loading, setLoading] = useState(true);
   const { isDynamic } = useDynamic();
@@ -271,7 +275,7 @@ export default function CabinetAnalysis() {
       <div className="p-6">
         {/* Charts: Patients + Activité side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-6 transition-colors">
+          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <FiUsers className="w-5 h-5 text-blue-600" />
@@ -288,7 +292,9 @@ export default function CabinetAnalysis() {
                 Temps réel
               </span>
             </div>
-            <Bar ref={patientsChartRef} data={patientsBarData} options={barOptions} plugins={isDynamic ? [streamingBarPlugin] : []} />
+            <div className={isRayan ? 'bg-white rounded-xl p-3' : ''}>
+              <Bar ref={patientsChartRef} data={patientsBarData} options={barOptions} plugins={isDynamic ? [streamingBarPlugin] : []} />
+            </div>
             {/* AI Insight — clickable */}
             <div
               className="mt-3 bg-gradient-to-r from-blue-50 to-violet-50 dark:from-blue-900/30 dark:to-violet-900/30 rounded-xl border border-blue-100 dark:border-blue-800 p-3 cursor-pointer hover:shadow-md transition-all"
@@ -330,7 +336,7 @@ export default function CabinetAnalysis() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-6 transition-colors">
+          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <FiClock className="w-5 h-5 text-purple-600" />
@@ -347,7 +353,9 @@ export default function CabinetAnalysis() {
                 Temps réel
               </span>
             </div>
-            <Bar ref={activiteChartRef} data={activiteBarData} options={barOptions} plugins={isDynamic ? [streamingBarPlugin] : []} />
+            <div className={isRayan ? 'bg-white rounded-xl p-3' : ''}>
+              <Bar ref={activiteChartRef} data={activiteBarData} options={barOptions} plugins={isDynamic ? [streamingBarPlugin] : []} />
+            </div>
             {/* AI Insight — clickable */}
             <div
               className="mt-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-xl border border-purple-100 dark:border-purple-800 p-3 cursor-pointer hover:shadow-md transition-all"
@@ -392,7 +400,7 @@ export default function CabinetAnalysis() {
         </div>
 
         {/* Scoring Performance — IA Health Score */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-6 mb-6 transition-colors">
+        <div className={`${cardCls} rounded-2xl p-6 mb-6 transition-colors`}>
           <div className="flex items-center justify-between mb-5">
             <h3 className="text-base font-bold text-gray-900 dark:text-white">Scoring Performance</h3>
             <span className="flex items-center gap-1 text-[9px] font-bold text-violet-600 bg-violet-50 px-2.5 py-1 rounded-full">
@@ -433,7 +441,7 @@ export default function CabinetAnalysis() {
         </div>
 
         {/* Répartition des Scores — Animated */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-6 transition-colors">
+        <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
           <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4">Répartition des Scores</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {pracData.map((p, i) => (

@@ -9,6 +9,7 @@ import { generateTrendLineDataset, generateAIInsight, detectAnomalies, cabinetHe
 import { streamingLinePlugin, startChartAnimation } from '../../utils/chartPlugins';
 import { useDynamic } from '../../context/DynamicContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
 
@@ -26,7 +27,10 @@ export default function Statistics() {
   const [scoreAnimated, setScoreAnimated] = useState(false);
   const { isDynamic } = useDynamic();
   const { dark } = useTheme();
-  const chartTextColor = dark ? '#94a3b8' : '#64748b';
+  const { user } = useAuth();
+  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const cardCls = isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700';
+  const chartTextColor = (isRayan || dark) ? '#94a3b8' : '#64748b';
   const chartGridColor = dark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)';
   const caChartRef = useRef(null);
   const patientsChartRef = useRef(null);
@@ -380,7 +384,7 @@ export default function Statistics() {
             { icon: FiUsers, label: 'Patients trait\u00e9s', value: animPatients, suffix: '', gradient: 'from-purple-500 to-violet-600', bgLight: 'bg-purple-50', textColor: 'text-purple-600', raw: totalPatients },
             { icon: FiPercent, label: 'Taux encaissement', value: animScore, suffix: '%', gradient: scoreMoyen >= 85 ? 'from-green-500 to-emerald-600' : scoreMoyen >= 70 ? 'from-amber-500 to-orange-500' : 'from-red-500 to-rose-600', bgLight: scoreMoyen >= 85 ? 'bg-green-50' : scoreMoyen >= 70 ? 'bg-amber-50' : 'bg-red-50', textColor: scoreMoyen >= 85 ? 'text-green-600' : scoreMoyen >= 70 ? 'text-amber-600' : 'text-red-600', raw: scoreMoyen },
           ].map((kpi, i) => (
-            <div key={i} className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group cursor-default relative overflow-hidden">
+            <div key={i} className={`${cardCls} rounded-xl p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group cursor-default relative overflow-hidden`}>
               {/* Background glow on hover */}
               <div className={`absolute -top-6 -right-6 w-20 h-20 rounded-full bg-gradient-to-br ${kpi.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500 blur-xl`} />
               <div className="flex items-center gap-3 relative">
@@ -406,7 +410,7 @@ export default function Statistics() {
         </div>
 
         {/* CA par cabinet - animated bars with metric toggle */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 transition-colors">
+        <div className={`${cardCls} rounded-xl p-6 mb-6 transition-colors`}>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-base font-bold text-gray-900 dark:text-white mb-0.5">Performance par cabinet</h3>
@@ -516,7 +520,7 @@ export default function Statistics() {
         </div>
 
         {/* CA Evolution chart — Interactive */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 transition-colors">
+        <div className={`${cardCls} rounded-xl p-6 mb-6 transition-colors`}>
           <div className="flex items-center justify-between mb-1">
             <h3 className="text-base font-bold text-gray-900 dark:text-white">Évolution du Chiffre d'Affaires</h3>
             <div className="flex items-center gap-2">
@@ -546,7 +550,9 @@ export default function Statistics() {
           </div>
           <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">CA Facturé vs Encaissé par mois en {year} — <span className="font-semibold text-blue-500 cursor-pointer hover:underline" onClick={() => setChartView(chartView === 'all' ? 'facture' : 'all')}>{chartView === 'all' ? 'Cliquez pour filtrer' : 'Voir tout'}</span></p>
           <div style={{ height: '320px' }}>
-            <Line ref={caChartRef} data={filteredCALineData} options={lineOptions} plugins={isDynamic ? [streamingLinePlugin] : []} />
+            <div className={isRayan ? 'bg-white rounded-xl p-3' : ''}>
+              <Line ref={caChartRef} data={filteredCALineData} options={lineOptions} plugins={isDynamic ? [streamingLinePlugin] : []} />
+            </div>
           </div>
           {/* AI Insight CA */}
           <div className="mt-4 bg-gradient-to-r from-amber-50 to-violet-50 dark:from-amber-900/30 dark:to-violet-900/30 rounded-xl border border-amber-100 dark:border-amber-800 p-4 transition-colors">
@@ -560,7 +566,7 @@ export default function Statistics() {
         </div>
 
         {/* Patients chart */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 transition-colors">
+        <div className={`${cardCls} rounded-xl p-6 mb-6 transition-colors`}>
           <div className="flex items-center justify-between mb-1">
             <h3 className="text-base font-bold text-gray-900 dark:text-white">Nombre de patients traités</h3>
             <span className="flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
@@ -570,7 +576,9 @@ export default function Statistics() {
           </div>
           <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Évolution mensuelle en {year}</p>
           <div style={{ height: '280px' }}>
-            <Line ref={patientsChartRef} data={patientsLineData} options={patientsLineOptions} plugins={isDynamic ? [streamingLinePlugin] : []} />
+            <div className={isRayan ? 'bg-white rounded-xl p-3' : ''}>
+              <Line ref={patientsChartRef} data={patientsLineData} options={patientsLineOptions} plugins={isDynamic ? [streamingLinePlugin] : []} />
+            </div>
           </div>
           {/* AI Insight Patients */}
           <div className="mt-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/30 dark:to-blue-900/30 rounded-xl border border-purple-100 dark:border-purple-800 p-4 transition-colors">
@@ -584,7 +592,7 @@ export default function Statistics() {
         </div>
 
         {/* Score moyen — Animated circular gauge */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700 p-8 relative overflow-hidden transition-colors">
+        <div className={`${cardCls} rounded-xl p-8 relative overflow-hidden transition-colors`}>
           {/* Background decorative circles */}
           <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full border-[30px] border-gray-50 dark:border-gray-700 opacity-50" />
           <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full border-[20px] border-gray-50 dark:border-gray-700 opacity-30" />

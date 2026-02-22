@@ -3,11 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import { getAdminDashboard, getCabinetDetails } from '../../services/api';
 import { FiBriefcase, FiCheckCircle, FiAlertTriangle, FiAlertCircle, FiSearch, FiEye, FiFileText, FiTrendingUp, FiX, FiUsers, FiClock, FiDollarSign } from 'react-icons/fi';
+import { useAuth } from '../../context/AuthContext';
 
 const fmt = (v) => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0));
 
 export default function CabinetManagement() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const cardCls = isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700';
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -111,8 +115,8 @@ export default function CabinetManagement() {
     }
 
     let status = 'performant';
-    if (score < 75) status = 'verifier';
-    else if (score < 85) status = 'surveiller';
+    if (score < 30) status = 'verifier';
+    else if (score < 40) status = 'surveiller';
 
     return {
       code: p.code, name: p.name, email: p.email,
@@ -137,28 +141,28 @@ export default function CabinetManagement() {
       <div className="p-6">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700 p-5 flex items-center justify-between transition-colors">
+          <div className={`${cardCls} rounded-xl p-5 flex items-center justify-between transition-colors`}>
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg"><FiBriefcase className="w-5 h-5 text-blue-600" /></div>
               <span className="text-sm text-gray-600 dark:text-gray-400">Cabinets suivis</span>
             </div>
             <span className="text-2xl font-black text-blue-600">{practitioners.length}</span>
           </div>
-          <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700 p-5 flex items-center justify-between transition-colors">
+          <div className={`${cardCls} rounded-xl p-5 flex items-center justify-between transition-colors`}>
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-green-50 dark:bg-green-900/30 rounded-lg"><FiCheckCircle className="w-5 h-5 text-green-600" /></div>
               <span className="text-sm text-gray-600 dark:text-gray-400">Performants</span>
             </div>
             <span className="text-2xl font-black text-green-600">{performants}</span>
           </div>
-          <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700 p-5 flex items-center justify-between transition-colors">
+          <div className={`${cardCls} rounded-xl p-5 flex items-center justify-between transition-colors`}>
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-amber-50 dark:bg-amber-900/30 rounded-lg"><FiAlertTriangle className="w-5 h-5 text-amber-600" /></div>
               <span className="text-sm text-gray-600 dark:text-gray-400">À surveiller</span>
             </div>
             <span className="text-2xl font-black text-amber-600">{surveiller}</span>
           </div>
-          <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700 p-5 flex items-center justify-between transition-colors">
+          <div className={`${cardCls} rounded-xl p-5 flex items-center justify-between transition-colors`}>
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-red-50 dark:bg-red-900/30 rounded-lg"><FiAlertCircle className="w-5 h-5 text-red-600" /></div>
               <span className="text-sm text-gray-600 dark:text-gray-400">À vérifier</span>
@@ -168,7 +172,7 @@ export default function CabinetManagement() {
         </div>
 
         {/* Search */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700 p-4 mb-6 flex items-center gap-3 transition-colors">
+        <div className={`${cardCls} rounded-xl p-4 mb-6 flex items-center gap-3 transition-colors`}>
           <div className="flex-1 relative">
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -187,7 +191,7 @@ export default function CabinetManagement() {
         {/* Cabinet Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
           {filtered.map((cab, i) => (
-            <div key={i} className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700 p-6 hover:shadow-md transition-colors">
+            <div key={i} className={`${cardCls} rounded-xl p-6 hover:shadow-md transition-colors`}>
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">{cab.code}</h3>
@@ -229,7 +233,7 @@ export default function CabinetManagement() {
         </div>
 
         {/* Vue d'ensemble table */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors">
+        <div className={`${cardCls} rounded-xl overflow-hidden transition-colors`}>
           <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <h3 className="text-base font-bold text-gray-900 dark:text-white">Vue d'ensemble</h3>
           </div>

@@ -10,7 +10,9 @@ import { FiUser, FiMail, FiShield, FiActivity, FiCalendar, FiCheck, FiLogIn, FiX
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { loginUser } = useAuth();
+  const { loginUser, user } = useAuth();
+  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const cardCls = isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50' : 'bg-white dark:bg-[#111c44] border border-gray-200 dark:border-blue-800/60';
   const { refreshSettings } = useAppSettings();
   const { isDynamic, refreshDynamic } = useDynamic();
   const [users, setUsers] = useState([]);
@@ -264,7 +266,7 @@ export default function Settings() {
       <div className="p-8">
 
         {/* Users List */}
-        <div className="bg-white dark:bg-[#111c44] rounded-2xl border border-gray-200 dark:border-blue-800/60 overflow-hidden mb-8 transition-colors">
+        <div className={`${cardCls} rounded-2xl overflow-hidden mb-8 transition-colors`}>
           <div className="px-6 py-4 border-b border-gray-100 dark:border-blue-800/40 flex items-center justify-between">
             <h3 className="text-lg font-semibold dark:text-white">Utilisateurs</h3>
             <span className="text-sm text-gray-500 dark:text-gray-400">{users.length} utilisateur(s)</span>
@@ -341,7 +343,7 @@ export default function Settings() {
         </div>
 
         {/* ═══ Production Controls — Kill Switches ═══ */}
-        <div className="bg-white dark:bg-[#111c44] rounded-2xl border border-gray-200 dark:border-blue-800/60 overflow-hidden mb-8 transition-colors">
+        <div className={`${cardCls} rounded-2xl overflow-hidden mb-8 transition-colors`}>
           <div className="px-6 py-4 border-b border-gray-100 dark:border-blue-800/40 flex items-center justify-between bg-gradient-to-r from-red-50 to-amber-50 dark:from-red-900/20 dark:to-amber-900/20">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-lg">
@@ -386,7 +388,8 @@ export default function Settings() {
               </button>
             </div>
 
-            {/* AI Models + Mode Dynamique — vérification par email */}
+            {/* AI Models + Mode Dynamique — vérification par email (Rayan uniquement) */}
+            {isRayan && (
             <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
               !aiModelsEnabled
                 ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700'
@@ -433,6 +436,7 @@ export default function Settings() {
                 {isDynamic ? 'Désactiver' : 'Activer'}
               </button>
             </div>
+            )}
 
             {/* Import Data */}
             <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
@@ -467,13 +471,13 @@ export default function Settings() {
             </div>
 
             {/* Warning banner */}
-            {(maintenanceMode || !aiModelsEnabled || !importEnabled) && (
+            {(maintenanceMode || (isRayan && !aiModelsEnabled) || !importEnabled) && (
               <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-start gap-2">
                 <FiAlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
                 <div className="text-xs text-red-600 dark:text-red-400 leading-relaxed">
                   <strong>Attention :</strong> Des fonctionnalités sont désactivées.
                   {maintenanceMode && <span className="block mt-1">• Les praticiens ne peuvent plus accéder au site.</span>}
-                  {!aiModelsEnabled && <span className="block mt-1">• Les analyses IA (tendances, anomalies, prévisions, scoring) sont stoppées sur toutes les pages.</span>}
+                  {isRayan && !aiModelsEnabled && <span className="block mt-1">• Les analyses IA (tendances, anomalies, prévisions, scoring) sont stoppées sur toutes les pages.</span>}
                   {!importEnabled && <span className="block mt-1">• L'import de nouvelles données est bloqué.</span>}
                 </div>
               </div>
@@ -483,7 +487,7 @@ export default function Settings() {
 
         {/* Configuration */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-[#111c44] rounded-2xl border border-gray-200 dark:border-blue-800/60 p-6 transition-colors">
+          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
             <h3 className="text-lg font-semibold dark:text-white mb-4 flex items-center gap-2">
               <FiCalendar className="text-primary-600" /> Automatisation
             </h3>
@@ -532,7 +536,7 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-[#111c44] rounded-2xl border border-gray-200 dark:border-blue-800/60 p-6 transition-colors">
+          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
             <h3 className="text-lg font-semibold dark:text-white mb-4 flex items-center gap-2">
               <FiMail className="text-blue-600" /> Configuration Email
             </h3>

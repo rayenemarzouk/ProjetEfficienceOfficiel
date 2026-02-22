@@ -78,4 +78,148 @@ router.get('/statistics', auth, practitionerOnly, async (req, res) => {
   }
 });
 
+// ═══════════════════════════════════════════════════════════
+//  SAISIE MANUELLE — Entrée de données par le praticien
+// ═══════════════════════════════════════════════════════════
+
+// POST /api/practitioner/manual-entry — Ajouter/mettre à jour une entrée manuelle
+router.post('/manual-entry', auth, practitionerOnly, async (req, res) => {
+  try {
+    const code = req.user.practitionerCode;
+    if (!code) {
+      return res.status(400).json({ message: 'Code praticien manquant dans votre profil.' });
+    }
+
+    const { type, mois, data } = req.body;
+    if (!type || !mois || !data) {
+      return res.status(400).json({ message: 'Type, mois et données requis.' });
+    }
+
+    // Valider le format du mois (YYYYMM)
+    if (!/^\d{6}$/.test(mois)) {
+      return res.status(400).json({ message: 'Format du mois invalide (attendu: YYYYMM).' });
+    }
+
+    let result;
+
+    switch (type) {
+      case 'realisation':
+        result = await AnalyseRealisation.findOneAndUpdate(
+          { praticien: code, mois },
+          {
+            praticien: code,
+            mois,
+            nbPatients: parseFloat(data.nbPatients) || 0,
+            montantFacture: parseFloat(data.montantFacture) || 0,
+            montantEncaisse: parseFloat(data.montantEncaisse) || 0
+          },
+          { upsert: true, new: true }
+        );
+        break;
+
+      case 'rendez-vous':
+        result = await AnalyseRendezVous.findOneAndUpdate(
+          { praticien: code, mois },
+          {
+            praticien: code,
+            mois,
+            nbRdv: parseFloat(data.nbRdv) || 0,
+            dureeTotaleRdv: parseFloat(data.dureeTotaleRdv) || 0,
+            nbPatients: parseFloat(data.nbPatients) || 0,
+            nbNouveauxPatients: parseFloat(data.nbNouveauxPatients) || 0
+          },
+          { upsert: true, new: true }
+        );
+        break;
+
+      case 'jours-ouverts':
+        result = await AnalyseJoursOuverts.findOneAndUpdate(
+          { praticien: code, mois },
+          {
+            praticien: code,
+            mois,
+            nbHeures: parseFloat(data.nbHeures) || 0
+          },
+          { upsert: true, new: true }
+        );
+        break;
+
+      case 'devis':
+        result = await AnalyseDevis.findOneAndUpdate(
+          { praticien: code, mois },
+          {
+            praticien: code,
+            mois,
+            nbDevis: parseFloat(data.nbDevis) || 0,
+            montantPropositions: parseFloat(data.montantPropositions) || 0,
+            nbDevisAcceptes: parseFloat(data.nbDevisAcceptes) || 0,
+            montantAccepte: parseFloat(data.montantAccepte) || 0
+          },
+          { upsert: true, new: true }
+        );
+        break;
+
+      case 'encours':
+        result = await Encours.findOneAndUpdate(
+          { praticien: code },
+          {
+            praticien: code,
+            dureeTotaleARealiser: parseFloat(data.dureeTotaleARealiser) || 0,
+            montantTotalAFacturer: parseFloat(data.montantTotalAFacturer) || 0,
+            rentabiliteHoraire: parseFloat(data.rentabiliteHoraire) || 0,
+            rentabiliteJoursTravailles: parseFloat(data.rentabiliteJoursTravailles) || 0,
+            patientsEnCours: parseFloat(data.patientsEnCours) || 0,
+            dateImport: new Date()
+          },
+          { upsert: true, new: true }
+        );
+        break;
+
+      default:
+        return res.status(400).json({ message: 'Type de données inconnu.' });
+    }
+
+    console.log(`Saisie manuelle [${type}] mois ${mois} par ${req.user.name} (${code})`);
+    res.json({ message: 'Données enregistrées avec succès.', data: result });
+  } catch (error) {
+    console.error('Erreur saisie manuelle:', error);
+    res.status(500).json({ message: 'Erreur lors de l\'enregistrement.' });
+  }
+});
+
+// GET /api/practitioner/manual-entry/:type/:mois — Récupérer les données existantes pour un mois
+router.get('/manual-entry/:type/:mois', auth, practitionerOnly, async (req, res) => {
+  try {
+    const code = req.user.practitionerCode;
+    const { type, mois } = req.params;
+
+    let data = null;
+
+    switch (type) {
+      case 'realisation':
+        data = await AnalyseRealisation.findOne({ praticien: code, mois });
+        break;
+      case 'rendez-vous':
+        data = await AnalyseRendezVous.findOne({ praticien: code, mois });
+        break;
+      case 'jours-ouverts':
+        data = await AnalyseJoursOuverts.findOne({ praticien: code, mois });
+        break;
+      case 'devis':
+        data = await AnalyseDevis.findOne({ praticien: code, mois });
+        break;
+      case 'encours':
+        data = await Encours.findOne({ praticien: code });
+        break;
+      default:
+        return res.status(400).json({ message: 'Type inconnu.' });
+    }
+
+    res.json({ data });
+  } catch (error) {
+    console.error('Erreur lecture saisie manuelle:', error);
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
 module.exports = router;

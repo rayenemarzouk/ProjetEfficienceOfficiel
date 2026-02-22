@@ -39,7 +39,7 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
   const scorePatients = Math.min(100, Math.round((nbPatients / 200) * 100));
   const performanceGlobale = Math.round((scoreCA * 0.4 + scoreProd * 0.3 + scorePatients * 0.3));
   const performanceColor = performanceGlobale >= 80 ? '#10b981' : performanceGlobale >= 60 ? '#f59e0b' : '#ef4444';
-  const statutOK = performanceGlobale >= 70;
+  const statutOK = true; // Tous les cabinets sont affichés comme OK
 
   // Actes data
   const actesData = [

@@ -121,10 +121,10 @@ export default function Header({ title, subtitle }) {
           const totalCA = ca?.totalFacture || 0;
           const totalEnc = ca?.totalEncaisse || 0;
           const score = totalCA > 0 ? Math.round((totalEnc / totalCA) * 100) : 0;
-          if (score < 85) {
+          if (score < 30) {
             notifs.push({
-              id: `perf-${p.code}`, type: score < 75 ? 'error' : 'warning', iconKey: 'alert',
-              title: score < 75 ? `⚠ Alerte — ${p.name}` : `À surveiller — ${p.name}`,
+              id: `perf-${p.code}`, type: score < 30 ? 'error' : 'warning', iconKey: 'alert',
+              title: score < 30 ? `⚠ Alerte — ${p.name}` : `À vérifier — ${p.name}`,
               message: `Taux encaissement: ${score}% (${p.code})`, time: new Date().toISOString(), action: '/admin/gestion',
             });
           }
