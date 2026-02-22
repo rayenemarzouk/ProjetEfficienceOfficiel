@@ -157,7 +157,10 @@ export default function Login() {
           <div className="mt-8 text-center">
             <p className="text-xs text-gray-400">
               PAS ENCORE MEMBRE ?{' '}
-              <span className="font-bold text-gray-800 underline cursor-pointer hover:text-blue-600 tracking-wide">
+              <span
+                onClick={() => navigate('/register')}
+                className="font-bold text-gray-800 underline cursor-pointer hover:text-blue-600 tracking-wide"
+              >
                 S'INSCRIRE
               </span>
             </p>

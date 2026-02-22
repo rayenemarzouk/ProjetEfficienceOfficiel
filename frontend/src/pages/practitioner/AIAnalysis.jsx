@@ -155,9 +155,9 @@ export default function AIAnalysis() {
   ];
 
   const typeColors = {
-    positive: { bg: 'bg-green-50', border: 'border-green-200', icon: 'text-green-600', badge: 'bg-green-100 text-green-700' },
-    warning: { bg: 'bg-amber-50', border: 'border-amber-200', icon: 'text-amber-600', badge: 'bg-amber-100 text-amber-700' },
-    neutral: { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-600', badge: 'bg-blue-100 text-blue-700' },
+    positive: { bg: 'bg-green-50 dark:bg-green-900/30', border: 'border-green-200 dark:border-green-800', icon: 'text-green-600', badge: 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' },
+    warning: { bg: 'bg-amber-50 dark:bg-amber-900/30', border: 'border-amber-200 dark:border-amber-800', icon: 'text-amber-600', badge: 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300' },
+    neutral: { bg: 'bg-blue-50 dark:bg-blue-900/30', border: 'border-blue-200 dark:border-blue-800', icon: 'text-blue-600', badge: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' },
   };
 
   return (
@@ -203,21 +203,21 @@ export default function AIAnalysis() {
 
           {/* AI Insight Panels */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <div className="bg-gradient-to-br from-violet-50 to-blue-50 rounded-2xl border border-violet-100 p-5">
+            <div className="bg-gradient-to-br from-violet-50 to-blue-50 dark:from-violet-900/30 dark:to-blue-900/30 rounded-2xl border border-violet-100 dark:border-violet-800 p-5">
               <div className="flex items-center gap-2 mb-3">
                 <FiCpu className="w-4 h-4 text-violet-600" />
-                <span className="text-xs font-bold text-gray-800">Insight IA — CA</span>
-                <span className="ml-auto text-[9px] font-semibold text-violet-600 bg-violet-100 px-2 py-0.5 rounded-full">R²={caInsight.confidence}%</span>
+                <span className="text-xs font-bold text-gray-800 dark:text-gray-200">Insight IA — CA</span>
+                <span className="ml-auto text-[9px] font-semibold text-violet-600 bg-violet-100 dark:bg-violet-900/50 px-2 py-0.5 rounded-full">R²={caInsight.confidence}%</span>
               </div>
-              {caInsight.parts.map((p, i) => <p key={i} className="text-[11px] text-gray-600 leading-relaxed mb-1">{p}</p>)}
+              {caInsight.parts.map((p, i) => <p key={i} className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed mb-1">{p}</p>)}
             </div>
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 p-5">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-2xl border border-blue-100 dark:border-blue-800 p-5">
               <div className="flex items-center gap-2 mb-3">
                 <FiCpu className="w-4 h-4 text-blue-600" />
-                <span className="text-xs font-bold text-gray-800">Insight IA — Patients</span>
-                <span className="ml-auto text-[9px] font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">Holt-Winters</span>
+                <span className="text-xs font-bold text-gray-800 dark:text-gray-200">Insight IA — Patients</span>
+                <span className="ml-auto text-[9px] font-semibold text-blue-600 bg-blue-100 dark:bg-blue-900/50 px-2 py-0.5 rounded-full">Holt-Winters</span>
               </div>
-              {patientsInsight.parts.map((p, i) => <p key={i} className="text-[11px] text-gray-600 leading-relaxed mb-1">{p}</p>)}
+              {patientsInsight.parts.map((p, i) => <p key={i} className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed mb-1">{p}</p>)}
             </div>
           </div>
 
@@ -230,21 +230,21 @@ export default function AIAnalysis() {
                   <div className={`${colors.bg} px-6 py-4 flex items-center gap-3`}>
                     <a.icon className={`w-6 h-6 ${colors.icon}`} />
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{a.title}</h3>
-                      <p className="text-[10px] text-gray-500">{a.model}</p>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{a.title}</h3>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400">{a.model}</p>
                     </div>
                     <div className="ml-auto flex items-center gap-2">
-                      <span className="text-[9px] font-bold text-gray-500 bg-white/60 px-2 py-0.5 rounded-full">Confiance: {a.confidence}</span>
+                      <span className="text-[9px] font-bold text-gray-500 dark:text-gray-400 bg-white/60 dark:bg-white/10 px-2 py-0.5 rounded-full">Confiance: {a.confidence}</span>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${colors.badge}`}>
                         {a.type === 'positive' ? '✅ Positif' : a.type === 'warning' ? '⚠️ Attention' : 'ℹ️ Info'}
                       </span>
                     </div>
                   </div>
-                  <div className="bg-white px-6 py-4">
-                    <p className="text-sm text-gray-700 mb-3 font-medium">{a.description}</p>
-                    <div className="p-3 bg-gray-50 rounded-xl">
-                      <p className="text-xs font-semibold text-gray-500 uppercase mb-1">🧠 Analyse du Modèle</p>
-                      <p className="text-sm text-gray-800">{a.detail}</p>
+                  <div className="bg-white dark:bg-[#1e293b] px-6 py-4">
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 font-medium">{a.description}</p>
+                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">🧠 Analyse du Modèle</p>
+                      <p className="text-sm text-gray-800 dark:text-gray-200">{a.detail}</p>
                     </div>
                   </div>
                 </div>

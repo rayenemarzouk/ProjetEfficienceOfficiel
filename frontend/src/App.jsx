@@ -1,8 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { DynamicProvider } from './context/DynamicContext';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import Register from './pages/Register';
 
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard';
@@ -22,11 +25,14 @@ import MyReports from './pages/practitioner/MyReports';
 
 export default function App() {
   return (
+    <DynamicProvider>
+    <ThemeProvider>
     <AuthProvider>
       <Router>
         <Routes>
           {/* Public */}
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
           {/* Admin Routes */}
           <Route element={<PrivateRoute allowedRoles={['admin']} />}>
@@ -58,5 +64,7 @@ export default function App() {
         </Routes>
       </Router>
     </AuthProvider>
+    </ThemeProvider>
+    </DynamicProvider>
   );
 }

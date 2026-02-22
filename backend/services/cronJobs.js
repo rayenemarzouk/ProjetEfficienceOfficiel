@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const User = require('../models/User');
 const Report = require('../models/Report');
+const AppSettings = require('../models/AppSettings');
 const AnalyseRealisation = require('../models/AnalyseRealisation');
 const AnalyseRendezVous = require('../models/AnalyseRendezVous');
 const AnalyseJoursOuverts = require('../models/AnalyseJoursOuverts');
@@ -106,6 +107,14 @@ function initCronJobs() {
     console.log('=== DÉBUT TÂCHE CRON: Génération rapports mensuels ===');
     
     try {
+      // Vérifier les paramètres de l'application
+      const appSettings = await AppSettings.getSettings();
+
+      if (!appSettings.autoGeneration) {
+        console.log('⏸️ Génération automatique désactivée dans les paramètres. Tâche annulée.');
+        return;
+      }
+
       const practitioners = await User.find({ role: 'practitioner', isActive: true });
       const mois = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}01`;
       const moisFormate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -161,29 +170,31 @@ function initCronJobs() {
           );
           reportsGeneres++;
 
-          // Envoyer l'email
-          const monthNames = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-          const moisLabel = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
-          await sendReportEmail({
-            to: process.env.REPORT_RECIPIENT,
-            subject: `📊 RAPPORT DE PERFORMANCE - ${p.name} | ${moisLabel}`,
-            practitionerName: p.name,
-            mois: moisLabel,
-            kpi,
-            pdfBuffer,
-            recommandations,
-            cabinetName: p.cabinetName,
-            historique
-          });
-          emailsEnvoyes++;
+          // Envoyer l'email (si activé)
+          if (appSettings.autoEmail) {
+            const monthNames = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+            const moisLabel = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+            await sendReportEmail({
+              to: process.env.REPORT_RECIPIENT,
+              subject: `📊 RAPPORT DE PERFORMANCE - ${p.name} | ${moisLabel}`,
+              practitionerName: p.name,
+              mois: moisLabel,
+              kpi,
+              pdfBuffer,
+              recommandations,
+              cabinetName: p.cabinetName,
+              historique
+            });
+            emailsEnvoyes++;
 
-          // Mettre à jour le statut d'envoi
-          await Report.findOneAndUpdate(
-            { praticien: p.practitionerCode, mois },
-            { emailEnvoye: true, dateEnvoi: new Date(), destinataireEmail: process.env.REPORT_RECIPIENT }
-          );
+            // Mettre à jour le statut d'envoi
+            await Report.findOneAndUpdate(
+              { praticien: p.practitionerCode, mois },
+              { emailEnvoye: true, dateEnvoi: new Date(), destinataireEmail: process.env.REPORT_RECIPIENT }
+            );
+          }
 
-          console.log(`✅ Rapport généré et envoyé pour Dr. ${p.name}`);
+          console.log(`✅ Rapport généré${appSettings.autoEmail ? ' et envoyé' : ''} pour Dr. ${p.name}`);
         } catch (err) {
           console.error(`❌ Erreur pour ${p.name}:`, err.message);
         }

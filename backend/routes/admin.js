@@ -8,6 +8,7 @@ const AnalyseDevis = require('../models/AnalyseDevis');
 const Encours = require('../models/Encours');
 const Report = require('../models/Report');
 const User = require('../models/User');
+const AppSettings = require('../models/AppSettings');
 
 // GET /api/admin/dashboard - Dashboard global admin
 router.get('/dashboard', auth, adminOnly, async (req, res) => {
@@ -350,8 +351,23 @@ router.get('/settings', auth, adminOnly, async (req, res) => {
     const users = await User.find().select('-password');
     const totalReports = await Report.countDocuments();
     const reportsEnvoyes = await Report.countDocuments({ emailEnvoye: true });
+    const appSettings = await AppSettings.getSettings();
     
-    res.json({ users, totalReports, reportsEnvoyes });
+    res.json({ users, totalReports, reportsEnvoyes, appSettings });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
+// PUT /api/admin/settings - Mettre à jour les paramètres
+router.put('/settings', auth, adminOnly, async (req, res) => {
+  try {
+    const { autoGeneration, autoEmail } = req.body;
+    let settings = await AppSettings.getSettings();
+    if (typeof autoGeneration === 'boolean') settings.autoGeneration = autoGeneration;
+    if (typeof autoEmail === 'boolean') settings.autoEmail = autoEmail;
+    await settings.save();
+    res.json({ message: 'Paramètres mis à jour.', appSettings: settings });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur.' });
   }

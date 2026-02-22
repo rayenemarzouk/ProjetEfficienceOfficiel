@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Header from '../../components/Header';
 import { getPractitionerStatistics } from '../../services/api';
 import { Bar } from 'react-chartjs-2';
@@ -6,6 +6,9 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, 
 import { useAuth } from '../../context/AuthContext';
 import { FiCpu } from 'react-icons/fi';
 import { linearRegression, generateAIInsight, detectAnomalies, analyzeTrend, forecast as aiForecast } from '../../utils/aiModels';
+import { streamingBarPlugin, startChartAnimation } from '../../utils/chartPlugins';
+import { useDynamic } from '../../context/DynamicContext';
+import { useTheme } from '../../context/ThemeContext';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend);
 
@@ -16,6 +19,22 @@ export default function MyStats() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const caChartRef = useRef(null);
+  const patientsChartRef = useRef(null);
+  const rentaChartRef = useRef(null);
+  const { isDynamic } = useDynamic();
+  const { dark } = useTheme();
+  const chartTextColor = dark ? '#94a3b8' : '#64748b';
+  const chartGridColor = dark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.4)';
+
+  // Animation loop pour les effets streaming
+  useEffect(() => {
+    if (!isDynamic) return;
+    const stopCA = startChartAnimation(caChartRef);
+    const stopPatients = startChartAnimation(patientsChartRef);
+    const stopRenta = startChartAnimation(rentaChartRef);
+    return () => { stopCA(); stopPatients(); stopRenta(); };
+  }, [loading, isDynamic]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -182,109 +201,127 @@ export default function MyStats() {
       <div className="p-8">
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Évolution du Chiffre d'Affaires</h3>
-              <span className="flex items-center gap-1 text-[9px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
-                <FiCpu className="w-3 h-3" /> Régression • R²={regCA.r2.toFixed(2)}
-              </span>
+              <h3 className="text-lg font-semibold dark:text-white">Évolution du Chiffre d'Affaires</h3>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
+                  <span className="relative flex h-2 w-2"><span className={`${isDynamic ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75`}></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
+                  Temps réel
+                </span>
+                <span className="flex items-center gap-1 text-[9px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
+                  <FiCpu className="w-3 h-3" /> Régression • R²={regCA.r2.toFixed(2)}
+                </span>
+              </div>
             </div>
-            <Bar data={caBarData} options={{
+            <Bar ref={caChartRef} data={caBarData} plugins={isDynamic ? [streamingBarPlugin] : []} options={{
               responsive: true,
-              plugins: { legend: { position: 'bottom' } },
+              plugins: { legend: { position: 'bottom', labels: { color: chartTextColor } } },
               scales: {
-                x: { grid: { display: false }, border: { display: false } },
-                y: { beginAtZero: true, grid: { color: 'rgba(226, 232, 240, 0.4)', drawBorder: false }, border: { display: false }, ticks: { callback: v => `${(v / 1000).toFixed(0)}k€` } },
+                x: { grid: { display: false }, border: { display: false }, ticks: { color: chartTextColor } },
+                y: { beginAtZero: true, grid: { color: chartGridColor, drawBorder: false }, border: { display: false }, ticks: { color: chartTextColor, callback: v => `${(v / 1000).toFixed(0)}k€` } },
               },
             }} />
-            <div className="mt-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl border border-green-100 p-3">
+            <div className="mt-3 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/30 dark:to-blue-900/30 rounded-xl border border-green-100 dark:border-green-800 p-3 transition-colors">
               <div className="flex items-center gap-1.5 mb-1">
                 <FiCpu className="w-3 h-3 text-green-600" />
-                <span className="text-[10px] font-bold text-gray-800">Analyse IA — CA</span>
+                <span className="text-[10px] font-bold text-gray-800 dark:text-gray-200">Analyse IA — CA</span>
                 <span className="ml-auto text-[8px] font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Tendance: {trendLabelCA.trend === 'upward' ? '↑ Hausse' : trendLabelCA.trend === 'downward' ? '↓ Baisse' : '→ Stable'}</span>
               </div>
-              {insightCA.parts.map((p, i) => <p key={i} className="text-[10px] text-gray-600 leading-relaxed">{p}</p>)}
+              {insightCA.parts.map((p, i) => <p key={i} className="text-[10px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
             </div>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Patients & Nouveaux Patients</h3>
-              <span className="flex items-center gap-1 text-[9px] font-bold text-pink-600 bg-pink-50 px-2.5 py-1 rounded-full">
-                <FiCpu className="w-3 h-3" /> Régression • R²={regPatients.r2.toFixed(2)}
-              </span>
+              <h3 className="text-lg font-semibold dark:text-white">Patients & Nouveaux Patients</h3>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
+                  <span className="relative flex h-2 w-2"><span className={`${isDynamic ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75`}></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
+                  Temps réel
+                </span>
+                <span className="flex items-center gap-1 text-[9px] font-bold text-pink-600 bg-pink-50 px-2.5 py-1 rounded-full">
+                  <FiCpu className="w-3 h-3" /> Régression • R²={regPatients.r2.toFixed(2)}
+                </span>
+              </div>
             </div>
-            <Bar data={patientsBarData} options={{
+            <Bar ref={patientsChartRef} data={patientsBarData} plugins={isDynamic ? [streamingBarPlugin] : []} options={{
               responsive: true,
               plugins: { legend: { position: 'bottom' } },
               scales: { y: { beginAtZero: true } },
             }} />
-            <div className="mt-3 bg-gradient-to-r from-teal-50 to-amber-50 rounded-xl border border-teal-100 p-3">
+            <div className="mt-3 bg-gradient-to-r from-teal-50 to-amber-50 dark:from-teal-900/30 dark:to-amber-900/30 rounded-xl border border-teal-100 dark:border-teal-800 p-3 transition-colors">
               <div className="flex items-center gap-1.5 mb-1">
                 <FiCpu className="w-3 h-3 text-teal-600" />
-                <span className="text-[10px] font-bold text-gray-800">Analyse IA — Patients</span>
+                <span className="text-[10px] font-bold text-gray-800 dark:text-gray-200">Analyse IA — Patients</span>
                 <span className="ml-auto text-[8px] font-semibold text-teal-600 bg-teal-100 px-2 py-0.5 rounded-full">Tendance: {trendLabelPatients.trend === 'upward' ? '↑ Hausse' : trendLabelPatients.trend === 'downward' ? '↓ Baisse' : '→ Stable'}</span>
               </div>
-              {insightPatients.parts.map((p, i) => <p key={i} className="text-[10px] text-gray-600 leading-relaxed">{p}</p>)}
+              {insightPatients.parts.map((p, i) => <p key={i} className="text-[10px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
+        <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 mb-8 transition-colors">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Rentabilité Horaire</h3>
-            <span className="flex items-center gap-1 text-[9px] font-bold text-violet-600 bg-violet-50 px-2.5 py-1 rounded-full">
-              <FiCpu className="w-3 h-3" /> Régression • R²={regRenta.r2.toFixed(2)}
-            </span>
+            <h3 className="text-lg font-semibold dark:text-white">Rentabilité Horaire</h3>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
+                <span className="relative flex h-2 w-2"><span className={`${isDynamic ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75`}></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
+                Temps réel
+              </span>
+              <span className="flex items-center gap-1 text-[9px] font-bold text-violet-600 bg-violet-50 px-2.5 py-1 rounded-full">
+                <FiCpu className="w-3 h-3" /> Régression • R²={regRenta.r2.toFixed(2)}
+              </span>
+            </div>
           </div>
-          <Bar data={rentaBarData} options={{
+          <Bar ref={rentaChartRef} data={rentaBarData} plugins={isDynamic ? [streamingBarPlugin] : []} options={{
             responsive: true,
             plugins: { legend: { display: false } },
             scales: {
-              x: { grid: { display: false }, border: { display: false } },
-              y: { beginAtZero: true, grid: { color: 'rgba(226, 232, 240, 0.4)', drawBorder: false }, border: { display: false }, ticks: { callback: v => `${v.toFixed(0)}€/h` } },
+              x: { grid: { display: false }, border: { display: false }, ticks: { color: chartTextColor } },
+              y: { beginAtZero: true, grid: { color: chartGridColor, drawBorder: false }, border: { display: false }, ticks: { color: chartTextColor, callback: v => `${v.toFixed(0)}€/h` } },
             },
           }} />
-          <div className="mt-3 bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl border border-violet-100 p-3">
+          <div className="mt-3 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/30 dark:to-purple-900/30 rounded-xl border border-violet-100 dark:border-violet-800 p-3 transition-colors">
             <div className="flex items-center gap-1.5 mb-1">
               <FiCpu className="w-3 h-3 text-violet-600" />
-              <span className="text-[10px] font-bold text-gray-800">Analyse IA — Rentabilité</span>
+              <span className="text-[10px] font-bold text-gray-800 dark:text-gray-200">Analyse IA — Rentabilité</span>
               <span className="ml-auto text-[8px] font-semibold text-violet-600 bg-violet-100 px-2 py-0.5 rounded-full">Tendance: {trendLabelRenta.trend === 'upward' ? '↑ Hausse' : trendLabelRenta.trend === 'downward' ? '↓ Baisse' : '→ Stable'}</span>
             </div>
-            {insightRenta.parts.map((p, i) => <p key={i} className="text-[10px] text-gray-600 leading-relaxed">{p}</p>)}
+            {insightRenta.parts.map((p, i) => <p key={i} className="text-[10px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
           </div>
         </div>
 
         {/* Detail Table */}
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h3 className="text-lg font-semibold">Détails Mensuels</h3>
+        <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+            <h3 className="text-lg font-semibold dark:text-white">Détails Mensuels</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Mois</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">CA Facturé</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">CA Encaissé</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Patients</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Nvx Patients</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">RDV</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Heures</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">€/h</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Mois</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">CA Facturé</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">CA Encaissé</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Patients</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Nvx Patients</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">RDV</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Heures</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">€/h</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                 {monthlyData.map((d, i) => {
                   const mi = parseInt(d.mois.substring(4, 6)) - 1;
                   return (
-                    <tr key={i} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{MONTHS[mi]} {d.mois.substring(0, 4)}</td>
-                      <td className="px-4 py-3 text-sm text-right">{fmt(d.caFacture)}</td>
-                      <td className="px-4 py-3 text-sm text-right">{fmt(d.caEncaisse)}</td>
-                      <td className="px-4 py-3 text-sm text-right">{d.nbPatients}</td>
-                      <td className="px-4 py-3 text-sm text-right">{d.nbNouveauxPatients}</td>
-                      <td className="px-4 py-3 text-sm text-right">{d.nbRdv}</td>
-                      <td className="px-4 py-3 text-sm text-right">{(d.heuresTravaillees || 0).toFixed(1)}h</td>
+                    <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{MONTHS[mi]} {d.mois.substring(0, 4)}</td>
+                      <td className="px-4 py-3 text-sm text-right dark:text-gray-300">{fmt(d.caFacture)}</td>
+                      <td className="px-4 py-3 text-sm text-right dark:text-gray-300">{fmt(d.caEncaisse)}</td>
+                      <td className="px-4 py-3 text-sm text-right dark:text-gray-300">{d.nbPatients}</td>
+                      <td className="px-4 py-3 text-sm text-right dark:text-gray-300">{d.nbNouveauxPatients}</td>
+                      <td className="px-4 py-3 text-sm text-right dark:text-gray-300">{d.nbRdv}</td>
+                      <td className="px-4 py-3 text-sm text-right dark:text-gray-300">{(d.heuresTravaillees || 0).toFixed(1)}h</td>
                       <td className="px-4 py-3 text-sm text-right font-medium text-primary-700">
                         {d.rentabiliteHoraire > 0 ? `${d.rentabiliteHoraire.toFixed(0)}€/h` : '-'}
                       </td>

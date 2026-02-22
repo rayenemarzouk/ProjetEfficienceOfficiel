@@ -31,6 +31,7 @@ api.interceptors.response.use(
 
 // Auth
 export const login = (email, password) => api.post('/auth/login', { email, password });
+export const register = (data) => api.post('/auth/register', data);
 export const getMe = () => api.get('/auth/me');
 
 // Admin
@@ -39,6 +40,7 @@ export const getComparison = (p1, p2) => api.get(`/admin/comparison?practitioner
 export const getCabinetDetails = (code) => api.get(`/admin/cabinet/${code}`);
 export const getStatistics = () => api.get('/admin/statistics');
 export const getSettings = () => api.get('/admin/settings');
+export const updateSettings = (data) => api.put('/admin/settings', data);
 
 // Practitioner
 export const getPractitionerDashboard = () => api.get('/practitioner/dashboard');

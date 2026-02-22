@@ -49,15 +49,15 @@ export default function DataManagement() {
       <div className="p-8">
         <div className="max-w-2xl mx-auto">
           {/* Import Card */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-8">
-            <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
+          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-8 transition-colors">
+            <h3 className="text-xl font-semibold dark:text-white mb-6 flex items-center gap-2">
               <FiUpload className="text-primary-600" />
               Importer des données
             </h3>
 
             {message && (
               <div className={`mb-6 p-4 rounded-xl flex items-center gap-2 text-sm ${
-                message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+                message.type === 'success' ? 'bg-green-50 dark:bg-green-900/30 text-green-700 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/30 text-red-700 border border-red-200 dark:border-red-800'
               }`}>
                 {message.type === 'success' ? <FiCheck /> : <FiAlertCircle />}
                 {message.text}
@@ -66,7 +66,7 @@ export default function DataManagement() {
 
             {/* Type selection */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Type de données</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type de données</label>
               <div className="grid grid-cols-1 gap-3">
                 {dataTypes.map(dt => (
                   <button
@@ -74,14 +74,14 @@ export default function DataManagement() {
                     onClick={() => setSelectedType(dt.value)}
                     className={`p-4 rounded-xl text-left transition-all ${
                       selectedType === dt.value
-                        ? 'bg-primary-50 border-2 border-primary-500'
-                        : 'bg-gray-50 border-2 border-transparent hover:border-gray-200'
+                        ? 'bg-primary-50 dark:bg-primary-900/30 border-2 border-primary-500'
+                        : 'bg-gray-50 dark:bg-gray-800 border-2 border-transparent hover:border-gray-200 dark:hover:border-gray-600'
                     }`}
                   >
-                    <p className={`text-sm font-medium ${selectedType === dt.value ? 'text-primary-700' : 'text-gray-900'}`}>
+                    <p className={`text-sm font-medium ${selectedType === dt.value ? 'text-primary-700' : 'text-gray-900 dark:text-white'}`}>
                       {dt.label}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">{dt.desc}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{dt.desc}</p>
                   </button>
                 ))}
               </div>
@@ -89,8 +89,8 @@ export default function DataManagement() {
 
             {/* File input */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Fichier TSV (LogosW)</label>
-              <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-primary-300 transition-colors">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fichier TSV (LogosW)</label>
+              <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center hover:border-primary-300 transition-colors">
                 <input
                   type="file"
                   accept=".txt,.tsv,.csv"
@@ -104,14 +104,14 @@ export default function DataManagement() {
                       <FiFileText className="w-8 h-8" />
                       <div>
                         <p className="font-medium">{file.name}</p>
-                        <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{(file.size / 1024).toFixed(1)} KB</p>
                       </div>
                     </div>
                   ) : (
                     <>
-                      <FiUpload className="w-10 h-10 mx-auto text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600">Cliquer pour sélectionner un fichier</p>
-                      <p className="text-xs text-gray-400 mt-1">.txt, .tsv, .csv</p>
+                      <FiUpload className="w-10 h-10 mx-auto text-gray-400 dark:text-gray-500 mb-2" />
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Cliquer pour sélectionner un fichier</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">.txt, .tsv, .csv</p>
                     </>
                   )}
                 </label>
@@ -137,7 +137,7 @@ export default function DataManagement() {
               )}
             </button>
 
-            <p className="text-xs text-gray-500 mt-4 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center">
               Les fichiers doivent être au format TSV (séparateur tabulation) exportés depuis LogosW.
             </p>
           </div>

@@ -30,8 +30,16 @@ app.get('/api/health', (req, res) => {
 initCronJobs();
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Serveur Efficience Analytics démarré sur le port ${PORT}`);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`⚠️ Le port ${PORT} est déjà utilisé. Arrêtez l'autre processus ou changez le port.`);
+    process.exit(1);
+  }
+  throw err;
 });
 
 module.exports = app;
