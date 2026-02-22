@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useAppSettings } from '../../context/AppSettingsContext';
 import { useDynamic } from '../../context/DynamicContext';
 import { setAIEnabled } from '../../utils/aiModels';
-import { FiUser, FiMail, FiShield, FiActivity, FiCalendar, FiCheck, FiLogIn, FiX, FiAlertCircle, FiLoader, FiTool, FiCpu, FiDatabase, FiAlertTriangle, FiTrash2, FiSend, FiLock, FiZap, FiClock } from 'react-icons/fi';
+import { FiUser, FiMail, FiShield, FiActivity, FiCalendar, FiCheck, FiLogIn, FiX, FiAlertCircle, FiLoader, FiTool, FiCpu, FiDatabase, FiAlertTriangle, FiTrash2, FiLock, FiZap, FiClock, FiSend, FiKey } from 'react-icons/fi';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -32,9 +32,11 @@ export default function Settings() {
   const [deactCode, setDeactCode] = useState('');
   const [deactError, setDeactError] = useState(null);
 
-  // ═══ AI Toggle state (vérification email) ═══
-  const [aiModal, setAiModal] = useState(null); // { targetState, step: 'confirm' | 'sending' | 'code' | 'verifying' | 'done' }
-  const [aiCode, setAiCode] = useState('');
+  // ═══ AI Toggle state ═══
+  const [aiModal, setAiModal] = useState(null); // { targetState, step: 'code' | 'sending' | 'verifying' | 'done' }
+  const [aiAdminCode, setAiAdminCode] = useState('');     // code fixe admin
+  const [aiEmailCode, setAiEmailCode] = useState('');     // code reçu par email
+  const [aiEmailSent, setAiEmailSent] = useState(false);  // email envoyé ?
   const [aiError, setAiError] = useState(null);
   const [dynamicExpiresAt, setDynamicExpiresAt] = useState(null);
 
@@ -96,35 +98,28 @@ export default function Settings() {
     }
   };
 
-  // ═══ AI Toggle functions (vérification email) ═══
+  // ═══ AI Toggle functions (2 méthodes : code admin fixe OU code email) ═══
   const handleAiToggleClick = () => {
     const targetState = !aiModelsEnabled;
-    setAiModal({ targetState, step: 'confirm' });
-    setAiCode('');
+    setAiModal({ targetState, step: 'code' });
+    setAiAdminCode('');
+    setAiEmailCode('');
+    setAiEmailSent(false);
     setAiError(null);
+    // Préparer la session côté backend
+    aiToggleSendCode(targetState).catch(() => {});
   };
 
-  const handleSendAiCode = async () => {
-    setAiModal(prev => ({ ...prev, step: 'sending' }));
-    setAiError(null);
-    try {
-      await aiToggleSendCode(aiModal.targetState);
-      setAiModal(prev => ({ ...prev, step: 'code' }));
-    } catch (err) {
-      setAiError(err.response?.data?.message || 'Erreur lors de l\'envoi du code');
-      setAiModal(prev => ({ ...prev, step: 'confirm' }));
-    }
-  };
-
-  const handleConfirmAiToggle = async () => {
-    if (!aiCode.trim()) {
-      setAiError('Veuillez entrer le code de vérification.');
+  // Méthode 1 : Code admin permanent
+  const handleAdminCodeConfirm = async () => {
+    if (!aiAdminCode.trim()) {
+      setAiError('Veuillez entrer votre code administrateur.');
       return;
     }
     setAiModal(prev => ({ ...prev, step: 'verifying' }));
     setAiError(null);
     try {
-      const res = await aiToggleConfirm(aiCode.trim());
+      const res = await aiToggleConfirm(aiAdminCode.trim(), 'admin');
       setAiModal(prev => ({ ...prev, step: 'done' }));
       const newState = res.data.aiModelsEnabled;
       setAiModelsEnabled(newState);
@@ -133,14 +128,53 @@ export default function Settings() {
       refreshSettings();
       refreshDynamic();
     } catch (err) {
-      setAiError(err.response?.data?.message || 'Code incorrect ou expiré');
+      setAiError(err.response?.data?.message || 'Code admin incorrect');
+      setAiModal(prev => ({ ...prev, step: 'code' }));
+    }
+  };
+
+  // Méthode 2 : Envoyer code par email
+  const handleSendEmailCode = async () => {
+    setAiError(null);
+    setAiModal(prev => ({ ...prev, step: 'sending' }));
+    try {
+      await aiToggleSendCode(aiModal.targetState, true); // sendEmail = true
+      setAiEmailSent(true);
+      setAiModal(prev => ({ ...prev, step: 'code' }));
+    } catch (err) {
+      setAiError(err.response?.data?.message || 'Erreur lors de l\'envoi du code');
+      setAiModal(prev => ({ ...prev, step: 'code' }));
+    }
+  };
+
+  // Méthode 2 : Confirmer code reçu par email
+  const handleEmailCodeConfirm = async () => {
+    if (!aiEmailCode.trim()) {
+      setAiError('Veuillez entrer le code reçu par email.');
+      return;
+    }
+    setAiModal(prev => ({ ...prev, step: 'verifying' }));
+    setAiError(null);
+    try {
+      const res = await aiToggleConfirm(aiEmailCode.trim(), 'email');
+      setAiModal(prev => ({ ...prev, step: 'done' }));
+      const newState = res.data.aiModelsEnabled;
+      setAiModelsEnabled(newState);
+      setAIEnabled(newState);
+      setDynamicExpiresAt(res.data.dynamicExpiresAt || null);
+      refreshSettings();
+      refreshDynamic();
+    } catch (err) {
+      setAiError(err.response?.data?.message || 'Code email incorrect ou expiré');
       setAiModal(prev => ({ ...prev, step: 'code' }));
     }
   };
 
   const closeAiModal = () => {
     setAiModal(null);
-    setAiCode('');
+    setAiAdminCode('');
+    setAiEmailCode('');
+    setAiEmailSent(false);
     setAiError(null);
   };
 
@@ -761,105 +795,128 @@ export default function Settings() {
             </div>
 
             <div className="p-6">
-              {/* Step: Confirm */}
-              {aiModal.step === 'confirm' && (
-                <div className="text-center">
-                  <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-                    aiModal.targetState ? 'bg-emerald-50 dark:bg-emerald-900/30' : 'bg-red-50 dark:bg-red-900/30'
-                  }`}>
-                    <FiZap className={`w-7 h-7 ${aiModal.targetState ? 'text-emerald-600' : 'text-red-600'}`} />
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                    {aiModal.targetState ? 'Activer le mode dynamique ?' : 'Désactiver le mode dynamique ?'}
+              {/* Step: Two methods - admin code OR email code */}
+              {aiModal.step === 'code' && (
+                <div>
+                  <h3 className="text-center text-lg font-bold text-gray-900 dark:text-white mb-1">
+                    {aiModal.targetState ? 'Activer le mode dynamique' : 'Désactiver le mode dynamique'}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  <p className="text-center text-xs text-gray-400 mb-5">
                     {aiModal.targetState
-                      ? 'Les graphiques dynamiques, animations et analyses IA seront activés pour tous les utilisateurs pendant 15 jours.'
-                      : 'Tous les effets dynamiques seront stoppés. Le site repassera en mode statique.'}
+                      ? 'Activez les graphiques dynamiques et les analyses IA pour tous les utilisateurs (15 jours).'
+                      : 'Le site repassera en mode statique pour tous les utilisateurs.'}
                   </p>
-                  <div className={`p-3 rounded-lg border mb-6 ${
-                    aiModal.targetState
-                      ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800'
-                      : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
-                  }`}>
-                    <p className={`text-xs ${aiModal.targetState ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
-                      <strong>🔐 Sécurité :</strong> Un code de vérification sera envoyé à votre email.
-                      {aiModal.targetState && <span className="block mt-1">⏱️ Le mode dynamique expirera automatiquement après 15 jours. Un code de renouvellement sera envoyé par email.</span>}
-                    </p>
-                  </div>
+
                   {aiError && (
                     <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 flex items-center gap-2">
                       <FiAlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                       <p className="text-xs text-red-600 dark:text-red-400">{aiError}</p>
                     </div>
                   )}
-                  <button
-                    onClick={handleSendAiCode}
-                    className={`w-full py-3 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 ${
-                      aiModal.targetState
-                        ? 'bg-emerald-600 hover:bg-emerald-700'
-                        : 'bg-red-600 hover:bg-red-700'
-                    }`}
-                  >
-                    <FiSend className="w-4 h-4" /> Envoyer le code de vérification
-                  </button>
-                  <button onClick={closeAiModal} className="mt-3 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors">
+
+                  {/* ── Méthode 1 : Code Admin Permanent ── */}
+                  <div className="mb-5 p-4 rounded-xl border-2 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
+                        <FiKey className="w-3.5 h-3.5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">Code Administrateur</p>
+                        <p className="text-[10px] text-gray-400">Code permanent — activation instantanée</p>
+                      </div>
+                    </div>
+                    <input
+                      type="password"
+                      value={aiAdminCode}
+                      onChange={e => setAiAdminCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="••••••"
+                      maxLength={6}
+                      className="w-full text-center text-2xl font-mono font-bold tracking-[10px] py-3 px-4 rounded-xl border-2 border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3"
+                      autoFocus
+                      onKeyDown={e => e.key === 'Enter' && aiAdminCode.length === 6 && handleAdminCodeConfirm()}
+                    />
+                    <button
+                      onClick={handleAdminCodeConfirm}
+                      disabled={aiAdminCode.length !== 6}
+                      className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
+                        aiAdminCode.length === 6
+                          ? 'bg-blue-600 text-white hover:bg-blue-700'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <FiZap className="w-4 h-4" /> Activer maintenant
+                    </button>
+                  </div>
+
+                  {/* ── Séparateur ── */}
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">ou</span>
+                    <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+                  </div>
+
+                  {/* ── Méthode 2 : Code par Email ── */}
+                  <div className="p-4 rounded-xl border-2 border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/20">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-7 h-7 rounded-lg bg-amber-500 flex items-center justify-center">
+                        <FiMail className="w-3.5 h-3.5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">Vérification par Email</p>
+                        <p className="text-[10px] text-gray-400">Un code temporaire sera envoyé à votre email</p>
+                      </div>
+                    </div>
+
+                    {!aiEmailSent ? (
+                      <button
+                        onClick={handleSendEmailCode}
+                        className="w-full py-2.5 rounded-xl font-semibold text-sm bg-amber-500 text-white hover:bg-amber-600 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <FiSend className="w-4 h-4" /> Envoyer le code par email
+                      </button>
+                    ) : (
+                      <>
+                        <p className="text-xs text-green-600 dark:text-green-400 mb-3 flex items-center gap-1">
+                          <FiCheck className="w-3 h-3" /> Code envoyé ! Vérifiez votre boîte email
+                        </p>
+                        <input
+                          type="text"
+                          value={aiEmailCode}
+                          onChange={e => setAiEmailCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          placeholder="000000"
+                          maxLength={6}
+                          className="w-full text-center text-2xl font-mono font-bold tracking-[10px] py-3 px-4 rounded-xl border-2 border-amber-200 dark:border-amber-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 mb-3"
+                          onKeyDown={e => e.key === 'Enter' && aiEmailCode.length === 6 && handleEmailCodeConfirm()}
+                        />
+                        <button
+                          onClick={handleEmailCodeConfirm}
+                          disabled={aiEmailCode.length !== 6}
+                          className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
+                            aiEmailCode.length === 6
+                              ? 'bg-amber-500 text-white hover:bg-amber-600'
+                              : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          <FiCheck className="w-4 h-4" /> Confirmer le code email
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  <button onClick={closeAiModal} className="w-full mt-4 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors text-center">
                     Annuler
                   </button>
                 </div>
               )}
 
-              {/* Step: Sending */}
+              {/* Step: Sending email */}
               {aiModal.step === 'sending' && (
                 <div className="text-center py-6">
                   <div className="w-12 h-12 mx-auto mb-4">
-                    <FiLoader className="w-12 h-12 text-emerald-600 animate-spin" />
+                    <FiLoader className="w-12 h-12 text-amber-500 animate-spin" />
                   </div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Envoi du code en cours…</p>
-                  <p className="text-xs text-gray-400 mt-1">Vérifiez votre boîte email</p>
-                </div>
-              )}
-
-              {/* Step: Enter code */}
-              {aiModal.step === 'code' && (
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
-                    <FiLock className="w-7 h-7 text-blue-600" />
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Entrez le code de vérification</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                    Un code à 6 chiffres a été envoyé à votre email
-                  </p>
-                  {aiError && (
-                    <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 flex items-center gap-2">
-                      <FiAlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                      <p className="text-xs text-red-600 dark:text-red-400">{aiError}</p>
-                    </div>
-                  )}
-                  <input
-                    type="text"
-                    value={aiCode}
-                    onChange={e => setAiCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="000000"
-                    maxLength={6}
-                    className="w-full text-center text-3xl font-mono font-bold tracking-[12px] py-4 px-4 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 mb-6"
-                    autoFocus
-                    onKeyDown={e => e.key === 'Enter' && aiCode.length === 6 && handleConfirmAiToggle()}
-                  />
-                  <button
-                    onClick={handleConfirmAiToggle}
-                    disabled={aiCode.length !== 6}
-                    className={`w-full py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 ${
-                      aiCode.length === 6
-                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                    }`}
-                  >
-                    <FiZap className="w-4 h-4" /> Confirmer
-                  </button>
-                  <button onClick={closeAiModal} className="mt-3 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors">
-                    Annuler
-                  </button>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">Envoi du code par email…</p>
+                  <p className="text-xs text-gray-400 mt-1">Veuillez patienter</p>
                 </div>
               )}
 

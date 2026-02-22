@@ -542,91 +542,119 @@ router.post('/deactivate-confirm', auth, adminOnly, async (req, res) => {
 //  ACTIVATION MODÈLES IA — Vérification par email
 // ═══════════════════════════════════════════════════════════
 
-// POST /api/admin/ai-toggle-send-code — Envoyer un code pour activer/désactiver les modèles IA
+// POST /api/admin/ai-toggle-send-code — Préparer l'activation + optionnellement envoyer un code par email
 router.post('/ai-toggle-send-code', auth, adminOnly, async (req, res) => {
   try {
-    const { targetState } = req.body; // true = activer, false = désactiver
+    const { targetState, sendEmail } = req.body;
     if (typeof targetState !== 'boolean') return res.status(400).json({ message: 'État cible requis.' });
 
-    const code = crypto.randomInt(100000, 999999).toString();
-    aiToggleCode = { code, expiresAt: Date.now() + 10 * 60 * 1000, targetState };
-
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: parseInt(process.env.EMAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
-
+    // Toujours stocker l'état cible
     const actionLabel = targetState ? 'ACTIVER' : 'DÉSACTIVER';
-    const actionColor = targetState ? '#10b981' : '#ef4444';
 
-    await transporter.sendMail({
-      from: `"Efficience Analytics" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
-      subject: `🤖 Code de vérification — ${actionLabel} les Modèles IA`,
-      html: `
-        <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:30px;background:#f8fafc;border-radius:16px;">
-          <div style="text-align:center;margin-bottom:25px;">
-            <h2 style="color:#1e293b;margin:0;">🤖 Modèles IA — Vérification</h2>
-            <p style="color:#64748b;font-size:14px;margin-top:8px;">Changement d'état des modèles IA</p>
-          </div>
-          <div style="background:white;border-radius:12px;padding:25px;border:1px solid #e2e8f0;text-align:center;">
-            <p style="color:#475569;font-size:14px;margin-bottom:5px;">Action demandée :</p>
-            <p style="color:${actionColor};font-size:20px;font-weight:bold;margin-bottom:20px;">${actionLabel} tous les modèles IA et le mode dynamique</p>
-            <div style="background:#f0fdf4;border:2px dashed ${actionColor};border-radius:12px;padding:20px;margin-bottom:20px;">
-              <p style="color:${actionColor};font-size:12px;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Votre code</p>
-              <p style="color:#1e293b;font-size:36px;font-weight:900;letter-spacing:8px;margin:0;">${code}</p>
+    if (sendEmail) {
+      // Méthode 2 : envoyer un code temporaire par email
+      const code = crypto.randomInt(100000, 999999).toString();
+      aiToggleCode = { code, expiresAt: Date.now() + 10 * 60 * 1000, targetState };
+
+      const transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT),
+        secure: false,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      });
+
+      const actionColor = targetState ? '#10b981' : '#ef4444';
+
+      await transporter.sendMail({
+        from: `"Efficience Analytics" <${process.env.EMAIL_USER}>`,
+        to: process.env.EMAIL_USER,
+        subject: `🤖 Code de vérification — ${actionLabel} les Modèles IA`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:30px;background:#f8fafc;border-radius:16px;">
+            <div style="text-align:center;margin-bottom:25px;">
+              <h2 style="color:#1e293b;margin:0;">🤖 Modèles IA — Vérification</h2>
+              <p style="color:#64748b;font-size:14px;margin-top:8px;">Changement d'état des modèles IA</p>
             </div>
-            <p style="color:#94a3b8;font-size:12px;">Ce code expire dans <strong>10 minutes</strong>.</p>
-            <p style="color:#64748b;font-size:11px;margin-top:10px;">Demandé par : ${req.user.name} (${req.user.email})</p>
+            <div style="background:white;border-radius:12px;padding:25px;border:1px solid #e2e8f0;text-align:center;">
+              <p style="color:#475569;font-size:14px;margin-bottom:5px;">Action demandée :</p>
+              <p style="color:${actionColor};font-size:20px;font-weight:bold;margin-bottom:20px;">${actionLabel} tous les modèles IA</p>
+              <div style="background:#f0fdf4;border:2px dashed ${actionColor};border-radius:12px;padding:20px;margin-bottom:20px;">
+                <p style="color:${actionColor};font-size:12px;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Votre code</p>
+                <p style="color:#1e293b;font-size:36px;font-weight:900;letter-spacing:8px;margin:0;">${code}</p>
+              </div>
+              <p style="color:#94a3b8;font-size:12px;">Ce code expire dans <strong>10 minutes</strong>.</p>
+              <p style="color:#64748b;font-size:11px;margin-top:10px;">Demandé par : ${req.user.name} (${req.user.email})</p>
+            </div>
+            <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:20px;">Efficience Analytics — Sécurité</p>
           </div>
-          <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:20px;">Efficience Analytics — Sécurité</p>
-        </div>
-      `
-    });
+        `
+      });
 
-    console.log(`Code IA envoyé pour ${actionLabel} par ${req.user.name}`);
-    res.json({ message: 'Code de vérification envoyé par email.' });
+      console.log(`Code IA envoyé par email pour ${actionLabel} par ${req.user.name}`);
+      res.json({ message: 'Code de vérification envoyé par email.' });
+    } else {
+      // Méthode 1 : préparer la session (le code admin fixe sera vérifié au confirm)
+      aiToggleCode = { targetState, expiresAt: Date.now() + 30 * 60 * 1000 };
+      console.log(`Admin ${req.user.name} prépare ${actionLabel} les modèles IA`);
+      res.json({ message: 'Session préparée. Entrez votre code administrateur.' });
+    }
   } catch (error) {
-    console.error('Erreur envoi code IA:', error);
+    console.error('Erreur ai-toggle-send-code:', error);
     res.status(500).json({ message: 'Erreur lors de l\'envoi du code.' });
   }
 });
 
-// POST /api/admin/ai-toggle-confirm — Vérifier le code et activer/désactiver les modèles IA
+// POST /api/admin/ai-toggle-confirm — Vérifier le code (admin fixe OU email) et activer/désactiver
 router.post('/ai-toggle-confirm', auth, adminOnly, async (req, res) => {
   try {
-    const { code } = req.body;
+    const { code, type } = req.body; // type = 'admin' ou 'email'
     if (!code) return res.status(400).json({ message: 'Code requis.' });
 
-    // Vérifier d'abord le code demandé manuellement, puis le code de renouvellement automatique
     let targetState = null;
-    
-    if (aiToggleCode) {
-      if (Date.now() > aiToggleCode.expiresAt) {
-        aiToggleCode = null;
-      } else if (aiToggleCode.code === code.trim()) {
-        targetState = aiToggleCode.targetState;
-        aiToggleCode = null;
-      }
-    }
+    const trimmedCode = code.trim();
 
-    // Vérifier aussi le code de renouvellement automatique (envoyé par le cron)
-    if (targetState === null && global.aiRenewalCode) {
-      if (Date.now() > global.aiRenewalCode.expiresAt) {
-        global.aiRenewalCode = null;
-      } else if (global.aiRenewalCode.code === code.trim()) {
-        targetState = global.aiRenewalCode.targetState;
-        global.aiRenewalCode = null;
+    if (type === 'admin') {
+      // Méthode 1 : Code fixe admin (ADMIN_AI_CODE dans .env)
+      if (process.env.ADMIN_AI_CODE && trimmedCode === process.env.ADMIN_AI_CODE) {
+        if (aiToggleCode && Date.now() <= aiToggleCode.expiresAt) {
+          targetState = aiToggleCode.targetState;
+          aiToggleCode = null;
+        } else {
+          targetState = true; // par défaut activer
+        }
+      } else {
+        return res.status(400).json({ message: 'Code administrateur incorrect.' });
       }
-    }
+    } else {
+      // Méthode 2 : Code temporaire envoyé par email
+      if (aiToggleCode && aiToggleCode.code) {
+        if (Date.now() > aiToggleCode.expiresAt) {
+          aiToggleCode = null;
+          return res.status(400).json({ message: 'Code expiré. Veuillez en redemander un.' });
+        } else if (aiToggleCode.code === trimmedCode) {
+          targetState = aiToggleCode.targetState;
+          aiToggleCode = null;
+        } else {
+          return res.status(400).json({ message: 'Code email incorrect.' });
+        }
+      }
 
-    if (targetState === null) {
-      return res.status(400).json({ message: 'Code incorrect ou expiré. Veuillez en redemander un.' });
+      // Vérifier aussi le code de renouvellement automatique (cron)
+      if (targetState === null && global.aiRenewalCode) {
+        if (Date.now() > global.aiRenewalCode.expiresAt) {
+          global.aiRenewalCode = null;
+        } else if (global.aiRenewalCode.code === trimmedCode) {
+          targetState = global.aiRenewalCode.targetState;
+          global.aiRenewalCode = null;
+        }
+      }
+
+      if (targetState === null) {
+        return res.status(400).json({ message: 'Code incorrect ou expiré.' });
+      }
     }
 
     // Mettre à jour les settings en base
