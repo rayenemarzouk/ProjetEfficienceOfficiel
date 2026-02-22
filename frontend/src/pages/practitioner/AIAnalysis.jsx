@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Header from '../../components/Header';
 import { getPractitionerStatistics } from '../../services/api';
-import { FiCpu, FiTrendingUp, FiTrendingDown, FiAlertTriangle, FiCheckCircle, FiTarget, FiActivity, FiBarChart2, FiZap } from 'react-icons/fi';
+import { FiCpu, FiTrendingUp, FiTrendingDown, FiAlertTriangle, FiCheckCircle, FiTarget, FiActivity, FiBarChart2, FiZap, FiHeart, FiUsers, FiDollarSign, FiCalendar } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import {
   linearRegression,
@@ -9,7 +9,8 @@ import {
   analyzeTrend,
   detectAnomalies,
   cabinetHealthScore,
-  generateAIInsight,
+  generateSimpleInsight,
+  getSimpleHealthLabel,
 } from '../../utils/aiModels';
 
 export default function AIAnalysis() {
@@ -48,24 +49,17 @@ export default function AIAnalysis() {
   const patientsArray = monthlyData.map(d => d.nbPatients || 0);
   const rentaArray = monthlyData.map(d => d.productionHoraire || d.rentabiliteHoraire || 0);
 
-  // ═══ AI MODEL 1: Linear Regression on CA ═══
+  // ═══ ANALYSES SIMPLIFIÉES ═══
   const caRegression = linearRegression(caArray);
-
-  // ═══ AI MODEL 2: Forecast next 3 months ═══
   const caForecastValues = aiForecast(caArray, 3);
   const patientsForecast = aiForecast(patientsArray, 3);
-
-  // ═══ AI MODEL 3: Trend Analysis ═══
   const caTrend = analyzeTrend(caArray);
   const patientsTrend = analyzeTrend(patientsArray);
   const rentaTrend = analyzeTrend(rentaArray);
-
-  // ═══ AI MODEL 4: Anomaly Detection (Z-Score) ═══
   const caAnomalies = detectAnomalies(caArray, 1.5);
   const patientsAnomalies = detectAnomalies(patientsArray, 1.5);
   const anomalyCount = caAnomalies.filter(a => a.isAnomaly).length + patientsAnomalies.filter(a => a.isAnomaly).length;
 
-  // ═══ AI MODEL 5: Health Score ═══
   const lastMonth = monthlyData[monthlyData.length - 1] || {};
   const tauxEnc = lastMonth.caFacture > 0 ? (lastMonth.caEncaisse / lastMonth.caFacture) * 100 : 0;
   const tauxAbs = lastMonth.nbRdv > 0 ? ((lastMonth.nbRdv - lastMonth.nbPatients) / lastMonth.nbRdv) * 100 : 0;
@@ -76,81 +70,92 @@ export default function AIAnalysis() {
     productionHoraire: rentaArray[rentaArray.length - 1] || 0,
     tauxNouveauxPatients: lastMonth.nbNouveauxPatients || 0,
   });
+  const healthLabel = getSimpleHealthLabel(health.score);
 
-  // ═══ AI MODEL 6: Full AI Insight (text generation) ═══
-  const caInsight = generateAIInsight(caArray, 'CA facturé');
-  const patientsInsight = generateAIInsight(patientsArray, 'nombre de patients');
+  const caInsight = generateSimpleInsight(caArray, 'chiffre d\'affaires');
+  const patientsInsight = generateSimpleInsight(patientsArray, 'nombre de patients');
 
-  // ═══ COMPUTED VALUES ═══
   const avgCA = caArray.length > 0 ? caArray.reduce((s, v) => s + v, 0) / caArray.length : 0;
   const avgRenta = rentaArray.length > 0 ? rentaArray.reduce((s, v) => s + v, 0) / rentaArray.length : 0;
 
-  // Build analysis cards with REAL AI outputs
+  // ═══ CARTES D'ANALYSE SIMPLIFIÉES ═══
   const analyses = [
     {
-      icon: FiBarChart2,
-      title: `Régression Linéaire CA — R²=${caRegression.r2.toFixed(2)}`,
-      model: 'Régression OLS (Moindres Carrés)',
-      description: `Pente: ${caRegression.slope >= 0 ? '+' : ''}${caRegression.slope.toFixed(0)}€/mois • Intercept: ${fmt(caRegression.intercept)} • Coefficient R²: ${(caRegression.r2 * 100).toFixed(1)}%`,
-      detail: caRegression.r2 >= 0.7
-        ? `Le modèle explique ${(caRegression.r2 * 100).toFixed(0)}% de la variance du CA. La tendance est statistiquement fiable.`
-        : `Le R² de ${(caRegression.r2 * 100).toFixed(0)}% indique une forte variabilité. Les prévisions doivent être interprétées avec prudence.`,
-      type: caRegression.slope > 0 ? 'positive' : caRegression.slope < -500 ? 'warning' : 'neutral',
-      confidence: `${(caRegression.r2 * 100).toFixed(0)}%`,
+      icon: FiDollarSign,
+      title: 'Évolution du Chiffre d\'Affaires',
+      subtitle: caInsight.trendLabel,
+      emoji: caInsight.trendIcon,
+      parts: caInsight.parts,
+      extras: [
+        { label: 'CA moyen mensuel', value: fmt(avgCA) },
+        { label: 'Prévision mois prochain', value: fmt(caForecastValues[0]) },
+        { label: 'Prévision M+2', value: fmt(caForecastValues[1]) },
+        { label: 'Prévision M+3', value: fmt(caForecastValues[2]) },
+      ],
+      type: caTrend.trend === 'upward' ? 'positive' : caTrend.trend === 'downward' ? 'warning' : 'neutral',
     },
     {
-      icon: FiTrendingUp,
-      title: `Prévision IA — CA des 3 prochains mois`,
-      model: 'Holt Smoothing + Régression pondérée',
-      description: `Mois+1: ${fmt(caForecastValues[0])} • Mois+2: ${fmt(caForecastValues[1])} • Mois+3: ${fmt(caForecastValues[2])}`,
-      detail: `Modèle combiné (Holt α=0.3, β=0.1 + OLS pondéré par R²=${caRegression.r2.toFixed(2)}). Tendance détectée: ${caTrend}. Prévision patients: ${patientsForecast.map(v => Math.round(v)).join(', ')} patients.`,
-      type: caForecastValues[2] > caForecastValues[0] ? 'positive' : 'warning',
-      confidence: `${Math.min(95, Math.round(caRegression.r2 * 100 + 15))}%`,
+      icon: FiUsers,
+      title: 'Évolution de la Patientèle',
+      subtitle: patientsInsight.trendLabel,
+      emoji: patientsInsight.trendIcon,
+      parts: patientsInsight.parts,
+      extras: [
+        { label: 'Patients par mois (moy.)', value: `${Math.round(patientsArray.reduce((s,v) => s+v, 0) / Math.max(1, patientsArray.length))}` },
+        { label: 'Prévision mois prochain', value: `${Math.round(patientsForecast[0])} patients` },
+        { label: 'Prévision M+2', value: `${Math.round(patientsForecast[1])} patients` },
+      ],
+      type: patientsTrend.trend === 'upward' ? 'positive' : patientsTrend.trend === 'downward' ? 'warning' : 'neutral',
     },
     {
       icon: FiActivity,
-      title: `Détection d'Anomalies — ${anomalyCount} anomalie(s) détectée(s)`,
-      model: 'Z-Score (σ = 1.5)',
-      description: (() => {
-        const caAnom = caAnomalies.filter(a => a.isAnomaly);
-        const pAnom = patientsAnomalies.filter(a => a.isAnomaly);
-        const parts = [];
-        if (caAnom.length > 0) parts.push(`CA: ${caAnom.length} mois anormaux (z-scores: ${caAnom.map(a => a.zScore.toFixed(1)).join(', ')})`);
-        if (pAnom.length > 0) parts.push(`Patients: ${pAnom.length} mois anormaux`);
-        return parts.length > 0 ? parts.join(' • ') : 'Aucune anomalie statistique détectée dans vos données.';
-      })(),
-      detail: anomalyCount > 0
-        ? `Les mois anormaux s'écartent de plus de 1.5 écart-types de la moyenne. Investiguer les causes: congés, travaux, événement externe.`
-        : `Votre activité est stable sans écarts significatifs. La distribution des données suit un pattern normal.`,
+      title: 'Mois Inhabituels Détectés',
+      subtitle: anomalyCount === 0 ? 'Aucun' : `${anomalyCount} mois`,
+      emoji: anomalyCount === 0 ? '✅' : '⚠️',
+      parts: anomalyCount > 0
+        ? [`${anomalyCount} mois présentent des variations inhabituelles dans votre activité.`, 'Cela peut être lié à des congés, des travaux dans le cabinet ou un événement exceptionnel.', 'Ces mois sont mis en évidence dans vos graphiques pour les identifier facilement.']
+        : ['Votre activité est régulière, sans variation anormale détectée.', 'C\'est un bon signe de stabilité pour votre cabinet.'],
+      extras: [],
       type: anomalyCount === 0 ? 'positive' : anomalyCount <= 2 ? 'neutral' : 'warning',
-      confidence: '95%',
     },
     {
-      icon: FiZap,
-      title: `Score Santé Cabinet — ${health.score}/100`,
-      model: 'Score Multi-KPI Pondéré (5 dimensions)',
-      description: `Encaissement: ${tauxEnc.toFixed(0)}% • Absences: ${tauxAbs.toFixed(1)}% • Productivité: ${avgRenta.toFixed(0)}€/h • Tendance CA: ${caTrend} • Patients: ${patientsTrend}`,
-      detail: `${health.label}. Pondérations: Encaissement(30%), Évolution CA(25%), Absences(20%), Production/h(15%), Nouveaux patients(10%). Recommandation IA: ${
-        health.score >= 80 ? 'Maintenir la dynamique actuelle et optimiser les marges.'
-        : health.score >= 60 ? 'Concentration sur l\'encaissement et la réduction des absences.'
-        : 'Plan d\'action urgent: revoir le planning, relancer les impayés, améliorer la rétention.'
-      }`,
+      icon: FiHeart,
+      title: 'Santé Globale du Cabinet',
+      subtitle: `${healthLabel.label} — ${health.score}/100`,
+      emoji: healthLabel.emoji,
+      parts: [
+        healthLabel.advice,
+        `Taux d'encaissement : ${tauxEnc.toFixed(0)}% — ${tauxEnc >= 80 ? 'Très bien' : tauxEnc >= 60 ? 'Correct, peut être amélioré' : 'À améliorer'}.`,
+        `Taux d'absence : ${tauxAbs.toFixed(1)}% — ${tauxAbs <= 5 ? 'Excellent' : tauxAbs <= 15 ? 'Acceptable' : 'Réfléchir à réduire les absences'}.`,
+        `Productivité moyenne : ${avgRenta.toFixed(0)}€/h.`,
+      ],
+      extras: [
+        { label: 'Encaissement', value: `${tauxEnc.toFixed(0)}%` },
+        { label: 'Absences', value: `${tauxAbs.toFixed(1)}%` },
+        { label: 'Productivité', value: `${avgRenta.toFixed(0)}€/h` },
+      ],
       type: health.score >= 80 ? 'positive' : health.score >= 60 ? 'neutral' : 'warning',
-      confidence: `${Math.min(98, health.score + 10)}%`,
     },
     {
       icon: FiTarget,
-      title: `Analyse de Tendance — Rentabilité: ${rentaTrend.trend}`,
-      model: 'Analyse séquentielle multi-variables',
-      description: `CA moyen: ${fmt(avgCA)}/mois • Rentabilité moyenne: ${avgRenta.toFixed(0)}€/h • Tendance CA: ${caTrend.trend} • Tendance Patients: ${patientsTrend.trend}`,
-      detail: `Évolution mensuelle analysée sur ${monthlyData.length} mois. ${
-        caTrend.trend === 'upward' && patientsTrend.trend === 'upward' ? 'Croissance globale confirmée sur les deux axes CA et patients.'
-        : caTrend.trend === 'upward' && patientsTrend.trend !== 'upward' ? 'Le CA augmente mais le nombre de patients stagne — valeur par patient en hausse.'
-        : caTrend.trend === 'downward' ? 'Tendance baissière du CA détectée. Analyser les causes structurelles.'
-        : 'Activité stable. Rechercher des leviers de croissance.'
-      }`,
+      title: 'Tendance Générale',
+      subtitle: rentaTrend.trend === 'upward' ? 'En hausse' : rentaTrend.trend === 'downward' ? 'En baisse' : 'Stable',
+      emoji: rentaTrend.trend === 'upward' ? '📈' : rentaTrend.trend === 'downward' ? '📉' : '➡️',
+      parts: [
+        (() => {
+          if (caTrend.trend === 'upward' && patientsTrend.trend === 'upward') return 'Bonne nouvelle : le chiffre d\'affaires et le nombre de patients sont tous les deux en hausse. Le cabinet est en croissance.';
+          if (caTrend.trend === 'upward' && patientsTrend.trend !== 'upward') return 'Le chiffre d\'affaires augmente mais le nombre de patients est stable. Cela peut indiquer des soins de plus grande valeur par patient.';
+          if (caTrend.trend === 'downward') return 'Le chiffre d\'affaires montre une baisse. Il serait utile d\'identifier les causes pour agir.';
+          return 'L\'activité du cabinet est globalement stable. Pour croître, cherchez de nouveaux leviers (communication, nouveaux soins, etc.).';
+        })(),
+        `Analyse réalisée sur ${monthlyData.length} mois de données.`,
+      ],
+      extras: [
+        { label: 'CA', value: caTrend.trend === 'upward' ? '↑ Hausse' : caTrend.trend === 'downward' ? '↓ Baisse' : '→ Stable' },
+        { label: 'Patients', value: patientsTrend.trend === 'upward' ? '↑ Hausse' : patientsTrend.trend === 'downward' ? '↓ Baisse' : '→ Stable' },
+        { label: 'Rentabilité', value: rentaTrend.trend === 'upward' ? '↑ Hausse' : rentaTrend.trend === 'downward' ? '↓ Baisse' : '→ Stable' },
+      ],
       type: caTrend.trend === 'upward' ? 'positive' : caTrend.trend === 'downward' ? 'warning' : 'neutral',
-      confidence: `${(caRegression.r2 * 100).toFixed(0)}%`,
     },
   ];
 
@@ -162,11 +167,11 @@ export default function AIAnalysis() {
 
   return (
     <div>
-      <Header title="Analyse IA" subtitle={`Cabinet ${user?.practitionerCode || ''} — Modèles de Machine Learning`} />
+      <Header title="Analyse du Cabinet" subtitle={`Cabinet ${user?.cabinetName || user?.name || ''} — Bilan et prévisions`} />
 
       <div className="p-8">
         <div className="max-w-3xl mx-auto">
-          {/* AI Header */}
+          {/* Header simplifié */}
           <div className="bg-gradient-to-r from-violet-600 via-blue-600 to-indigo-700 rounded-2xl p-8 text-white mb-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20"></div>
             <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full -ml-12 -mb-12"></div>
@@ -176,8 +181,8 @@ export default function AIAnalysis() {
                   <FiCpu className="w-8 h-8" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold">Analyse par Intelligence Artificielle</h2>
-                  <p className="text-violet-200 text-sm">5 modèles ML exécutés sur vos données</p>
+                  <h2 className="text-2xl font-bold">Bilan Intelligent du Cabinet</h2>
+                  <p className="text-violet-200 text-sm">Analyse automatique de votre activité</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
@@ -186,42 +191,42 @@ export default function AIAnalysis() {
                   <p className="text-[10px] text-violet-200 uppercase">Mois analysés</p>
                 </div>
                 <div className="bg-white/10 rounded-xl p-3 text-center">
-                  <p className="text-2xl font-black">{health.score}</p>
-                  <p className="text-[10px] text-violet-200 uppercase">Score Santé</p>
+                  <p className="text-2xl font-black">{healthLabel.emoji} {health.score}</p>
+                  <p className="text-[10px] text-violet-200 uppercase">Santé Cabinet</p>
                 </div>
                 <div className="bg-white/10 rounded-xl p-3 text-center">
-                  <p className="text-2xl font-black">{(caRegression.r2 * 100).toFixed(0)}%</p>
-                  <p className="text-[10px] text-violet-200 uppercase">Confiance R²</p>
+                  <p className="text-2xl font-black">{caInsight.trendIcon}</p>
+                  <p className="text-[10px] text-violet-200 uppercase">Tendance CA</p>
                 </div>
                 <div className="bg-white/10 rounded-xl p-3 text-center">
-                  <p className="text-2xl font-black">{anomalyCount}</p>
-                  <p className="text-[10px] text-violet-200 uppercase">Anomalies</p>
+                  <p className="text-2xl font-black">{anomalyCount === 0 ? '✅' : `⚠️ ${anomalyCount}`}</p>
+                  <p className="text-[10px] text-violet-200 uppercase">{anomalyCount === 0 ? 'Activité régulière' : 'Mois inhabituels'}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* AI Insight Panels */}
+          {/* Insight Panels simplifiés */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <div className="bg-gradient-to-br from-violet-50 to-blue-50 dark:from-violet-900/30 dark:to-blue-900/30 rounded-2xl border border-violet-100 dark:border-violet-800 p-5">
               <div className="flex items-center gap-2 mb-3">
-                <FiCpu className="w-4 h-4 text-violet-600" />
-                <span className="text-xs font-bold text-gray-800 dark:text-gray-200">Insight IA — CA</span>
-                <span className="ml-auto text-[9px] font-semibold text-violet-600 bg-violet-100 dark:bg-violet-900/50 px-2 py-0.5 rounded-full">R²={caInsight.confidence}%</span>
+                <FiDollarSign className="w-4 h-4 text-violet-600" />
+                <span className="text-xs font-bold text-gray-800 dark:text-gray-200">Résumé — Chiffre d'Affaires</span>
+                <span className="ml-auto text-[9px] font-semibold text-violet-600 bg-violet-100 dark:bg-violet-900/50 px-2 py-0.5 rounded-full">{caInsight.trendIcon} {caInsight.trendLabel}</span>
               </div>
               {caInsight.parts.map((p, i) => <p key={i} className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed mb-1">{p}</p>)}
             </div>
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-2xl border border-blue-100 dark:border-blue-800 p-5">
               <div className="flex items-center gap-2 mb-3">
-                <FiCpu className="w-4 h-4 text-blue-600" />
-                <span className="text-xs font-bold text-gray-800 dark:text-gray-200">Insight IA — Patients</span>
-                <span className="ml-auto text-[9px] font-semibold text-blue-600 bg-blue-100 dark:bg-blue-900/50 px-2 py-0.5 rounded-full">Holt-Winters</span>
+                <FiUsers className="w-4 h-4 text-blue-600" />
+                <span className="text-xs font-bold text-gray-800 dark:text-gray-200">Résumé — Patients</span>
+                <span className="ml-auto text-[9px] font-semibold text-blue-600 bg-blue-100 dark:bg-blue-900/50 px-2 py-0.5 rounded-full">{patientsInsight.trendIcon} {patientsInsight.trendLabel}</span>
               </div>
               {patientsInsight.parts.map((p, i) => <p key={i} className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed mb-1">{p}</p>)}
             </div>
           </div>
 
-          {/* Analysis Cards */}
+          {/* Analysis Cards simplifiées */}
           <div className="space-y-6">
             {analyses.map((a, i) => {
               const colors = typeColors[a.type];
@@ -231,21 +236,25 @@ export default function AIAnalysis() {
                     <a.icon className={`w-6 h-6 ${colors.icon}`} />
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{a.title}</h3>
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400">{a.model}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{a.emoji} {a.subtitle}</p>
                     </div>
-                    <div className="ml-auto flex items-center gap-2">
-                      <span className="text-[9px] font-bold text-gray-500 dark:text-gray-400 bg-white/60 dark:bg-white/10 px-2 py-0.5 rounded-full">Confiance: {a.confidence}</span>
+                    <div className="ml-auto">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${colors.badge}`}>
-                        {a.type === 'positive' ? '✅ Positif' : a.type === 'warning' ? '⚠️ Attention' : 'ℹ️ Info'}
+                        {a.type === 'positive' ? '✅ Positif' : a.type === 'warning' ? '⚠️ À surveiller' : 'ℹ️ Neutre'}
                       </span>
                     </div>
                   </div>
                   <div className="bg-white dark:bg-[#1e293b] px-6 py-4">
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 font-medium">{a.description}</p>
-                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">🧠 Analyse du Modèle</p>
-                      <p className="text-sm text-gray-800 dark:text-gray-200">{a.detail}</p>
-                    </div>
+                    {a.parts.map((p, j) => <p key={j} className="text-sm text-gray-700 dark:text-gray-300 mb-2 leading-relaxed">{p}</p>)}
+                    {a.extras.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                        {a.extras.map((e, j) => (
+                          <span key={j} className="text-[10px] bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-lg font-medium">
+                            {e.label}: <span className="font-bold text-gray-800 dark:text-gray-200">{e.value}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

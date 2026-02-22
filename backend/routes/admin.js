@@ -13,6 +13,9 @@ const Report = require('../models/Report');
 const User = require('../models/User');
 const AppSettings = require('../models/AppSettings');
 
+// Helper: get practitioner identifier (code if set, otherwise use name or email)
+const getPraticienId = (user) => user.practitionerCode || user.name || user.email;
+
 // ═══ Store for deactivation verification codes (userId → { code, expiresAt }) ═══
 const deactivateCodes = new Map();
 
@@ -24,7 +27,7 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
   try {
     // Nombre de praticiens actifs
     const practitioners = await User.find({ role: 'practitioner', isActive: true });
-    const practitionerCodes = practitioners.map(p => p.practitionerCode);
+    const practitionerCodes = practitioners.map(p => getPraticienId(p));
 
     // CA total par praticien (agrégé)
     const caByPractitioner = await AnalyseRealisation.aggregate([
@@ -129,7 +132,7 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
       practitioners: practitioners.map(p => ({
         id: p._id,
         name: p.name,
-        code: p.practitionerCode,
+        code: getPraticienId(p),
         email: p.email
       })),
       caByPractitioner,
@@ -279,7 +282,7 @@ router.get('/cabinet/:code', auth, adminOnly, async (req, res) => {
 router.get('/statistics', auth, adminOnly, async (req, res) => {
   try {
     const practitioners = await User.find({ role: 'practitioner', isActive: true });
-    const codes = practitioners.map(p => p.practitionerCode);
+    const codes = practitioners.map(p => getPraticienId(p));
 
     // Stats globales
     const globalCA = await AnalyseRealisation.aggregate([
@@ -405,12 +408,12 @@ router.post('/impersonate', auth, adminOnly, async (req, res) => {
 
     // L'admin est déjà authentifié — générer directement un token praticien
     const token = jwt.sign(
-      { id: practitioner._id, role: practitioner.role, practitionerCode: practitioner.practitionerCode },
+      { id: practitioner._id, role: practitioner.role, practitionerCode: getPraticienId(practitioner) },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
-    console.log(`Admin ${req.user.name} connecté en tant que ${practitioner.name} (${practitioner.practitionerCode})`);
+    console.log(`Admin ${req.user.name} connecté en tant que ${practitioner.name} (${getPraticienId(practitioner)})`);
 
     res.json({
       token,
@@ -419,7 +422,7 @@ router.post('/impersonate', auth, adminOnly, async (req, res) => {
         email: practitioner.email,
         name: practitioner.name,
         role: practitioner.role,
-        practitionerCode: practitioner.practitionerCode,
+        practitionerCode: getPraticienId(practitioner),
         cabinetName: practitioner.cabinetName
       }
     });
@@ -515,17 +518,15 @@ router.post('/deactivate-confirm', auth, adminOnly, async (req, res) => {
 
     const userName = targetUser.name;
     const userEmail = targetUser.email;
-    const practitionerCode = targetUser.practitionerCode;
+    const praticienId = getPraticienId(targetUser);
 
     // Supprimer les données liées au praticien
-    if (practitionerCode) {
-      await Promise.all([
-        AnalyseRealisation.deleteMany({ praticien: practitionerCode }),
-        AnalyseRendezVous.deleteMany({ praticien: practitionerCode }),
-        AnalyseJoursOuverts.deleteMany({ praticien: practitionerCode }),
-        AnalyseDevis.deleteMany({ praticien: practitionerCode }),
-      ]);
-    }
+    await Promise.all([
+      AnalyseRealisation.deleteMany({ praticien: praticienId }),
+      AnalyseRendezVous.deleteMany({ praticien: praticienId }),
+      AnalyseJoursOuverts.deleteMany({ praticien: praticienId }),
+      AnalyseDevis.deleteMany({ praticien: praticienId }),
+    ]);
 
     // Supprimer les rapports liés
     await Report.deleteMany({ userId: targetUser._id });

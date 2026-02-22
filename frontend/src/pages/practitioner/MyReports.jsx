@@ -14,7 +14,8 @@ export default function MyReports() {
       try {
         const res = await getReportsList();
         // Filter only this practitioner's reports
-        const myReports = res.data.filter(r => r.praticien === user?.practitionerCode);
+        const praticienId = user?.practitionerCode || user?.name || user?.email;
+        const myReports = res.data.filter(r => r.praticien === praticienId);
         setReports(myReports);
       } catch (err) {
         console.error(err);
@@ -47,7 +48,7 @@ export default function MyReports() {
 
   return (
     <div>
-      <Header title="Mes Rapports" subtitle={`Cabinet ${user?.practitionerCode || ''} — Historique des rapports mensuels`} />
+      <Header title="Mes Rapports" subtitle={`Cabinet ${user?.cabinetName || user?.name || ''} — Historique des rapports mensuels`} />
 
       <div className="p-8">
         {loading ? (

@@ -44,7 +44,7 @@ export default function DataManagement() {
 
   return (
     <div>
-      <Header title="Gestion des Données" subtitle={`Cabinet ${user?.practitionerCode || ''} — Import de données LogosW`} />
+      <Header title="Gestion des Données" subtitle={`Cabinet ${user?.cabinetName || user?.name || ''} — Import de données LogosW`} />
 
       <div className="p-8">
         <div className="max-w-2xl mx-auto">

@@ -47,7 +47,7 @@ export default function Login() {
         <div className="absolute bottom-1/4 right-0 w-56 h-56 bg-blue-500 rounded-full opacity-5 blur-3xl"></div>
 
         <div className="relative z-10">
-          {/* Logo RM DEV */}
+          {/* Logo Rayene Marzouk Dev AI */}
           <div className="flex items-center gap-3 mb-12">
             <div className="relative w-10 h-10 rounded-lg bg-gradient-to-br from-blue-700 to-blue-600 flex items-center justify-center shadow-[0_0_12px_rgba(59,130,246,0.3),0_0_24px_rgba(59,130,246,0.1)]">
               <div className="absolute inset-0 rounded-lg bg-blue-600 opacity-20 blur-lg animate-pulse"></div>
@@ -56,7 +56,7 @@ export default function Login() {
                 <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
               </svg>
             </div>
-            <span className="text-blue-400 font-semibold text-sm tracking-wider drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]">RM DEV IA</span>
+            <span className="text-blue-400 font-semibold text-sm tracking-wider drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]">Rayene Marzouk Dev AI</span>
           </div>
 
           {/* Main title */}

@@ -50,11 +50,20 @@ export const deactivateConfirm = (userId, code) => api.post('/admin/deactivate-c
 export const aiToggleSendCode = (targetState, sendEmail = false) => api.post('/admin/ai-toggle-send-code', { targetState, sendEmail });
 export const aiToggleConfirm = (code, type = 'admin') => api.post('/admin/ai-toggle-confirm', { code, type });
 
+// Profile
+export const updateProfile = (data) => api.put('/auth/profile', data);
+
 // Practitioner
 export const getPractitionerDashboard = () => api.get('/practitioner/dashboard');
 export const getPractitionerStatistics = () => api.get('/practitioner/statistics');
 export const submitManualEntry = (type, mois, data) => api.post('/practitioner/manual-entry', { type, mois, data });
 export const getManualEntry = (type, mois) => api.get(`/practitioner/manual-entry/${type}/${mois}`);
+
+// Patients
+export const getPatients = (params) => api.get('/practitioner/patients', { params });
+export const addPatient = (data) => api.post('/practitioner/patients', data);
+export const updatePatient = (id, data) => api.put(`/practitioner/patients/${id}`, data);
+export const deletePatient = (id) => api.delete(`/practitioner/patients/${id}`);
 
 // Data
 export const getDataSummary = () => api.get('/data/summary');

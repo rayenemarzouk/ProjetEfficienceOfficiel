@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { register as registerAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { FiUser, FiMail, FiLock, FiArrowRight, FiShield, FiCheckCircle, FiAlertCircle, FiHome, FiHash, FiArrowLeft } from 'react-icons/fi';
+import { FiUser, FiMail, FiLock, FiArrowRight, FiShield, FiCheckCircle, FiAlertCircle, FiHome, FiArrowLeft } from 'react-icons/fi';
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -51,7 +51,7 @@ export default function Register() {
         email: form.email,
         password: form.password,
         cabinetName: form.cabinetName,
-        practitionerCode: form.practitionerCode
+        practitionerCode: form.practitionerCode || undefined
       });
       // Connexion automatique après inscription
       if (res.data.token && res.data.user) {
@@ -207,17 +207,18 @@ export default function Register() {
               {/* Code praticien */}
               <div>
                 <label className="block text-[10px] font-bold tracking-[0.15em] text-gray-400 uppercase mb-2">
-                  Code praticien <span className="text-gray-300 normal-case">(optionnel)</span>
+                  Code praticien <span className="text-gray-300 normal-case">(ex: JC, DV — votre identifiant LogosW)</span>
                 </label>
                 <div className="relative">
-                  <FiHash className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <FiShield className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     type="text"
                     name="practitionerCode"
                     value={form.practitionerCode}
                     onChange={handleChange}
-                    placeholder="Ex: JD"
-                    className="w-full pl-12 pr-4 py-3.5 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
+                    placeholder="JC"
+                    maxLength={10}
+                    className="w-full pl-12 pr-4 py-3.5 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200 uppercase"
                   />
                 </div>
               </div>

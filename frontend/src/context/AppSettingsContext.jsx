@@ -46,4 +46,5 @@ export function AppSettingsProvider({ children }) {
   );
 }
 
-export const useAppSettings = () => useContext(AppSettingsContext);
+// eslint-disable-next-line react-refresh/only-export-components
+export function useAppSettings() { return useContext(AppSettingsContext); }

@@ -25,7 +25,8 @@ const practitionerPages = [
   { path: '/dashboard', label: 'Mon Tableau de Bord', Icon: FiHome, desc: "Vue d'ensemble", keywords: ['dashboard', 'tableau de bord', 'accueil'] },
   { path: '/dashboard/stats', label: 'Mes Statistiques', Icon: FiBarChart2, desc: 'Performances', keywords: ['statistiques', 'stats', 'graphiques', 'performance'] },
   { path: '/dashboard/data', label: 'Gestion Données', Icon: FiDatabase, desc: 'Import de données', keywords: ['donnees', 'data', 'import', 'fichier', 'csv'] },
-  { path: '/dashboard/ai', label: 'Analyse IA', Icon: FiCpu, desc: 'Intelligence artificielle', keywords: ['ia', 'intelligence', 'artificielle', 'prediction', 'analyse'] },
+  { path: '/dashboard/ai', label: 'Bilan du Cabinet', Icon: FiCpu, desc: 'Analyse et prévisions', keywords: ['bilan', 'cabinet', 'analyse', 'prevision', 'tendance', 'sante'] },
+  { path: '/dashboard/patients', label: 'Mes Patients', Icon: FiHome, desc: 'Gestion des patients', keywords: ['patients', 'patientele', 'ajouter', 'patient', 'fiche', 'contact'] },
   { path: '/dashboard/reports', label: 'Mes Rapports', Icon: FiFileText, desc: 'Rapports mensuels', keywords: ['rapports', 'reports', 'pdf', 'mensuel'] },
 ];
 

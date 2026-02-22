@@ -299,13 +299,10 @@ export default function Settings() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    {user.practitionerCode && (
-                      <span className="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                        {user.practitionerCode}
-                      </span>
-                    )}
                     {user.cabinetName && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">{user.cabinetName}</span>
+                      <span className="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                        {user.cabinetName}
+                      </span>
                     )}
                     <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
                       user.role === 'admin'
@@ -575,7 +572,7 @@ export default function Settings() {
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-white">Connexion praticien</h2>
-                  <p className="text-blue-200 text-xs">{impModal.user.name} ({impModal.user.practitionerCode})</p>
+                  <p className="text-blue-200 text-xs">{impModal.user.name} ({impModal.user.email})</p>
                 </div>
               </div>
               <button onClick={closeImpModal} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
@@ -595,7 +592,7 @@ export default function Settings() {
                     Vous allez vous connecter au compte de
                   </p>
                   <p className="text-base font-bold text-gray-900 dark:text-white mb-1">{impModal.user.name}</p>
-                  <p className="text-xs text-gray-400 mb-6">{impModal.user.email} — {impModal.user.practitionerCode}</p>
+                  <p className="text-xs text-gray-400 mb-6">{impModal.user.email}</p>
                   {impError && (
                     <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 flex items-center gap-2">
                       <FiAlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
@@ -641,7 +638,7 @@ export default function Settings() {
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-white">Désactivation du compte</h2>
-                  <p className="text-red-200 text-xs">{deactModal.user.name} ({deactModal.user.practitionerCode || deactModal.user.email})</p>
+                  <p className="text-red-200 text-xs">{deactModal.user.name} ({deactModal.user.email})</p>
                 </div>
               </div>
               <button onClick={closeDeactModal} className="p-2 hover:bg-white/20 rounded-lg transition-colors">

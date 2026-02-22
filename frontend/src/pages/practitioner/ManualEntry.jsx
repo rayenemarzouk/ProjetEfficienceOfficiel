@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import Header from '../../components/Header';
-import { submitManualEntry, getManualEntry } from '../../services/api';
+import { submitManualEntry, getManualEntry, updateProfile } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { FiEdit3, FiCheck, FiAlertCircle, FiCalendar, FiDollarSign, FiUsers, FiClock, FiFileText, FiLoader, FiSave, FiRefreshCw } from 'react-icons/fi';
+import { FiEdit3, FiCheck, FiAlertCircle, FiCalendar, FiDollarSign, FiUsers, FiClock, FiFileText, FiLoader, FiSave, FiRefreshCw, FiShield } from 'react-icons/fi';
 
 const fmt = (v) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(v || 0);
 
@@ -86,7 +86,7 @@ const dataTypes = [
 ];
 
 export default function ManualEntry() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const monthOptions = generateMonthOptions();
   const [selectedType, setSelectedType] = useState('realisation');
   const [selectedMois, setSelectedMois] = useState(monthOptions[0].value);
@@ -94,6 +94,24 @@ export default function ManualEntry() {
   const [saving, setSaving] = useState(false);
   const [loadingExisting, setLoadingExisting] = useState(false);
   const [message, setMessage] = useState(null);
+  const [codeInput, setCodeInput] = useState('');
+  const [savingCode, setSavingCode] = useState(false);
+
+  const hasPractitionerCode = !!user?.practitionerCode;
+
+  const handleSaveCode = async () => {
+    if (!codeInput.trim()) return;
+    setSavingCode(true);
+    try {
+      const res = await updateProfile({ practitionerCode: codeInput.trim().toUpperCase() });
+      updateUser(res.data.user);
+      setMessage({ type: 'success', text: `Code praticien "${res.data.user.practitionerCode}" enregistr\u00e9 avec succ\u00e8s !` });
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Erreur lors de la mise \u00e0 jour du code.' });
+    } finally {
+      setSavingCode(false);
+    }
+  };
 
   const currentType = dataTypes.find(d => d.value === selectedType);
 
@@ -198,7 +216,7 @@ export default function ManualEntry() {
 
   return (
     <div>
-      <Header title="Saisie Manuelle" subtitle={`Cabinet ${user?.practitionerCode || ''} — Entrez vos données mensuelles`} />
+      <Header title="Saisie Manuelle" subtitle={`Cabinet ${user?.cabinetName || user?.name || ''} — Entrez vos données mensuelles`} />
 
       <div className="p-8">
         <div className="max-w-4xl mx-auto">
@@ -244,6 +262,37 @@ export default function ManualEntry() {
                     <FiLoader className="w-5 h-5 text-gray-400 animate-spin" />
                   )}
                 </div>
+
+                {/* Practitioner code warning & setup */}
+                {!hasPractitionerCode && (
+                  <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                    <div className="flex items-start gap-3">
+                      <FiAlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">Code praticien manquant</p>
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">Renseignez votre code praticien LogosW (ex: JC, DV) pour associer correctement vos donn\u00e9es. Sans ce code, vos donn\u00e9es seront enregistr\u00e9es sous votre nom.</p>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={codeInput}
+                            onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                            placeholder="Ex: JC"
+                            maxLength={10}
+                            className="flex-1 px-3 py-2 rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-mono uppercase focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                          />
+                          <button
+                            onClick={handleSaveCode}
+                            disabled={savingCode || !codeInput.trim()}
+                            className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                          >
+                            {savingCode ? <FiLoader className="w-3.5 h-3.5 animate-spin" /> : <FiShield className="w-3.5 h-3.5" />}
+                            Enregistrer
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Month selector */}
                 <div className="mb-6">
@@ -362,8 +411,8 @@ export default function ManualEntry() {
                     <span className="font-semibold text-gray-900 dark:text-white">{user?.name || '—'}</span>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span className="text-gray-500">Code</span>
-                    <span className="font-semibold text-gray-900 dark:text-white">{user?.practitionerCode || '—'}</span>
+                    <span className="text-gray-500">Cabinet</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{user?.cabinetName || '—'}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-500">Mois sélectionné</span>

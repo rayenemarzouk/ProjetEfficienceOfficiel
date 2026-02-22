@@ -1,16 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import Header from '../../components/Header';
 import { getPractitionerStatistics } from '../../services/api';
-import { Bar } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend } from 'chart.js';
+import { Line, Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { useAuth } from '../../context/AuthContext';
-import { FiCpu } from 'react-icons/fi';
-import { linearRegression, generateAIInsight, detectAnomalies, analyzeTrend, forecast as aiForecast } from '../../utils/aiModels';
-import { streamingBarPlugin, startChartAnimation } from '../../utils/chartPlugins';
+import { FiCpu, FiTrendingUp, FiTrendingDown, FiMinus } from 'react-icons/fi';
+import { generateSimpleInsight } from '../../utils/aiModels';
 import { useDynamic } from '../../context/DynamicContext';
 import { useTheme } from '../../context/ThemeContext';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, Filler);
 
 const fmt = (v) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(v || 0);
 const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
@@ -19,22 +18,10 @@ export default function MyStats() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const caChartRef = useRef(null);
-  const patientsChartRef = useRef(null);
-  const rentaChartRef = useRef(null);
   const { isDynamic } = useDynamic();
   const { dark } = useTheme();
   const chartTextColor = dark ? '#94a3b8' : '#64748b';
-  const chartGridColor = dark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.4)';
-
-  // Animation loop pour les effets streaming
-  useEffect(() => {
-    if (!isDynamic) return;
-    const stopCA = startChartAnimation(caChartRef);
-    const stopPatients = startChartAnimation(patientsChartRef);
-    const stopRenta = startChartAnimation(rentaChartRef);
-    return () => { stopCA(); stopPatients(); stopRenta(); };
-  }, [loading, isDynamic]);
+  const chartGridColor = dark ? 'rgba(148, 163, 184, 0.08)' : 'rgba(226, 232, 240, 0.6)';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,233 +52,258 @@ export default function MyStats() {
     return `${MONTHS[mi]} ${d.mois.substring(2, 4)}`;
   });
 
-  const caFactureArr = monthlyData.map(d => d.caFacture);
-  const caEncaisseArr = monthlyData.map(d => d.caEncaisse);
-  const patientsArr = monthlyData.map(d => d.nbPatients);
+  const caFactureArr = monthlyData.map(d => d.caFacture || 0);
+  const caEncaisseArr = monthlyData.map(d => d.caEncaisse || 0);
+  const patientsArr = monthlyData.map(d => d.nbPatients || 0);
+  const nouveauxArr = monthlyData.map(d => d.nbNouveauxPatients || 0);
   const rentaArr = monthlyData.map(d => d.rentabiliteHoraire || 0);
 
-  // ═══ MODÈLES IA ═══
-  const regCA = linearRegression(caFactureArr);
-  const regPatients = linearRegression(patientsArr);
-  const regRenta = linearRegression(rentaArr);
-  const trendCA = caFactureArr.map((_, i) => regCA.slope * i + regCA.intercept);
-  const trendPatients = patientsArr.map((_, i) => regPatients.slope * i + regPatients.intercept);
-  const trendRenta = rentaArr.map((_, i) => regRenta.slope * i + regRenta.intercept);
-  const insightCA = generateAIInsight(caFactureArr, 'CA facturé');
-  const insightPatients = generateAIInsight(patientsArr, 'nombre de patients');
-  const insightRenta = generateAIInsight(rentaArr, 'rentabilité horaire');
-  const anomaliesCA = detectAnomalies(caFactureArr, 1.5);
-  const anomaliesRenta = detectAnomalies(rentaArr, 1.5);
-  const trendLabelCA = analyzeTrend(caFactureArr);
-  const trendLabelPatients = analyzeTrend(patientsArr);
-  const trendLabelRenta = analyzeTrend(rentaArr);
+  // ═══ Insights simplifiés ═══
+  const insightCA = generateSimpleInsight(caFactureArr, 'chiffre d\'affaires');
+  const insightPatients = generateSimpleInsight(patientsArr, 'nombre de patients');
+  const insightRenta = generateSimpleInsight(rentaArr, 'rentabilité horaire');
 
-  const caBarData = {
+  // ═══ TOTAUX pour résumé ═══
+  const totalCA = caFactureArr.reduce((s, v) => s + v, 0);
+  const totalEnc = caEncaisseArr.reduce((s, v) => s + v, 0);
+  const totalPatients = patientsArr.reduce((s, v) => s + v, 0);
+  const totalNouveaux = nouveauxArr.reduce((s, v) => s + v, 0);
+  const avgRenta = rentaArr.length > 0 ? rentaArr.reduce((s, v) => s + v, 0) / rentaArr.length : 0;
+
+  // ═══ GRAPHIQUE CA — Courbe lisse avec remplissage ═══
+  const caChartData = {
     labels,
     datasets: [
       {
         label: 'CA Facturé',
         data: caFactureArr,
-        backgroundColor: 'rgba(16, 185, 129, 0.85)',
-        borderRadius: 4,
-        barPercentage: 0.7,
-        categoryPercentage: 0.8,
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: caFactureArr.length <= 6 ? 6 : 4,
+        pointBackgroundColor: '#10b981',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointHoverRadius: 8,
+        borderWidth: 3,
       },
       {
         label: 'CA Encaissé',
         data: caEncaisseArr,
-        backgroundColor: 'rgba(59, 130, 246, 0.85)',
-        borderRadius: 4,
-        barPercentage: 0.7,
-        categoryPercentage: 0.8,
-      },
-      {
-        type: 'line',
-        label: 'Tendance IA',
-        data: trendCA,
-        borderColor: '#f59e0b',
-        borderWidth: 2,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.08)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: caEncaisseArr.length <= 6 ? 5 : 3,
+        pointBackgroundColor: '#3b82f6',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointHoverRadius: 7,
+        borderWidth: 2.5,
         borderDash: [6, 3],
-        pointRadius: 0,
-        fill: false,
-        tension: 0,
-        order: 0,
-      },
-      {
-        type: 'line',
-        label: 'Anomalies',
-        data: caFactureArr.map((v, i) => anomaliesCA[i]?.isAnomaly ? v : null),
-        borderColor: 'transparent',
-        backgroundColor: '#ef4444',
-        pointRadius: caFactureArr.map((_, i) => anomaliesCA[i]?.isAnomaly ? 8 : 0),
-        pointStyle: 'crossRot',
-        pointBorderColor: '#ef4444',
-        pointBorderWidth: 3,
-        showLine: false,
-        fill: false,
-        order: 0,
       },
     ],
   };
 
-  const patientsBarData = {
-    labels,
-    datasets: [
-      { label: 'Patients', data: patientsArr, backgroundColor: 'rgba(13, 148, 136, 0.8)', borderRadius: 6 },
-      { label: 'Nouveaux Patients', data: monthlyData.map(d => d.nbNouveauxPatients), backgroundColor: 'rgba(245, 158, 11, 0.8)', borderRadius: 6 },
-      {
-        type: 'line',
-        label: 'Tendance IA',
-        data: trendPatients,
-        borderColor: '#ec4899',
-        borderWidth: 2,
-        borderDash: [6, 3],
-        pointRadius: 0,
-        fill: false,
-        tension: 0,
-        order: 0,
-      },
-    ],
-  };
-
-  const rentaBarData = {
+  // ═══ GRAPHIQUE PATIENTS — Barres simples et lisibles ═══
+  const patientsChartData = {
     labels,
     datasets: [
       {
-        label: 'Rentabilité Horaire (€/h)',
-        data: rentaArr,
-        backgroundColor: 'rgba(139, 92, 246, 0.85)',
-        borderRadius: 4,
+        label: 'Patients vus',
+        data: patientsArr,
+        backgroundColor: dark ? 'rgba(13, 148, 136, 0.7)' : 'rgba(13, 148, 136, 0.75)',
+        borderRadius: 8,
+        borderSkipped: false,
         barPercentage: 0.6,
-        categoryPercentage: 0.8,
+        categoryPercentage: 0.7,
       },
       {
-        type: 'line',
-        label: 'Tendance IA',
-        data: trendRenta,
-        borderColor: '#f59e0b',
-        borderWidth: 2,
-        borderDash: [6, 3],
-        pointRadius: 0,
-        fill: false,
-        tension: 0,
-        order: 0,
-      },
-      {
-        type: 'line',
-        label: 'Anomalies',
-        data: rentaArr.map((v, i) => anomaliesRenta[i]?.isAnomaly ? v : null),
-        borderColor: 'transparent',
-        backgroundColor: '#ef4444',
-        pointRadius: rentaArr.map((_, i) => anomaliesRenta[i]?.isAnomaly ? 8 : 0),
-        pointStyle: 'crossRot',
-        pointBorderColor: '#ef4444',
-        pointBorderWidth: 3,
-        showLine: false,
-        fill: false,
-        order: 0,
+        label: 'Nouveaux patients',
+        data: nouveauxArr,
+        backgroundColor: dark ? 'rgba(245, 158, 11, 0.7)' : 'rgba(245, 158, 11, 0.75)',
+        borderRadius: 8,
+        borderSkipped: false,
+        barPercentage: 0.6,
+        categoryPercentage: 0.7,
       },
     ],
+  };
+
+  // ═══ GRAPHIQUE RENTABILITÉ — Courbe lisse avec remplissage ═══
+  const rentaChartData = {
+    labels,
+    datasets: [
+      {
+        label: 'Rentabilité (€/h)',
+        data: rentaArr,
+        borderColor: '#8b5cf6',
+        backgroundColor: (ctx) => {
+          const chart = ctx.chart;
+          const { ctx: canvasCtx, chartArea } = chart;
+          if (!chartArea) return 'rgba(139, 92, 246, 0.15)';
+          const gradient = canvasCtx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          gradient.addColorStop(0, 'rgba(139, 92, 246, 0.25)');
+          gradient.addColorStop(1, 'rgba(139, 92, 246, 0.02)');
+          return gradient;
+        },
+        fill: true,
+        tension: 0.4,
+        pointRadius: rentaArr.length <= 6 ? 6 : 4,
+        pointBackgroundColor: '#8b5cf6',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointHoverRadius: 8,
+        borderWidth: 3,
+      },
+    ],
+  };
+
+  // Options communes pour les courbes
+  const lineOptions = (yFormat, yLabel) => ({
+    responsive: true,
+    maintainAspectRatio: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'bottom', labels: { color: chartTextColor, usePointStyle: true, pointStyle: 'circle', padding: 16, font: { size: 11 } } },
+      tooltip: {
+        backgroundColor: dark ? '#1e293b' : '#fff',
+        titleColor: dark ? '#fff' : '#1e293b',
+        bodyColor: dark ? '#94a3b8' : '#64748b',
+        borderColor: dark ? '#334155' : '#e2e8f0',
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 10,
+        displayColors: true,
+        callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${yFormat(ctx.parsed.y)}` },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        border: { display: false },
+        ticks: { color: chartTextColor, font: { size: 11 } },
+      },
+      y: {
+        beginAtZero: true,
+        grid: { color: chartGridColor, drawBorder: false },
+        border: { display: false },
+        ticks: {
+          color: chartTextColor,
+          font: { size: 11 },
+          callback: (v) => yFormat(v),
+          maxTicksLimit: 6,
+        },
+      },
+    },
+  });
+
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'bottom', labels: { color: chartTextColor, usePointStyle: true, pointStyle: 'rectRounded', padding: 16, font: { size: 11 } } },
+      tooltip: {
+        backgroundColor: dark ? '#1e293b' : '#fff',
+        titleColor: dark ? '#fff' : '#1e293b',
+        bodyColor: dark ? '#94a3b8' : '#64748b',
+        borderColor: dark ? '#334155' : '#e2e8f0',
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 10,
+      },
+    },
+    scales: {
+      x: { grid: { display: false }, border: { display: false }, ticks: { color: chartTextColor, font: { size: 11 } } },
+      y: { beginAtZero: true, grid: { color: chartGridColor, drawBorder: false }, border: { display: false }, ticks: { color: chartTextColor, font: { size: 11 }, maxTicksLimit: 6, precision: 0 } },
+    },
+  };
+
+  // Helper pour les badges de tendance
+  const TrendBadge = ({ insight, color }) => {
+    const Icon = insight.trend === 'upward' ? FiTrendingUp : insight.trend === 'downward' ? FiTrendingDown : FiMinus;
+    const colors = {
+      green: 'text-green-600 bg-green-50 dark:bg-green-900/40 dark:text-green-400',
+      teal: 'text-teal-600 bg-teal-50 dark:bg-teal-900/40 dark:text-teal-400',
+      violet: 'text-violet-600 bg-violet-50 dark:bg-violet-900/40 dark:text-violet-400',
+    };
+    return (
+      <span className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-full ${colors[color]}`}>
+        <Icon className="w-3.5 h-3.5" />
+        {insight.trendLabel}
+      </span>
+    );
   };
 
   return (
     <div>
-      <Header title="Mes Statistiques" subtitle={`Cabinet ${user?.practitionerCode || ''} — Détails mensuels`} />
+      <Header title="Mes Statistiques" subtitle={`Cabinet ${user?.cabinetName || user?.name || ''} — Détails mensuels`} />
 
       <div className="p-8">
-        {/* Charts */}
+        {/* Résumé rapide */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+          {[
+            { label: 'CA total facturé', value: fmt(totalCA), color: 'text-emerald-600' },
+            { label: 'CA total encaissé', value: fmt(totalEnc), color: 'text-blue-600' },
+            { label: 'Total patients', value: totalPatients.toLocaleString('fr-FR'), color: 'text-teal-600' },
+            { label: 'Nouveaux patients', value: totalNouveaux.toLocaleString('fr-FR'), color: 'text-amber-600' },
+            { label: 'Rentabilité moy.', value: `${avgRenta.toFixed(0)}€/h`, color: 'text-violet-600' },
+          ].map((s, i) => (
+            <div key={i} className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-center">
+              <p className={`text-xl font-bold ${s.color} tabular-nums`}>{s.value}</p>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">{s.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Graphiques */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* CA */}
           <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold dark:text-white">Évolution du Chiffre d'Affaires</h3>
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
-                  <span className="relative flex h-2 w-2"><span className={`${isDynamic ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75`}></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
-                  Temps réel
-                </span>
-                <span className="flex items-center gap-1 text-[9px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
-                  <FiCpu className="w-3 h-3" /> Régression • R²={regCA.r2.toFixed(2)}
-                </span>
-              </div>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-semibold dark:text-white">Chiffre d'Affaires</h3>
+              <TrendBadge insight={insightCA} color="green" />
             </div>
-            <Bar ref={caChartRef} data={caBarData} plugins={isDynamic ? [streamingBarPlugin] : []} options={{
-              responsive: true,
-              plugins: { legend: { position: 'bottom', labels: { color: chartTextColor } } },
-              scales: {
-                x: { grid: { display: false }, border: { display: false }, ticks: { color: chartTextColor } },
-                y: { beginAtZero: true, grid: { color: chartGridColor, drawBorder: false }, border: { display: false }, ticks: { color: chartTextColor, callback: v => `${(v / 1000).toFixed(0)}k€` } },
-              },
-            }} />
-            <div className="mt-3 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/30 dark:to-blue-900/30 rounded-xl border border-green-100 dark:border-green-800 p-3 transition-colors">
-              <div className="flex items-center gap-1.5 mb-1">
-                <FiCpu className="w-3 h-3 text-green-600" />
-                <span className="text-[10px] font-bold text-gray-800 dark:text-gray-200">Analyse IA — CA</span>
-                <span className="ml-auto text-[8px] font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Tendance: {trendLabelCA.trend === 'upward' ? '↑ Hausse' : trendLabelCA.trend === 'downward' ? '↓ Baisse' : '→ Stable'}</span>
-              </div>
-              {insightCA.parts.map((p, i) => <p key={i} className="text-[10px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
+            <div className="h-[280px]">
+              <Line data={caChartData} options={{ ...lineOptions(v => `${(v/1000).toFixed(v >= 1000 ? 0 : 1)}k€`), maintainAspectRatio: false }} />
+            </div>
+            <div className="mt-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-3">
+              {insightCA.parts.map((p, i) => <p key={i} className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
             </div>
           </div>
+
+          {/* Patients */}
           <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-semibold dark:text-white">Patients & Nouveaux Patients</h3>
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
-                  <span className="relative flex h-2 w-2"><span className={`${isDynamic ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75`}></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
-                  Temps réel
-                </span>
-                <span className="flex items-center gap-1 text-[9px] font-bold text-pink-600 bg-pink-50 px-2.5 py-1 rounded-full">
-                  <FiCpu className="w-3 h-3" /> Régression • R²={regPatients.r2.toFixed(2)}
-                </span>
-              </div>
+              <TrendBadge insight={insightPatients} color="teal" />
             </div>
-            <Bar ref={patientsChartRef} data={patientsBarData} plugins={isDynamic ? [streamingBarPlugin] : []} options={{
-              responsive: true,
-              plugins: { legend: { position: 'bottom' } },
-              scales: { y: { beginAtZero: true } },
-            }} />
-            <div className="mt-3 bg-gradient-to-r from-teal-50 to-amber-50 dark:from-teal-900/30 dark:to-amber-900/30 rounded-xl border border-teal-100 dark:border-teal-800 p-3 transition-colors">
-              <div className="flex items-center gap-1.5 mb-1">
-                <FiCpu className="w-3 h-3 text-teal-600" />
-                <span className="text-[10px] font-bold text-gray-800 dark:text-gray-200">Analyse IA — Patients</span>
-                <span className="ml-auto text-[8px] font-semibold text-teal-600 bg-teal-100 px-2 py-0.5 rounded-full">Tendance: {trendLabelPatients.trend === 'upward' ? '↑ Hausse' : trendLabelPatients.trend === 'downward' ? '↓ Baisse' : '→ Stable'}</span>
-              </div>
-              {insightPatients.parts.map((p, i) => <p key={i} className="text-[10px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
+            <div className="h-[280px]">
+              <Bar data={patientsChartData} options={{ ...barOptions, maintainAspectRatio: false }} />
+            </div>
+            <div className="mt-4 bg-gradient-to-r from-teal-50 to-amber-50 dark:from-teal-900/20 dark:to-amber-900/20 rounded-xl p-3">
+              {insightPatients.parts.map((p, i) => <p key={i} className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
             </div>
           </div>
         </div>
 
+        {/* Rentabilité — pleine largeur */}
         <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 mb-8 transition-colors">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-5">
             <h3 className="text-lg font-semibold dark:text-white">Rentabilité Horaire</h3>
-            <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
-                <span className="relative flex h-2 w-2"><span className={`${isDynamic ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75`}></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
-                Temps réel
-              </span>
-              <span className="flex items-center gap-1 text-[9px] font-bold text-violet-600 bg-violet-50 px-2.5 py-1 rounded-full">
-                <FiCpu className="w-3 h-3" /> Régression • R²={regRenta.r2.toFixed(2)}
-              </span>
-            </div>
+            <TrendBadge insight={insightRenta} color="violet" />
           </div>
-          <Bar ref={rentaChartRef} data={rentaBarData} plugins={isDynamic ? [streamingBarPlugin] : []} options={{
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { grid: { display: false }, border: { display: false }, ticks: { color: chartTextColor } },
-              y: { beginAtZero: true, grid: { color: chartGridColor, drawBorder: false }, border: { display: false }, ticks: { color: chartTextColor, callback: v => `${v.toFixed(0)}€/h` } },
-            },
-          }} />
-          <div className="mt-3 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/30 dark:to-purple-900/30 rounded-xl border border-violet-100 dark:border-violet-800 p-3 transition-colors">
-            <div className="flex items-center gap-1.5 mb-1">
-              <FiCpu className="w-3 h-3 text-violet-600" />
-              <span className="text-[10px] font-bold text-gray-800 dark:text-gray-200">Analyse IA — Rentabilité</span>
-              <span className="ml-auto text-[8px] font-semibold text-violet-600 bg-violet-100 px-2 py-0.5 rounded-full">Tendance: {trendLabelRenta.trend === 'upward' ? '↑ Hausse' : trendLabelRenta.trend === 'downward' ? '↓ Baisse' : '→ Stable'}</span>
-            </div>
-            {insightRenta.parts.map((p, i) => <p key={i} className="text-[10px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
+          <div className="h-[260px]">
+            <Line data={rentaChartData} options={{ ...lineOptions(v => `${v.toFixed(0)}€/h`), maintainAspectRatio: false }} />
+          </div>
+          <div className="mt-4 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 rounded-xl p-3">
+            {insightRenta.parts.map((p, i) => <p key={i} className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
           </div>
         </div>
 
-        {/* Detail Table */}
+        {/* Tableau détaillé */}
         <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
           <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <h3 className="text-lg font-semibold dark:text-white">Détails Mensuels</h3>

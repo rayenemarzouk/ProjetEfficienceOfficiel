@@ -24,6 +24,7 @@ import DataManagement from './pages/practitioner/DataManagement';
 import AIAnalysis from './pages/practitioner/AIAnalysis';
 import MyReports from './pages/practitioner/MyReports';
 import ManualEntry from './pages/practitioner/ManualEntry';
+import PatientManagement from './pages/practitioner/PatientManagement';
 
 export default function App() {
   return (
@@ -59,6 +60,7 @@ export default function App() {
               <Route path="/dashboard/ai" element={<AIAnalysis />} />
               <Route path="/dashboard/reports" element={<MyReports />} />
               <Route path="/dashboard/saisie" element={<ManualEntry />} />
+              <Route path="/dashboard/patients" element={<PatientManagement />} />
             </Route>
           </Route>
 

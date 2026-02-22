@@ -189,4 +189,36 @@ router.get('/me', auth, async (req, res) => {
   });
 });
 
+// PUT /api/auth/profile - Mettre à jour le profil (practitionerCode, cabinetName)
+router.put('/profile', auth, async (req, res) => {
+  try {
+    const { practitionerCode, cabinetName } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'Utilisateur introuvable.' });
+
+    if (practitionerCode !== undefined) {
+      user.practitionerCode = practitionerCode.trim().toUpperCase() || null;
+    }
+    if (cabinetName !== undefined) {
+      user.cabinetName = cabinetName;
+    }
+    await user.save();
+
+    res.json({
+      message: 'Profil mis à jour.',
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        practitionerCode: user.practitionerCode,
+        cabinetName: user.cabinetName
+      }
+    });
+  } catch (error) {
+    console.error('Erreur mise à jour profil:', error);
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
 module.exports = router;
