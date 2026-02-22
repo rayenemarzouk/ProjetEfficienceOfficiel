@@ -51,9 +51,10 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Efficience Analytics API opérationnelle' });
 });
 
-// Servir le frontend buildé en production
-if (process.env.NODE_ENV === 'production') {
-  const frontendPath = path.join(__dirname, '..', 'frontend', 'dist');
+// Servir le frontend buildé en production (si le dossier dist existe)
+const fs = require('fs');
+const frontendPath = path.join(__dirname, '..', 'frontend', 'dist');
+if (process.env.NODE_ENV === 'production' && fs.existsSync(frontendPath)) {
   app.use(express.static(frontendPath));
   
   // Toute route non-API renvoie vers index.html (SPA)
