@@ -26,13 +26,16 @@ const AppSettings = require('./models/AppSettings');
 app.get('/api/settings/public', async (req, res) => {
   try {
     const s = await AppSettings.getSettings();
+    const dynamicActive = s.isDynamicActive();
     res.json({
       maintenanceMode: s.maintenanceMode,
       aiModelsEnabled: s.aiModelsEnabled,
-      importEnabled: s.importEnabled
+      importEnabled: s.importEnabled,
+      dynamicActive,
+      dynamicExpiresAt: s.dynamicExpiresAt
     });
   } catch (err) {
-    res.json({ maintenanceMode: false, aiModelsEnabled: true, importEnabled: true });
+    res.json({ maintenanceMode: false, aiModelsEnabled: true, importEnabled: true, dynamicActive: false, dynamicExpiresAt: null });
   }
 });
 

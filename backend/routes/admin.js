@@ -16,6 +16,9 @@ const AppSettings = require('../models/AppSettings');
 // ═══ Store for deactivation verification codes (userId → { code, expiresAt }) ═══
 const deactivateCodes = new Map();
 
+// ═══ Store for AI toggle verification codes ═══
+let aiToggleCode = null; // { code, expiresAt, targetState }
+
 // GET /api/admin/dashboard - Dashboard global admin
 router.get('/dashboard', auth, adminOnly, async (req, res) => {
   try {
@@ -424,7 +427,7 @@ router.post('/impersonate', auth, adminOnly, async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════
-//  DÉSACTIVATION COMPTE — Envoi code + vérification
+//  SUPPRESSION COMPTE — Envoi code + vérification + suppression définitive
 // ═══════════════════════════════════════════════════════════
 
 // POST /api/admin/deactivate-send-code — Envoyer un code de vérification par email
@@ -435,7 +438,7 @@ router.post('/deactivate-send-code', auth, adminOnly, async (req, res) => {
 
     const targetUser = await User.findById(userId);
     if (!targetUser) return res.status(404).json({ message: 'Utilisateur non trouvé.' });
-    if (targetUser.role === 'admin') return res.status(403).json({ message: 'Impossible de désactiver un administrateur.' });
+    if (targetUser.role === 'admin') return res.status(403).json({ message: 'Impossible de supprimer un administrateur.' });
 
     // Generate a 6-digit code
     const code = crypto.randomInt(100000, 999999).toString();
@@ -455,36 +458,37 @@ router.post('/deactivate-send-code', auth, adminOnly, async (req, res) => {
     await transporter.sendMail({
       from: `"Efficience Analytics" <${process.env.EMAIL_USER}>`,
       to: process.env.EMAIL_USER,
-      subject: `🔐 Code de vérification — Désactivation de ${targetUser.name}`,
+      subject: `🗑️ Code de vérification — Suppression de ${targetUser.name}`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:30px;background:#f8fafc;border-radius:16px;">
           <div style="text-align:center;margin-bottom:25px;">
-            <h2 style="color:#1e293b;margin:0;">🔐 Code de vérification</h2>
-            <p style="color:#64748b;font-size:14px;margin-top:8px;">Désactivation du compte</p>
+            <h2 style="color:#1e293b;margin:0;">🗑️ Code de vérification</h2>
+            <p style="color:#64748b;font-size:14px;margin-top:8px;">Suppression définitive du compte</p>
           </div>
           <div style="background:white;border-radius:12px;padding:25px;border:1px solid #e2e8f0;text-align:center;">
-            <p style="color:#475569;font-size:14px;margin-bottom:5px;">Compte à désactiver :</p>
+            <p style="color:#475569;font-size:14px;margin-bottom:5px;">Compte à supprimer :</p>
             <p style="color:#1e293b;font-size:18px;font-weight:bold;margin-bottom:20px;">${targetUser.name} (${targetUser.practitionerCode || targetUser.email})</p>
-            <div style="background:#eff6ff;border:2px dashed #3b82f6;border-radius:12px;padding:20px;margin-bottom:20px;">
-              <p style="color:#3b82f6;font-size:12px;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Votre code</p>
-              <p style="color:#1e40af;font-size:36px;font-weight:900;letter-spacing:8px;margin:0;">${code}</p>
+            <div style="background:#fef2f2;border:2px dashed #ef4444;border-radius:12px;padding:20px;margin-bottom:20px;">
+              <p style="color:#ef4444;font-size:12px;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Votre code</p>
+              <p style="color:#dc2626;font-size:36px;font-weight:900;letter-spacing:8px;margin:0;">${code}</p>
             </div>
             <p style="color:#94a3b8;font-size:12px;">Ce code expire dans <strong>10 minutes</strong>.</p>
+            <p style="color:#ef4444;font-size:11px;margin-top:10px;font-weight:600;">⚠️ Cette action est irréversible. Le compte et toutes ses données seront supprimés.</p>
           </div>
           <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:20px;">Efficience Analytics — Sécurité</p>
         </div>
       `
     });
 
-    console.log(`Code de désactivation envoyé pour ${targetUser.name} (${targetUser.email})`);
+    console.log(`Code de suppression envoyé pour ${targetUser.name} (${targetUser.email})`);
     res.json({ message: 'Code de vérification envoyé par email.' });
   } catch (error) {
-    console.error('Erreur envoi code désactivation:', error);
+    console.error('Erreur envoi code suppression:', error);
     res.status(500).json({ message: 'Erreur lors de l\'envoi du code.' });
   }
 });
 
-// POST /api/admin/deactivate-confirm — Vérifier le code et désactiver le compte
+// POST /api/admin/deactivate-confirm — Vérifier le code et supprimer définitivement le compte
 router.post('/deactivate-confirm', auth, adminOnly, async (req, res) => {
   try {
     const { userId, code } = req.body;
@@ -500,19 +504,155 @@ router.post('/deactivate-confirm', auth, adminOnly, async (req, res) => {
       return res.status(400).json({ message: 'Code incorrect.' });
     }
 
-    // Code valid — deactivate user
+    // Code valid — supprimer définitivement le compte et ses données
     deactivateCodes.delete(userId);
     const targetUser = await User.findById(userId);
     if (!targetUser) return res.status(404).json({ message: 'Utilisateur non trouvé.' });
-    if (targetUser.role === 'admin') return res.status(403).json({ message: 'Impossible de désactiver un administrateur.' });
+    if (targetUser.role === 'admin') return res.status(403).json({ message: 'Impossible de supprimer un administrateur.' });
 
-    targetUser.isActive = false;
-    await targetUser.save();
+    const userName = targetUser.name;
+    const userEmail = targetUser.email;
+    const practitionerCode = targetUser.practitionerCode;
 
-    console.log(`Compte désactivé : ${targetUser.name} (${targetUser.email}) par admin ${req.user.name}`);
-    res.json({ message: `Compte de ${targetUser.name} désactivé avec succès.`, user: { _id: targetUser._id, isActive: false } });
+    // Supprimer les données liées au praticien
+    if (practitionerCode) {
+      await Promise.all([
+        AnalyseRealisation.deleteMany({ praticien: practitionerCode }),
+        AnalyseRendezVous.deleteMany({ praticien: practitionerCode }),
+        AnalyseJoursOuverts.deleteMany({ praticien: practitionerCode }),
+        AnalyseDevis.deleteMany({ praticien: practitionerCode }),
+      ]);
+    }
+
+    // Supprimer les rapports liés
+    await Report.deleteMany({ userId: targetUser._id });
+
+    // Supprimer le compte utilisateur
+    await User.findByIdAndDelete(userId);
+
+    console.log(`Compte SUPPRIMÉ définitivement : ${userName} (${userEmail}) par admin ${req.user.name}`);
+    res.json({ message: `Compte de ${userName} supprimé définitivement.`, deletedUserId: userId });
   } catch (error) {
-    console.error('Erreur désactivation compte:', error);
+    console.error('Erreur suppression compte:', error);
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+//  ACTIVATION MODÈLES IA — Vérification par email
+// ═══════════════════════════════════════════════════════════
+
+// POST /api/admin/ai-toggle-send-code — Envoyer un code pour activer/désactiver les modèles IA
+router.post('/ai-toggle-send-code', auth, adminOnly, async (req, res) => {
+  try {
+    const { targetState } = req.body; // true = activer, false = désactiver
+    if (typeof targetState !== 'boolean') return res.status(400).json({ message: 'État cible requis.' });
+
+    const code = crypto.randomInt(100000, 999999).toString();
+    aiToggleCode = { code, expiresAt: Date.now() + 10 * 60 * 1000, targetState };
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: parseInt(process.env.EMAIL_PORT),
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+
+    const actionLabel = targetState ? 'ACTIVER' : 'DÉSACTIVER';
+    const actionColor = targetState ? '#10b981' : '#ef4444';
+
+    await transporter.sendMail({
+      from: `"Efficience Analytics" <${process.env.EMAIL_USER}>`,
+      to: process.env.EMAIL_USER,
+      subject: `🤖 Code de vérification — ${actionLabel} les Modèles IA`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:30px;background:#f8fafc;border-radius:16px;">
+          <div style="text-align:center;margin-bottom:25px;">
+            <h2 style="color:#1e293b;margin:0;">🤖 Modèles IA — Vérification</h2>
+            <p style="color:#64748b;font-size:14px;margin-top:8px;">Changement d'état des modèles IA</p>
+          </div>
+          <div style="background:white;border-radius:12px;padding:25px;border:1px solid #e2e8f0;text-align:center;">
+            <p style="color:#475569;font-size:14px;margin-bottom:5px;">Action demandée :</p>
+            <p style="color:${actionColor};font-size:20px;font-weight:bold;margin-bottom:20px;">${actionLabel} tous les modèles IA et le mode dynamique</p>
+            <div style="background:#f0fdf4;border:2px dashed ${actionColor};border-radius:12px;padding:20px;margin-bottom:20px;">
+              <p style="color:${actionColor};font-size:12px;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Votre code</p>
+              <p style="color:#1e293b;font-size:36px;font-weight:900;letter-spacing:8px;margin:0;">${code}</p>
+            </div>
+            <p style="color:#94a3b8;font-size:12px;">Ce code expire dans <strong>10 minutes</strong>.</p>
+            <p style="color:#64748b;font-size:11px;margin-top:10px;">Demandé par : ${req.user.name} (${req.user.email})</p>
+          </div>
+          <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:20px;">Efficience Analytics — Sécurité</p>
+        </div>
+      `
+    });
+
+    console.log(`Code IA envoyé pour ${actionLabel} par ${req.user.name}`);
+    res.json({ message: 'Code de vérification envoyé par email.' });
+  } catch (error) {
+    console.error('Erreur envoi code IA:', error);
+    res.status(500).json({ message: 'Erreur lors de l\'envoi du code.' });
+  }
+});
+
+// POST /api/admin/ai-toggle-confirm — Vérifier le code et activer/désactiver les modèles IA
+router.post('/ai-toggle-confirm', auth, adminOnly, async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ message: 'Code requis.' });
+
+    // Vérifier d'abord le code demandé manuellement, puis le code de renouvellement automatique
+    let targetState = null;
+    
+    if (aiToggleCode) {
+      if (Date.now() > aiToggleCode.expiresAt) {
+        aiToggleCode = null;
+      } else if (aiToggleCode.code === code.trim()) {
+        targetState = aiToggleCode.targetState;
+        aiToggleCode = null;
+      }
+    }
+
+    // Vérifier aussi le code de renouvellement automatique (envoyé par le cron)
+    if (targetState === null && global.aiRenewalCode) {
+      if (Date.now() > global.aiRenewalCode.expiresAt) {
+        global.aiRenewalCode = null;
+      } else if (global.aiRenewalCode.code === code.trim()) {
+        targetState = global.aiRenewalCode.targetState;
+        global.aiRenewalCode = null;
+      }
+    }
+
+    if (targetState === null) {
+      return res.status(400).json({ message: 'Code incorrect ou expiré. Veuillez en redemander un.' });
+    }
+
+    // Mettre à jour les settings en base
+    let settings = await AppSettings.getSettings();
+    settings.aiModelsEnabled = targetState;
+
+    if (targetState) {
+      // Activer le mode dynamique pour 15 jours
+      settings.dynamicExpiresAt = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+    } else {
+      // Désactiver immédiatement
+      settings.dynamicExpiresAt = null;
+    }
+    await settings.save();
+
+    const label = targetState ? 'activés' : 'désactivés';
+    const expiresMsg = targetState ? ` (expire le ${settings.dynamicExpiresAt.toLocaleDateString('fr-FR')})` : '';
+    console.log(`Modèles IA ${label}${expiresMsg} par admin ${req.user.name}`);
+    res.json({
+      message: `Modèles IA ${label} avec succès.${expiresMsg}`,
+      aiModelsEnabled: targetState,
+      dynamicActive: settings.isDynamicActive(),
+      dynamicExpiresAt: settings.dynamicExpiresAt
+    });
+  } catch (error) {
+    console.error('Erreur toggle IA:', error);
     res.status(500).json({ message: 'Erreur serveur.' });
   }
 });

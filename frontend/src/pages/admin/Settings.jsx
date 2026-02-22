@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
-import { getSettings, updateSettings, impersonateUser, deactivateSendCode, deactivateConfirm } from '../../services/api';
+import { getSettings, updateSettings, impersonateUser, deactivateSendCode, deactivateConfirm, aiToggleSendCode, aiToggleConfirm } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useAppSettings } from '../../context/AppSettingsContext';
+import { useDynamic } from '../../context/DynamicContext';
 import { setAIEnabled } from '../../utils/aiModels';
-import { FiUser, FiMail, FiShield, FiActivity, FiCalendar, FiCheck, FiLogIn, FiX, FiAlertCircle, FiLoader, FiTool, FiCpu, FiDatabase, FiAlertTriangle, FiTrash2, FiSend, FiLock } from 'react-icons/fi';
+import { FiUser, FiMail, FiShield, FiActivity, FiCalendar, FiCheck, FiLogIn, FiX, FiAlertCircle, FiLoader, FiTool, FiCpu, FiDatabase, FiAlertTriangle, FiTrash2, FiSend, FiLock, FiZap, FiClock } from 'react-icons/fi';
 
 export default function Settings() {
   const navigate = useNavigate();
   const { loginUser } = useAuth();
   const { refreshSettings } = useAppSettings();
+  const { isDynamic, refreshDynamic } = useDynamic();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [autoGeneration, setAutoGeneration] = useState(true);
@@ -30,6 +32,12 @@ export default function Settings() {
   const [deactCode, setDeactCode] = useState('');
   const [deactError, setDeactError] = useState(null);
 
+  // ═══ AI Toggle state (vérification email) ═══
+  const [aiModal, setAiModal] = useState(null); // { targetState, step: 'confirm' | 'sending' | 'code' | 'verifying' | 'done' }
+  const [aiCode, setAiCode] = useState('');
+  const [aiError, setAiError] = useState(null);
+  const [dynamicExpiresAt, setDynamicExpiresAt] = useState(null);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -41,6 +49,7 @@ export default function Settings() {
           setMaintenanceMode(res.data.appSettings.maintenanceMode || false);
           setAiModelsEnabled(res.data.appSettings.aiModelsEnabled !== false);
           setImportEnabled(res.data.appSettings.importEnabled !== false);
+          setDynamicExpiresAt(res.data.appSettings.dynamicExpiresAt || null);
         }
       } catch (err) {
         console.error(err);
@@ -57,41 +66,82 @@ export default function Settings() {
   };
 
   const handleToggle = async (field) => {
-    const stateMap = { autoGeneration, autoEmail, maintenanceMode, aiModelsEnabled, importEnabled };
+    const stateMap = { autoGeneration, autoEmail, maintenanceMode, importEnabled };
     const setterMap = {
       autoGeneration: setAutoGeneration,
       autoEmail: setAutoEmail,
       maintenanceMode: setMaintenanceMode,
-      aiModelsEnabled: setAiModelsEnabled,
       importEnabled: setImportEnabled
     };
     const labelMap = {
       autoGeneration: (v) => `Génération automatique ${v ? 'activée' : 'désactivée'}`,
       autoEmail: (v) => `Envoi par email ${v ? 'activé' : 'désactivé'}`,
       maintenanceMode: (v) => `Mode maintenance ${v ? 'ACTIVÉ — site bloqué pour les praticiens' : 'désactivé'}`,
-      aiModelsEnabled: (v) => `Modèles IA ${v ? 'activés' : 'DÉSACTIVÉS — analyses stoppées'}`,
       importEnabled: (v) => `Import de données ${v ? 'autorisé' : 'BLOQUÉ'}`,
     };
 
     const newVal = !stateMap[field];
     setterMap[field](newVal);
 
-    // Synchroniser le kill-switch IA global immédiatement
-    if (field === 'aiModelsEnabled') setAIEnabled(newVal);
-
     setSaving(true);
     try {
       await updateSettings({ [field]: newVal });
       showToast(labelMap[field](newVal));
-      // Rafraîchir le contexte global pour que toutes les pages soient à jour
       refreshSettings();
     } catch (err) {
       setterMap[field](!newVal);
-      if (field === 'aiModelsEnabled') setAIEnabled(!newVal);
       showToast('Erreur lors de la mise à jour');
     } finally {
       setSaving(false);
     }
+  };
+
+  // ═══ AI Toggle functions (vérification email) ═══
+  const handleAiToggleClick = () => {
+    const targetState = !aiModelsEnabled;
+    setAiModal({ targetState, step: 'confirm' });
+    setAiCode('');
+    setAiError(null);
+  };
+
+  const handleSendAiCode = async () => {
+    setAiModal(prev => ({ ...prev, step: 'sending' }));
+    setAiError(null);
+    try {
+      await aiToggleSendCode(aiModal.targetState);
+      setAiModal(prev => ({ ...prev, step: 'code' }));
+    } catch (err) {
+      setAiError(err.response?.data?.message || 'Erreur lors de l\'envoi du code');
+      setAiModal(prev => ({ ...prev, step: 'confirm' }));
+    }
+  };
+
+  const handleConfirmAiToggle = async () => {
+    if (!aiCode.trim()) {
+      setAiError('Veuillez entrer le code de vérification.');
+      return;
+    }
+    setAiModal(prev => ({ ...prev, step: 'verifying' }));
+    setAiError(null);
+    try {
+      const res = await aiToggleConfirm(aiCode.trim());
+      setAiModal(prev => ({ ...prev, step: 'done' }));
+      const newState = res.data.aiModelsEnabled;
+      setAiModelsEnabled(newState);
+      setAIEnabled(newState);
+      setDynamicExpiresAt(res.data.dynamicExpiresAt || null);
+      refreshSettings();
+      refreshDynamic();
+    } catch (err) {
+      setAiError(err.response?.data?.message || 'Code incorrect ou expiré');
+      setAiModal(prev => ({ ...prev, step: 'code' }));
+    }
+  };
+
+  const closeAiModal = () => {
+    setAiModal(null);
+    setAiCode('');
+    setAiError(null);
   };
 
   // ═══ Impersonation functions ═══
@@ -151,8 +201,8 @@ export default function Settings() {
     try {
       await deactivateConfirm(deactModal.user._id, deactCode.trim());
       setDeactModal(prev => ({ ...prev, step: 'done' }));
-      // Update user list locally
-      setUsers(prev => prev.map(u => u._id === deactModal.user._id ? { ...u, isActive: false } : u));
+      // Retirer l'utilisateur de la liste (supprimé définitivement)
+      setUsers(prev => prev.filter(u => u._id !== deactModal.user._id));
     } catch (err) {
       setDeactError(err.response?.data?.message || 'Code incorrect ou expiré');
       setDeactModal(prev => ({ ...prev, step: 'code' }));
@@ -244,7 +294,7 @@ export default function Settings() {
                       <button
                         onClick={(e) => handleDeactivateClick(e, user)}
                         className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors opacity-0 group-hover:opacity-100"
-                        title={`Désactiver le compte de ${user.name}`}
+                        title={`Supprimer le compte de ${user.name}`}
                       >
                         <FiTrash2 className="w-3 h-3" /> Supprimer
                       </button>
@@ -302,35 +352,51 @@ export default function Settings() {
               </button>
             </div>
 
-            {/* AI Models */}
+            {/* AI Models + Mode Dynamique — vérification par email */}
             <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
               !aiModelsEnabled
                 ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700'
-                : 'bg-gray-50 dark:bg-gray-800 border-transparent'
+                : isDynamic
+                  ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-700'
+                  : 'bg-gray-50 dark:bg-gray-800 border-transparent'
             }`}>
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${!aiModelsEnabled ? 'bg-amber-100 dark:bg-amber-900/40' : 'bg-gray-200 dark:bg-gray-700'}`}>
-                  <FiCpu className={`w-5 h-5 ${!aiModelsEnabled ? 'text-amber-600' : 'text-gray-500'}`} />
+                <div className={`p-2 rounded-lg ${
+                  isDynamic ? 'bg-emerald-100 dark:bg-emerald-900/40' :
+                  !aiModelsEnabled ? 'bg-amber-100 dark:bg-amber-900/40' : 'bg-gray-200 dark:bg-gray-700'
+                }`}>
+                  <FiZap className={`w-5 h-5 ${
+                    isDynamic ? 'text-emerald-600' :
+                    !aiModelsEnabled ? 'text-amber-600' : 'text-gray-500'
+                  }`} />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Modèles IA</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Modèles IA & Mode Dynamique</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {aiModelsEnabled
-                      ? 'Régression, anomalies, prévisions, scoring — actifs'
-                      : '⚠️ Toutes les analyses IA sont stoppées'}
+                    {isDynamic
+                      ? `✅ Actif — expire le ${new Date(dynamicExpiresAt).toLocaleDateString('fr-FR')}`
+                      : aiModelsEnabled
+                        ? '⏳ En attente d\'activation dynamique'
+                        : '⚠️ Désactivé — graphiques statiques'}
                   </p>
+                  {isDynamic && (
+                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center gap-1">
+                      <FiClock className="w-3 h-3" />
+                      Renouvellement automatique par email tous les 15 jours
+                    </p>
+                  )}
                 </div>
               </div>
               <button
-                onClick={() => handleToggle('aiModelsEnabled')}
-                disabled={saving}
-                className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
-                  aiModelsEnabled ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'
+                onClick={handleAiToggleClick}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  isDynamic
+                    ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
+                    : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'
                 }`}
               >
-                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
-                  aiModelsEnabled ? 'translate-x-[22px]' : 'translate-x-1'
-                }`}></div>
+                <FiLock className="w-3 h-3" />
+                {isDynamic ? 'Désactiver' : 'Activer'}
               </button>
             </div>
 
@@ -552,15 +618,15 @@ export default function Settings() {
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
                     <FiAlertTriangle className="w-7 h-7 text-red-600" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Désactiver ce compte ?</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Supprimer ce compte ?</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                    Vous allez désactiver le compte de
+                    Vous allez supprimer définitivement le compte de
                   </p>
                   <p className="text-base font-bold text-gray-900 dark:text-white mb-1">{deactModal.user.name}</p>
                   <p className="text-xs text-gray-400 mb-2">{deactModal.user.email}</p>
                   <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 mb-6">
                     <p className="text-xs text-amber-700 dark:text-amber-400">
-                      <strong>⚠️ Attention :</strong> Un code de vérification sera envoyé à votre email pour confirmer cette action.
+                      <strong>⚠️ Attention :</strong> Cette action est irréversible. Le compte et toutes ses données seront supprimés. Un code de vérification sera envoyé à votre email.
                     </p>
                   </div>
                   {deactError && (
@@ -627,7 +693,7 @@ export default function Settings() {
                         : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
                     }`}
                   >
-                    <FiTrash2 className="w-4 h-4" /> Confirmer la désactivation
+                    <FiTrash2 className="w-4 h-4" /> Confirmer la suppression
                   </button>
                   <button onClick={closeDeactModal} className="mt-3 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors">
                     Annuler
@@ -642,7 +708,7 @@ export default function Settings() {
                     <FiLoader className="w-12 h-12 text-red-600 animate-spin" />
                   </div>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">Vérification en cours…</p>
-                  <p className="text-xs text-gray-400 mt-1">Désactivation du compte</p>
+                  <p className="text-xs text-gray-400 mt-1">Suppression du compte</p>
                 </div>
               )}
 
@@ -652,13 +718,189 @@ export default function Settings() {
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center">
                     <FiCheck className="w-7 h-7 text-green-600" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Compte désactivé</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Compte supprimé</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                    Le compte de <strong>{deactModal.user.name}</strong> a été désactivé avec succès.
+                    Le compte de <strong>{deactModal.user.name}</strong> a été supprimé définitivement.
                   </p>
-                  <p className="text-xs text-gray-400 mb-6">L'utilisateur ne pourra plus se connecter.</p>
+                  <p className="text-xs text-gray-400 mb-6">Toutes les données associées ont été supprimées.</p>
                   <button
                     onClick={closeDeactModal}
+                    className="w-full py-3 bg-gray-800 dark:bg-gray-600 text-white rounded-xl font-semibold hover:bg-gray-900 dark:hover:bg-gray-500 transition-colors"
+                  >
+                    Fermer
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ AI Toggle Modal (vérification email) ═══ */}
+      {aiModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-gray-200 dark:border-gray-700">
+            {/* Header */}
+            <div className={`px-6 py-4 flex items-center justify-between ${
+              aiModal.targetState
+                ? 'bg-gradient-to-r from-emerald-600 to-green-600'
+                : 'bg-gradient-to-r from-red-600 to-orange-600'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                  <FiZap className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm">Modèles IA & Dynamisme</p>
+                  <p className="text-white/70 text-xs">{aiModal.targetState ? 'Activation' : 'Désactivation'}</p>
+                </div>
+              </div>
+              <button onClick={closeAiModal} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+                <FiX className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {/* Step: Confirm */}
+              {aiModal.step === 'confirm' && (
+                <div className="text-center">
+                  <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                    aiModal.targetState ? 'bg-emerald-50 dark:bg-emerald-900/30' : 'bg-red-50 dark:bg-red-900/30'
+                  }`}>
+                    <FiZap className={`w-7 h-7 ${aiModal.targetState ? 'text-emerald-600' : 'text-red-600'}`} />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                    {aiModal.targetState ? 'Activer le mode dynamique ?' : 'Désactiver le mode dynamique ?'}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    {aiModal.targetState
+                      ? 'Les graphiques dynamiques, animations et analyses IA seront activés pour tous les utilisateurs pendant 15 jours.'
+                      : 'Tous les effets dynamiques seront stoppés. Le site repassera en mode statique.'}
+                  </p>
+                  <div className={`p-3 rounded-lg border mb-6 ${
+                    aiModal.targetState
+                      ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800'
+                      : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+                  }`}>
+                    <p className={`text-xs ${aiModal.targetState ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                      <strong>🔐 Sécurité :</strong> Un code de vérification sera envoyé à votre email.
+                      {aiModal.targetState && <span className="block mt-1">⏱️ Le mode dynamique expirera automatiquement après 15 jours. Un code de renouvellement sera envoyé par email.</span>}
+                    </p>
+                  </div>
+                  {aiError && (
+                    <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 flex items-center gap-2">
+                      <FiAlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                      <p className="text-xs text-red-600 dark:text-red-400">{aiError}</p>
+                    </div>
+                  )}
+                  <button
+                    onClick={handleSendAiCode}
+                    className={`w-full py-3 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 ${
+                      aiModal.targetState
+                        ? 'bg-emerald-600 hover:bg-emerald-700'
+                        : 'bg-red-600 hover:bg-red-700'
+                    }`}
+                  >
+                    <FiSend className="w-4 h-4" /> Envoyer le code de vérification
+                  </button>
+                  <button onClick={closeAiModal} className="mt-3 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors">
+                    Annuler
+                  </button>
+                </div>
+              )}
+
+              {/* Step: Sending */}
+              {aiModal.step === 'sending' && (
+                <div className="text-center py-6">
+                  <div className="w-12 h-12 mx-auto mb-4">
+                    <FiLoader className="w-12 h-12 text-emerald-600 animate-spin" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">Envoi du code en cours…</p>
+                  <p className="text-xs text-gray-400 mt-1">Vérifiez votre boîte email</p>
+                </div>
+              )}
+
+              {/* Step: Enter code */}
+              {aiModal.step === 'code' && (
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                    <FiLock className="w-7 h-7 text-blue-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Entrez le code de vérification</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                    Un code à 6 chiffres a été envoyé à votre email
+                  </p>
+                  {aiError && (
+                    <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 flex items-center gap-2">
+                      <FiAlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                      <p className="text-xs text-red-600 dark:text-red-400">{aiError}</p>
+                    </div>
+                  )}
+                  <input
+                    type="text"
+                    value={aiCode}
+                    onChange={e => setAiCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="000000"
+                    maxLength={6}
+                    className="w-full text-center text-3xl font-mono font-bold tracking-[12px] py-4 px-4 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 mb-6"
+                    autoFocus
+                    onKeyDown={e => e.key === 'Enter' && aiCode.length === 6 && handleConfirmAiToggle()}
+                  />
+                  <button
+                    onClick={handleConfirmAiToggle}
+                    disabled={aiCode.length !== 6}
+                    className={`w-full py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 ${
+                      aiCode.length === 6
+                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <FiZap className="w-4 h-4" /> Confirmer
+                  </button>
+                  <button onClick={closeAiModal} className="mt-3 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors">
+                    Annuler
+                  </button>
+                </div>
+              )}
+
+              {/* Step: Verifying */}
+              {aiModal.step === 'verifying' && (
+                <div className="text-center py-6">
+                  <div className="w-12 h-12 mx-auto mb-4">
+                    <FiLoader className="w-12 h-12 text-emerald-600 animate-spin" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">Vérification en cours…</p>
+                  <p className="text-xs text-gray-400 mt-1">{aiModal.targetState ? 'Activation' : 'Désactivation'} des modèles IA</p>
+                </div>
+              )}
+
+              {/* Step: Done */}
+              {aiModal.step === 'done' && (
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center">
+                    <FiCheck className="w-7 h-7 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                    {aiModal.targetState ? '✅ Mode dynamique activé !' : '⏸️ Mode dynamique désactivé'}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                    {aiModal.targetState
+                      ? 'Tous les graphiques et analyses IA sont maintenant dynamiques pour tous les utilisateurs.'
+                      : 'Le site est repassé en mode statique.'}
+                  </p>
+                  {aiModal.targetState && dynamicExpiresAt && (
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-2 flex items-center justify-center gap-1">
+                      <FiClock className="w-3 h-3" />
+                      Expire le {new Date(dynamicExpiresAt).toLocaleDateString('fr-FR')} — renouvellement automatique par email
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-400 mb-6">
+                    {aiModal.targetState
+                      ? 'Un nouveau code sera envoyé automatiquement à votre email dans 15 jours pour le renouvellement.'
+                      : 'Vous pouvez le réactiver à tout moment.'}
+                  </p>
+                  <button
+                    onClick={closeAiModal}
                     className="w-full py-3 bg-gray-800 dark:bg-gray-600 text-white rounded-xl font-semibold hover:bg-gray-900 dark:hover:bg-gray-500 transition-colors"
                   >
                     Fermer

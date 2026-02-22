@@ -9,17 +9,29 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
     
-    if (token && savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      }
+    if (token) {
+      // Valider le token auprès du backend
+      getMe()
+        .then((res) => {
+          const userData = res.data.user || res.data;
+          localStorage.setItem('user', JSON.stringify(userData));
+          setUser(userData);
+        })
+        .catch(() => {
+          // Token invalide ou expiré → déconnecter
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      localStorage.removeItem('user');
+      setUser(null);
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const loginUser = (userData, token) => {

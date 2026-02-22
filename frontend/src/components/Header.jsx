@@ -2,9 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { useDynamic } from '../context/DynamicContext';
 import {
-  FiBell, FiSearch, FiMoon, FiSun, FiZap, FiZapOff,
+  FiBell, FiSearch, FiMoon, FiSun,
   FiHome, FiBarChart2, FiGitMerge, FiBriefcase, FiFileText,
   FiPieChart, FiSettings, FiDatabase, FiCpu,
   FiSend, FiAlertTriangle, FiCheckCircle, FiX, FiArrowRight
@@ -48,7 +47,6 @@ function timeAgo(dateStr) {
 export default function Header({ title, subtitle }) {
   const { user } = useAuth();
   const { dark, toggleDark } = useTheme();
-  const { isDynamic, toggleDynamic } = useDynamic();
   const navigate = useNavigate();
 
   // ═══ SEARCH ═══
@@ -225,41 +223,6 @@ export default function Header({ title, subtitle }) {
             )}
           </div>
 
-          {/* Dynamic Mode Toggle — 84 éléments */}
-          <button
-            onClick={toggleDynamic}
-            className="relative p-2.5 rounded-xl transition-all duration-300 group"
-            style={{
-              background: isDynamic
-                ? 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
-                : 'linear-gradient(135deg, #6b7280 0%, #9ca3af 100%)',
-              boxShadow: isDynamic
-                ? '0 0 14px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255,255,255,0.15)'
-                : '0 0 8px rgba(107, 114, 128, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
-            }}
-            title={isDynamic ? 'Désactiver le mode dynamique (84 effets)' : 'Activer le mode dynamique (84 effets)'}
-          >
-            <div className="relative w-5 h-5">
-              <FiZap
-                className={`w-5 h-5 absolute inset-0 transition-all duration-300 ${
-                  isDynamic ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-90 scale-0'
-                }`}
-                style={{ color: '#ffffff' }}
-              />
-              <FiZapOff
-                className={`w-5 h-5 absolute inset-0 transition-all duration-300 ${
-                  isDynamic ? 'opacity-0 -rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'
-                }`}
-                style={{ color: '#ffffff' }}
-              />
-            </div>
-            {isDynamic && (
-              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-300 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-400 border border-white"></span>
-              </span>
-            )}
-          </button>
           {/* Dark Mode Toggle */}
           <button
             onClick={toggleDark}

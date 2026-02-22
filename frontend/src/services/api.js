@@ -47,6 +47,8 @@ export const updateSettings = (data) => api.put('/admin/settings', data);
 export const impersonateUser = (practitionerId) => api.post('/admin/impersonate', { practitionerId });
 export const deactivateSendCode = (userId) => api.post('/admin/deactivate-send-code', { userId });
 export const deactivateConfirm = (userId, code) => api.post('/admin/deactivate-confirm', { userId, code });
+export const aiToggleSendCode = (targetState) => api.post('/admin/ai-toggle-send-code', { targetState });
+export const aiToggleConfirm = (code) => api.post('/admin/ai-toggle-confirm', { code });
 
 // Practitioner
 export const getPractitionerDashboard = () => api.get('/practitioner/dashboard');

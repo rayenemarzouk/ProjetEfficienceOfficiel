@@ -1,4 +1,6 @@
 const cron = require('node-cron');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const User = require('../models/User');
 const Report = require('../models/Report');
 const AppSettings = require('../models/AppSettings');
@@ -214,6 +216,72 @@ function initCronJobs() {
   });
 
   console.log('📅 Tâches cron initialisées - Rapports mensuels programmés (dernier jour du mois à 20h00)');
+
+  // ═══ CRON: Vérification expiration mode dynamique — toutes les heures ═══
+  // Quand le dynamisme expire, envoyer automatiquement un nouveau code de renouvellement
+  cron.schedule('0 * * * *', async () => {
+    try {
+      const settings = await AppSettings.getSettings();
+      
+      // Si le mode dynamique était actif et vient d'expirer
+      if (settings.dynamicExpiresAt && new Date() >= settings.dynamicExpiresAt) {
+        console.log('⏰ Mode dynamique expiré — Envoi automatique d\'un code de renouvellement');
+        
+        // Désactiver le mode dynamique
+        settings.dynamicExpiresAt = null;
+        await settings.save();
+
+        // Générer et envoyer un nouveau code
+        const code = crypto.randomInt(100000, 999999).toString();
+        
+        // Stocker le code dans une variable globale accessible par la route
+        global.aiRenewalCode = { code, expiresAt: Date.now() + 24 * 60 * 60 * 1000, targetState: true };
+
+        const transporter = nodemailer.createTransport({
+          host: process.env.EMAIL_HOST,
+          port: parseInt(process.env.EMAIL_PORT),
+          secure: false,
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+          }
+        });
+
+        await transporter.sendMail({
+          from: `"Efficience Analytics" <${process.env.EMAIL_USER}>`,
+          to: process.env.EMAIL_USER,
+          subject: '🔄 Renouvellement — Code d\'activation Mode Dynamique (expiré)',
+          html: `
+            <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:30px;background:#f8fafc;border-radius:16px;">
+              <div style="text-align:center;margin-bottom:25px;">
+                <h2 style="color:#1e293b;margin:0;">🔄 Renouvellement Dynamique</h2>
+                <p style="color:#ef4444;font-size:14px;margin-top:8px;font-weight:600;">Le mode dynamique a expiré</p>
+              </div>
+              <div style="background:white;border-radius:12px;padding:25px;border:1px solid #e2e8f0;text-align:center;">
+                <p style="color:#475569;font-size:14px;margin-bottom:15px;">
+                  Le mode dynamique des graphiques a expiré après 15 jours.<br/>
+                  Utilisez ce code pour le réactiver dans <strong>Réglages → Modèles IA</strong>.
+                </p>
+                <div style="background:#f0fdf4;border:2px dashed #10b981;border-radius:12px;padding:20px;margin-bottom:20px;">
+                  <p style="color:#10b981;font-size:12px;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Code de renouvellement</p>
+                  <p style="color:#1e293b;font-size:36px;font-weight:900;letter-spacing:8px;margin:0;">${code}</p>
+                </div>
+                <p style="color:#94a3b8;font-size:12px;">Ce code est valide <strong>24 heures</strong>.</p>
+                <p style="color:#64748b;font-size:11px;margin-top:10px;">Connectez-vous à Réglages pour réactiver le dynamisme.</p>
+              </div>
+              <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:20px;">Efficience Analytics — Système automatique</p>
+            </div>
+          `
+        });
+
+        console.log('✅ Code de renouvellement dynamique envoyé par email');
+      }
+    } catch (error) {
+      console.error('❌ Erreur cron vérification dynamique:', error);
+    }
+  });
+
+  console.log('🔄 Cron renouvellement dynamique initialisé (vérification toutes les heures)');
 }
 
 module.exports = { initCronJobs };

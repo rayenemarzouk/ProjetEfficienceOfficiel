@@ -51,12 +51,23 @@ export default function Login() {
         <div className="relative z-10">
           {/* Logo RM DEV */}
           <div className="flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-emerald-400 flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <div className="relative w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-green-400 flex items-center justify-center shadow-[0_0_24px_rgba(16,185,129,0.7),0_0_48px_rgba(16,185,129,0.3)]">
+              <div className="absolute inset-0 rounded-lg bg-green-400 opacity-40 blur-lg animate-pulse"></div>
+              <div className="absolute -inset-1 rounded-xl bg-emerald-400 opacity-20 blur-xl animate-[pulse_1.5s_ease-in-out_infinite]"></div>
+              <svg className="relative w-5 h-5 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)]" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
               </svg>
             </div>
-            <span className="text-white font-semibold text-sm tracking-wider">RM DEV</span>
+            <div className="flex items-center gap-2">
+              <span className="text-emerald-400 font-semibold text-sm tracking-wider drop-shadow-[0_0_10px_rgba(16,185,129,0.6)]">RM DEV IA</span>
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]"></span>
+                </span>
+                <span className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest">Live</span>
+              </span>
+            </div>
           </div>
 
           {/* Main title */}
