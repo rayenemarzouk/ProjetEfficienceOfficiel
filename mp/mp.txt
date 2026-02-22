@@ -1,11 +1,34 @@
+
+FIXER LE PROBLEME DE VERIIFCATION , KEN HAKA NAHIH JEMLA , W NEFHEM L BOC ELI YZID SECURITE , ( yelzem kif ndepoiii  site , ykoun menghir des codes de verifications 
+
+
+creer un compte admin pour moi , maarzkryaan @gmail.com par exemple 
+et ajouter le design des cadres bleu foncé ! au tour de tour les models , le contenu du modele doit rester le meeme , mais le fond ssera bleu foncé 
+
+
+
+
+
 Voici tous les comptes et mots de passe :
 
 Administrateurs
 Nom	Email	Mot de passe
 Younis Admin	younis@efficience.fr	younis@efficience
 Mr Robert	mrrobert@efficience.fr	mrrobert.efficience
-Rayan Maarzouk	maarzoukrayan3@gmail.com	rayan@efficience
+maarzoukrayan3@gmail.com       mp = maarzoukrayan3@gmail 
 Praticiens
 Nom	Email	Mot de passe
 Dr. Jean-Claude	jc@efficience.fr	jc@efficience
 Dr. David Vernet	dv@efficience.fr	dv@efficience
+
+
+
+
+CODE PERSONEL DU STATUT DYNAMIQUES = 241213
+
+
+
+
+
+
+important !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! COMPRENDRE L'API !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

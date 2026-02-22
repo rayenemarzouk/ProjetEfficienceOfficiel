@@ -21,8 +21,9 @@ export default function AdminDashboard() {
   const { isDynamic } = useDynamic();
   const { user } = useAuth();
   const { dark } = useTheme();
-  const chartTextColor = dark ? '#94a3b8' : '#64748b';
-  const chartGridColor = dark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)';
+  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const chartTextColor = (isRayan || dark) ? '#94a3b8' : '#64748b';
+  const chartGridColor = (isRayan || dark) ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)';
   const lineChartRef = useRef(null);
   const doughnutChartRef = useRef(null);
 
@@ -179,7 +180,7 @@ export default function AdminDashboard() {
         return c + 'dd';
       }),
       borderWidth: 4,
-      borderColor: '#ffffff',
+      borderColor: isRayan ? '#111d30' : (dark ? '#1e293b' : '#ffffff'),
       hoverBorderWidth: 2,
       hoverOffset: 12,
     }]
@@ -236,22 +237,22 @@ export default function AdminDashboard() {
       <div className="p-6">
         {/* Greeting personnalisé */}
         <div className="mb-4">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 className={`text-2xl font-bold ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
             Bonjour {user?.name?.split(' ')[0] === 'Mr' || user?.name?.split(' ')[0] === 'Mr.' ? user.name : user?.name?.split(' ')[0] || 'Admin'} 👋
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Bienvenue sur votre tableau de bord</p>
+          <p className={`text-sm mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>Bienvenue sur votre tableau de bord</p>
         </div>
 
         {/* Bannière Efficience */}
-        <div className="relative overflow-hidden rounded-2xl mb-6 bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 transition-colors" style={{ height: '120px' }}>
+        <div className={`relative overflow-hidden rounded-2xl mb-6 transition-colors ${isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700'}`} style={{ height: '120px' }}>
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <h2 className="text-4xl font-black tracking-[0.08em] text-[#2956b2] dark:text-blue-400" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+              <h2 className={`text-4xl font-black tracking-[0.08em] ${isRayan ? 'text-blue-400' : 'text-[#2956b2] dark:text-blue-400'}`} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
                 <span style={{ letterSpacing: '0.02em' }}>≡</span>FFICI
                 <span style={{ letterSpacing: '0.02em' }}>≡</span>NC
                 <span style={{ letterSpacing: '0.02em' }}>≡</span>
               </h2>
-              <p className="text-[11px] mt-1 tracking-[0.05em] text-[#5a7cbf] dark:text-blue-300" style={{ fontFamily: 'system-ui, sans-serif' }}>
+              <p className={`text-[11px] mt-1 tracking-[0.05em] ${isRayan ? 'text-blue-300' : 'text-[#5a7cbf] dark:text-blue-300'}`} style={{ fontFamily: 'system-ui, sans-serif' }}>
                 L'accompagnement personnalisé de votre cabinet dentaire
               </p>
             </div>
@@ -260,64 +261,64 @@ export default function AdminDashboard() {
 
         {/* KPI Cards — Animated */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-          <div className="group bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-5 hover:shadow-lg hover:shadow-blue-100/50 dark:hover:shadow-blue-900/30 transition-all duration-500 hover:-translate-y-1 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 dark:from-blue-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className={`group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50 hover:shadow-blue-900/30' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-blue-100/50 dark:hover:shadow-blue-900/30'}`}>
+            <div className={`absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isRayan ? 'from-blue-900/20' : 'from-blue-50/50 dark:from-blue-900/20'}`}></div>
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-3 rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition-colors"><FiDollarSign className="w-6 h-6" /></div>
+                <div className={`p-3 rounded-xl transition-colors ${isRayan ? 'bg-blue-900/30 text-blue-400 group-hover:bg-blue-900/50' : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'}`}><FiDollarSign className="w-6 h-6" /></div>
                 {trendCA !== null && (
                   <span className={`text-xs font-semibold px-2 py-1 rounded-full ${trendCA >= 0 ? 'text-green-500 bg-green-50' : 'text-red-500 bg-red-50'}`}>
                     {trendCA >= 0 ? '+' : ''}{trendCA}%
                   </span>
                 )}
               </div>
-              <p className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(animCA)}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">CA Total</p>
-              <div className="mt-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(animCA)}</p>
+              <p className={`text-sm mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>CA Total</p>
+              <div className={`mt-3 w-full rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-700' : 'bg-gray-100 dark:bg-gray-700'}`}>
                 <div className={`h-1.5 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 ${isDynamic ? 'transition-all duration-[2200ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
               </div>
             </div>
           </div>
-          <div className="group bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-5 hover:shadow-lg hover:shadow-indigo-100/50 dark:hover:shadow-indigo-900/30 transition-all duration-500 hover:-translate-y-1 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 dark:from-indigo-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className={`group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50 hover:shadow-indigo-900/30' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-indigo-100/50 dark:hover:shadow-indigo-900/30'}`}>
+            <div className={`absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isRayan ? 'from-indigo-900/20' : 'from-indigo-50/50 dark:from-indigo-900/20'}`}></div>
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-3 rounded-xl bg-blue-50 text-blue-600 group-hover:bg-indigo-100 transition-colors"><FiUsers className="w-6 h-6" /></div>
+                <div className={`p-3 rounded-xl transition-colors ${isRayan ? 'bg-indigo-900/30 text-indigo-400 group-hover:bg-indigo-900/50' : 'bg-blue-50 text-blue-600 group-hover:bg-indigo-100'}`}><FiUsers className="w-6 h-6" /></div>
                 {trendPatients !== null && (
                   <span className={`text-xs font-semibold px-2 py-1 rounded-full ${trendPatients >= 0 ? 'text-green-500 bg-green-50' : 'text-red-500 bg-red-50'}`}>
                     {trendPatients >= 0 ? '+' : ''}{trendPatients}%
                   </span>
                 )}
               </div>
-              <p className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{animPatients.toLocaleString('fr-FR')}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Patients Total</p>
-              <div className="mt-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{animPatients.toLocaleString('fr-FR')}</p>
+              <p className={`text-sm mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>Patients Total</p>
+              <div className={`mt-3 w-full rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-700' : 'bg-gray-100 dark:bg-gray-700'}`}>
                 <div className={`h-1.5 rounded-full bg-gradient-to-r from-indigo-400 to-indigo-600 ${isDynamic ? 'transition-all duration-[1800ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
               </div>
             </div>
           </div>
-          <div className="group bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-5 hover:shadow-lg hover:shadow-gray-100/50 dark:hover:shadow-gray-900/30 transition-all duration-500 hover:-translate-y-1 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 dark:from-gray-700/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className={`group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50 hover:shadow-gray-900/30' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-gray-100/50 dark:hover:shadow-gray-900/30'}`}>
+            <div className={`absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isRayan ? 'from-gray-700/30' : 'from-gray-50/50 dark:from-gray-700/30'}`}></div>
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 group-hover:bg-gray-100 dark:group-hover:bg-gray-600 transition-colors"><FiFileText className="w-6 h-6" /></div>
+                <div className={`p-3 rounded-xl transition-colors ${isRayan ? 'bg-gray-700/50 text-gray-300 group-hover:bg-gray-600' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 group-hover:bg-gray-100 dark:group-hover:bg-gray-600'}`}><FiFileText className="w-6 h-6" /></div>
               </div>
-              <p className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{animRapports}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Rapports Générés</p>
-              <div className="mt-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{animRapports}</p>
+              <p className={`text-sm mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>Rapports Générés</p>
+              <div className={`mt-3 w-full rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-700' : 'bg-gray-100 dark:bg-gray-700'}`}>
                 <div className={`h-1.5 rounded-full bg-gradient-to-r from-gray-400 to-gray-600 ${isDynamic ? 'transition-all duration-[1200ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
               </div>
             </div>
           </div>
-          <div className="group bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-5 hover:shadow-lg hover:shadow-emerald-100/50 dark:hover:shadow-emerald-900/30 transition-all duration-500 hover:-translate-y-1 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 dark:from-emerald-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className={`group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50 hover:shadow-emerald-900/30' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-emerald-100/50 dark:hover:shadow-emerald-900/30'}`}>
+            <div className={`absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isRayan ? 'from-emerald-900/20' : 'from-emerald-50/50 dark:from-emerald-900/20'}`}></div>
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40 transition-colors"><FiMail className="w-6 h-6" /></div>
+                <div className={`p-3 rounded-xl transition-colors ${isRayan ? 'bg-emerald-900/30 text-emerald-400 group-hover:bg-emerald-900/40' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40'}`}><FiMail className="w-6 h-6" /></div>
               </div>
-              <p className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{animEmails}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Emails Envoyés</p>
-              <div className="mt-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{animEmails}</p>
+              <p className={`text-sm mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>Emails Envoyés</p>
+              <div className={`mt-3 w-full rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-700' : 'bg-gray-100 dark:bg-gray-700'}`}>
                 <div className={`h-1.5 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 ${isDynamic ? 'transition-all duration-[1200ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
               </div>
             </div>
@@ -345,22 +346,22 @@ export default function AdminDashboard() {
                     <span className={`${theme.badgeText} font-bold text-sm`}>{p.code}</span>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">{p.name}</h3>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">{p.email}</p>
+                    <h3 className={`font-semibold ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{p.name}</h3>
+                    <p className={`text-xs ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>{p.email}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="text-center p-3 bg-white/70 dark:bg-white/10 backdrop-blur-sm rounded-xl border border-white/50 dark:border-gray-600/50 shadow-sm">
+                  <div className={`text-center p-3 backdrop-blur-sm rounded-xl shadow-sm ${isRayan ? 'bg-white/10 border border-gray-600/50' : 'bg-white/70 dark:bg-white/10 border border-white/50 dark:border-gray-600/50'}`}>
                     <p className={`text-base font-bold ${theme.accent}`}>{formatMoney(ca?.totalFacture || 0)}</p>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">CA Total</p>
+                    <p className={`text-[10px] mt-0.5 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>CA Total</p>
                   </div>
-                  <div className="text-center p-3 bg-white/70 dark:bg-white/10 backdrop-blur-sm rounded-xl border border-white/50 dark:border-gray-600/50 shadow-sm">
-                    <p className="text-base font-bold text-blue-600">{ca?.totalPatients || 0}</p>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Patients</p>
+                  <div className={`text-center p-3 backdrop-blur-sm rounded-xl shadow-sm ${isRayan ? 'bg-white/10 border border-gray-600/50' : 'bg-white/70 dark:bg-white/10 border border-white/50 dark:border-gray-600/50'}`}>
+                    <p className={`text-base font-bold ${isRayan ? 'text-blue-400' : 'text-blue-600'}`}>{ca?.totalPatients || 0}</p>
+                    <p className={`text-[10px] mt-0.5 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>Patients</p>
                   </div>
-                  <div className="text-center p-3 bg-white/70 dark:bg-white/10 backdrop-blur-sm rounded-xl border border-white/50 dark:border-gray-600/50 shadow-sm">
-                    <p className="text-base font-bold text-amber-600">{hTotal.toFixed(0)}h</p>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Heures</p>
+                  <div className={`text-center p-3 backdrop-blur-sm rounded-xl shadow-sm ${isRayan ? 'bg-white/10 border border-gray-600/50' : 'bg-white/70 dark:bg-white/10 border border-white/50 dark:border-gray-600/50'}`}>
+                    <p className={`text-base font-bold ${isRayan ? 'text-amber-400' : 'text-amber-600'}`}>{hTotal.toFixed(0)}h</p>
+                    <p className={`text-[10px] mt-0.5 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>Heures</p>
                   </div>
                 </div>
               </div>
@@ -370,11 +371,11 @@ export default function AdminDashboard() {
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
-          <div className="lg:col-span-2 bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm transition-colors">
+          <div className={`lg:col-span-2 rounded-2xl p-6 shadow-sm transition-colors ${isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700'}`}>
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h3 className="text-base font-bold text-gray-900 dark:text-white">Évolution du Chiffre d'Affaires</h3>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Analyse comparative facturé vs encaissé</p>
+                <h3 className={`text-base font-bold ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>Évolution du Chiffre d'Affaires</h3>
+                <p className={`text-xs mt-0.5 ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>Analyse comparative facturé vs encaissé</p>
               </div>
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
@@ -428,15 +429,15 @@ export default function AdminDashboard() {
               }} />
             </div>
           </div>
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-6 transition-colors">
+          <div className={`rounded-2xl p-6 transition-colors ${isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700'}`}>
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Répartition CA par Cabinet</h3>
+              <h3 className={`text-base font-bold ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>Répartition CA par Cabinet</h3>
               <span className="flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full border border-green-200">
                 <span className="relative flex h-1.5 w-1.5"><span className={`${isDynamic ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75`}></span><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span></span>
                 Live
               </span>
             </div>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Part de chaque cabinet dans le CA global</p>
+            <p className={`text-xs mb-4 ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>Part de chaque cabinet dans le CA global</p>
             <Doughnut ref={doughnutChartRef} data={doughnutData} plugins={isDynamic ? [streamingDoughnutPlugin] : []} options={{
               responsive: true,
               cutout: '60%',
@@ -477,11 +478,11 @@ export default function AdminDashboard() {
                   <div key={i} className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: doughnutColors[i % doughnutColors.length] }}></span>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">{p._id}</span>
+                      <span className={`font-medium ${isRayan ? 'text-gray-300' : 'text-gray-700 dark:text-gray-300'}`}>{p._id}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-gray-400 dark:text-gray-500">{pct}%</span>
-                      <span className="font-bold text-gray-900 dark:text-white">{formatMoney(p.totalFacture)}</span>
+                      <span className={`${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>{pct}%</span>
+                      <span className={`font-bold ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{formatMoney(p.totalFacture)}</span>
                     </div>
                   </div>
                 );
@@ -492,15 +493,15 @@ export default function AdminDashboard() {
 
         {/* AI Insight Panel */}
         {aiInsightCA && (
-          <div className="bg-gradient-to-r from-violet-50 via-blue-50 to-amber-50 dark:from-violet-900/30 dark:via-blue-900/30 dark:to-amber-900/30 rounded-2xl border border-violet-100 dark:border-violet-800 p-5 mb-6 transition-colors">
+          <div className={`rounded-2xl p-5 mb-6 transition-colors ${isRayan ? 'bg-gradient-to-r from-violet-900/30 via-blue-900/30 to-amber-900/30 border border-violet-800/50' : 'bg-gradient-to-r from-violet-50 via-blue-50 to-amber-50 dark:from-violet-900/30 dark:via-blue-900/30 dark:to-amber-900/30 border border-violet-100 dark:border-violet-800'}`}>
             <div className="flex items-center gap-2 mb-3">
-              <div className="p-1.5 bg-violet-100 dark:bg-violet-900/50 rounded-lg"><FiCpu className="w-4 h-4 text-violet-600" /></div>
-              <h4 className="text-sm font-bold text-gray-900 dark:text-white">Analyse IA — Chiffre d'Affaires</h4>
+              <div className={`p-1.5 rounded-lg ${isRayan ? 'bg-violet-900/50' : 'bg-violet-100 dark:bg-violet-900/50'}`}><FiCpu className={`w-4 h-4 ${isRayan ? 'text-violet-400' : 'text-violet-600'}`} /></div>
+              <h4 className={`text-sm font-bold ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>Analyse IA — Chiffre d'Affaires</h4>
               <span className="ml-auto text-[10px] font-semibold text-violet-500 bg-violet-100 px-2 py-0.5 rounded-full">Fiabilité {aiInsightCA.confidence}%</span>
             </div>
             <div className="space-y-1">
               {aiInsightCA.parts.map((part, i) => (
-                <p key={i} className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{part}</p>
+                <p key={i} className={`text-xs leading-relaxed ${isRayan ? 'text-gray-300' : 'text-gray-700 dark:text-gray-300'}`}>{part}</p>
               ))}
             </div>
           </div>
@@ -508,30 +509,30 @@ export default function AdminDashboard() {
 
         {/* Alertes & Notifications - clickable */}
         <div className="mb-6">
-          <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4">Alertes & Notifications</h3>
+          <h3 className={`text-base font-bold mb-4 ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>Alertes & Notifications</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5" onClick={() => navigate('/admin/statistics')}>
-              <p className="text-sm font-bold text-red-600">Encaissement faible <FiAlertTriangle className="inline w-4 h-4 ml-1" /></p>
-              <p className="text-3xl font-black text-gray-900 dark:text-white mt-1 tabular-nums">{animFaible}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">cabinets &lt; 85% encaissement</p>
+            <div className={`border-l-4 border-red-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isRayan ? 'bg-red-900/30' : 'bg-red-50 dark:bg-red-900/30'}`} onClick={() => navigate('/admin/statistics')}>
+              <p className={`text-sm font-bold ${isRayan ? 'text-red-400' : 'text-red-600'}`}>Encaissement faible <FiAlertTriangle className="inline w-4 h-4 ml-1" /></p>
+              <p className={`text-3xl font-black mt-1 tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{animFaible}</p>
+              <p className={`text-xs mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>cabinets &lt; 85% encaissement</p>
               <p className="text-xs text-blue-600 mt-2 flex items-center gap-1 hover:underline">Voir les détails <FiArrowRight className="w-3 h-3" /></p>
             </div>
-            <div className="bg-orange-50 dark:bg-orange-900/30 border-l-4 border-orange-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5" onClick={() => navigate('/admin/comparison')}>
-              <p className="text-sm font-bold text-orange-600">Absences détectées <span className={`inline-block w-2 h-2 rounded-full bg-orange-400 ml-1 ${isDynamic ? 'animate-pulse' : ''}`}></span></p>
-              <p className="text-3xl font-black text-gray-900 dark:text-white mt-1 tabular-nums">{animAbsences}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">RDV sans présence patient</p>
+            <div className={`border-l-4 border-orange-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isRayan ? 'bg-orange-900/30' : 'bg-orange-50 dark:bg-orange-900/30'}`} onClick={() => navigate('/admin/comparison')}>
+              <p className={`text-sm font-bold ${isRayan ? 'text-orange-400' : 'text-orange-600'}`}>Absences détectées <span className={`inline-block w-2 h-2 rounded-full bg-orange-400 ml-1 ${isDynamic ? 'animate-pulse' : ''}`}></span></p>
+              <p className={`text-3xl font-black mt-1 tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{animAbsences}</p>
+              <p className={`text-xs mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>RDV sans présence patient</p>
               <p className="text-xs text-blue-600 mt-2 flex items-center gap-1 hover:underline">Voir les détails <FiArrowRight className="w-3 h-3" /></p>
             </div>
-            <div className="bg-green-50 dark:bg-green-900/30 border-l-4 border-green-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5" onClick={() => navigate('/admin/comparison')}>
-              <p className="text-sm font-bold text-green-600">Total Présences <span className={`inline-block w-2 h-2 rounded-full bg-green-400 ml-1 ${isDynamic ? 'animate-pulse' : ''}`}></span></p>
-              <p className="text-3xl font-black text-gray-900 dark:text-white mt-1 tabular-nums">{animPresences}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">présences confirmées</p>
+            <div className={`border-l-4 border-green-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isRayan ? 'bg-green-900/30' : 'bg-green-50 dark:bg-green-900/30'}`} onClick={() => navigate('/admin/comparison')}>
+              <p className={`text-sm font-bold ${isRayan ? 'text-green-400' : 'text-green-600'}`}>Total Présences <span className={`inline-block w-2 h-2 rounded-full bg-green-400 ml-1 ${isDynamic ? 'animate-pulse' : ''}`}></span></p>
+              <p className={`text-3xl font-black mt-1 tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{animPresences}</p>
+              <p className={`text-xs mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>présences confirmées</p>
               <p className="text-xs text-blue-600 mt-2 flex items-center gap-1 hover:underline">Voir les détails <FiArrowRight className="w-3 h-3" /></p>
             </div>
-            <div className="bg-pink-50 dark:bg-pink-900/30 border-l-4 border-pink-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5" onClick={() => navigate('/admin/reports')}>
-              <p className="text-sm font-bold text-pink-600">Rapports non envoyés <span className={`inline-block w-2 h-2 rounded-full bg-pink-400 ml-1 ${isDynamic ? 'animate-pulse' : ''}`}></span></p>
-              <p className="text-3xl font-black text-gray-900 dark:text-white mt-1 tabular-nums">{animNonEnvoyes}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">rapports en attente</p>
+            <div className={`border-l-4 border-pink-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isRayan ? 'bg-pink-900/30' : 'bg-pink-50 dark:bg-pink-900/30'}`} onClick={() => navigate('/admin/reports')}>
+              <p className={`text-sm font-bold ${isRayan ? 'text-pink-400' : 'text-pink-600'}`}>Rapports non envoyés <span className={`inline-block w-2 h-2 rounded-full bg-pink-400 ml-1 ${isDynamic ? 'animate-pulse' : ''}`}></span></p>
+              <p className={`text-3xl font-black mt-1 tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{animNonEnvoyes}</p>
+              <p className={`text-xs mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>rapports en attente</p>
               <p className="text-xs text-blue-600 mt-2 flex items-center gap-1 hover:underline">Voir les détails <FiArrowRight className="w-3 h-3" /></p>
             </div>
           </div>
@@ -539,25 +540,25 @@ export default function AdminDashboard() {
 
         {/* CA Total & Objectif Total — Animated */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="group bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-5 flex items-center gap-4 hover:shadow-lg hover:shadow-green-100/50 dark:hover:shadow-green-900/30 transition-all duration-500 hover:-translate-y-0.5 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-50/40 dark:from-green-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div className={`group rounded-2xl p-5 flex items-center gap-4 hover:shadow-lg transition-all duration-500 hover:-translate-y-0.5 relative overflow-hidden ${isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50 hover:shadow-green-900/30' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-green-100/50 dark:hover:shadow-green-900/30'}`}>
+            <div className={`absolute inset-0 bg-gradient-to-r to-transparent opacity-0 group-hover:opacity-100 transition-opacity ${isRayan ? 'from-green-900/20' : 'from-green-50/40 dark:from-green-900/20'}`}></div>
             <div className="relative z-10 w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
               <FiTrendingUp className="w-6 h-6 text-white" />
             </div>
             <div className="relative z-10">
-              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 tracking-widest uppercase">CA TOTAL ({nbPractitioners} CABINETS)</p>
-              <p className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{formatMoney(animCABottom)}</p>
+              <p className={`text-[10px] font-bold tracking-widest uppercase ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>CA TOTAL ({nbPractitioners} CABINETS)</p>
+              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{formatMoney(animCABottom)}</p>
             </div>
           </div>
-          <div className="group bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-100 dark:border-gray-700 p-5 flex items-center gap-4 hover:shadow-lg hover:shadow-green-100/50 dark:hover:shadow-green-900/30 transition-all duration-500 hover:-translate-y-0.5 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-50/40 dark:from-green-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div className={`group rounded-2xl p-5 flex items-center gap-4 hover:shadow-lg transition-all duration-500 hover:-translate-y-0.5 relative overflow-hidden ${isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50 hover:shadow-green-900/30' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-green-100/50 dark:hover:shadow-green-900/30'}`}>
+            <div className={`absolute inset-0 bg-gradient-to-r to-transparent opacity-0 group-hover:opacity-100 transition-opacity ${isRayan ? 'from-green-900/20' : 'from-green-50/40 dark:from-green-900/20'}`}></div>
             <div className="relative z-10 w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
               <FiFileText className="w-6 h-6 text-white" />
             </div>
             <div className="relative z-10">
-              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 tracking-widest uppercase">TOTAL ENCAISSÉ ({nbPractitioners} CABINETS)</p>
-              <p className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{formatMoney(animEncaisseBottom)}</p>
-              <div className="mt-1 w-48 bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+              <p className={`text-[10px] font-bold tracking-widest uppercase ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>TOTAL ENCAISSÉ ({nbPractitioners} CABINETS)</p>
+              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{formatMoney(animEncaisseBottom)}</p>
+              <div className={`mt-1 w-48 rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-700' : 'bg-gray-100 dark:bg-gray-700'}`}>
                 <div className={`h-1.5 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 ${isDynamic ? 'transition-all duration-[2400ms] ease-out' : ''}`} style={{ width: `${animEncaissePct}%` }}></div>
               </div>
             </div>
