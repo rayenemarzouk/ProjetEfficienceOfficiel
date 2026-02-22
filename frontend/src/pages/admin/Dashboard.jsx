@@ -22,8 +22,8 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const { dark } = useTheme();
   const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
-  const chartTextColor = (isRayan || dark) ? '#94a3b8' : '#64748b';
-  const chartGridColor = (isRayan || dark) ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)';
+  const chartTextColor = (dark && !isRayan) ? '#94a3b8' : '#64748b';
+  const chartGridColor = (dark && !isRayan) ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)';
   const lineChartRef = useRef(null);
   const doughnutChartRef = useRef(null);
 
@@ -180,7 +180,7 @@ export default function AdminDashboard() {
         return c + 'dd';
       }),
       borderWidth: 4,
-      borderColor: isRayan ? '#111d30' : (dark ? '#1e293b' : '#ffffff'),
+      borderColor: isRayan ? '#ffffff' : (dark ? '#1e293b' : '#ffffff'),
       hoverBorderWidth: 2,
       hoverOffset: 12,
     }]
@@ -258,20 +258,20 @@ export default function AdminDashboard() {
         {isRayan && (
           <div className="mb-6 relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600/20 via-blue-500/20 to-cyan-500/20 rounded-2xl blur-lg opacity-60 group-hover:opacity-100 transition-opacity duration-700"></div>
-            <div className="relative bg-[#0a1628] border border-[#1e3a5f]/60 rounded-2xl p-5 backdrop-blur-xl overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 via-blue-500 to-cyan-500 opacity-60"></div>
+            <div className="relative bg-white border border-gray-200 rounded-2xl p-5 overflow-hidden shadow-sm">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 via-blue-500 to-cyan-500"></div>
               <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 rounded-full blur-3xl"></div>
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-500/5 rounded-full blur-3xl"></div>
 
-              <div className="relative flex items-center gap-2 mb-4 pb-3 border-b border-[#1e3a5f]/40">
+              <div className="relative flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
                 <div className="relative">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <div className="absolute inset-0 w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="absolute inset-0 w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
                 </div>
-                <span className="text-[10px] font-bold text-green-400 uppercase tracking-[0.15em]">MOTEUR IA OPÉRATIONNEL</span>
+                <span className="text-[10px] font-bold text-green-600 uppercase tracking-[0.15em]">MOTEUR IA OPÉRATIONNEL</span>
                 <div className="ml-auto flex items-center gap-3">
                   <span className="text-[10px] text-gray-600 font-mono">v2.4.0</span>
-                  <span className="px-2 py-0.5 bg-violet-500/10 border border-violet-500/20 rounded text-[10px] text-violet-400 font-bold">5 MODÈLES ACTIFS</span>
+                  <span className="px-2 py-0.5 bg-violet-500/10 border border-violet-500/20 rounded text-[10px] text-violet-600 font-bold">5 MODÈLES ACTIFS</span>
                 </div>
               </div>
 
@@ -282,42 +282,42 @@ export default function AdminDashboard() {
                       <FiCpu className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-base font-bold text-white">Centre de Commande IA</h3>
+                      <h3 className="text-base font-bold text-gray-900">Centre de Commande IA</h3>
                       <p className="text-[11px] text-gray-500">Intelligence artificielle temps réel</p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1.5 mt-3">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-violet-500/10 border border-violet-500/20 rounded-md text-[9px] font-medium text-violet-400">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-violet-500/10 border border-violet-500/20 rounded-md text-[9px] font-medium text-violet-600">
                       <FiZap className="w-2.5 h-2.5" /> Régression OLS
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded-md text-[9px] font-medium text-blue-400">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded-md text-[9px] font-medium text-blue-600">
                       <FiActivity className="w-2.5 h-2.5" /> Holt-Winters
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/20 rounded-md text-[9px] font-medium text-cyan-400">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/20 rounded-md text-[9px] font-medium text-cyan-600">
                       <FiShield className="w-2.5 h-2.5" /> Z-Score
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded-md text-[9px] font-medium text-amber-400">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded-md text-[9px] font-medium text-amber-600">
                       <FiTarget className="w-2.5 h-2.5" /> Multi-KPI
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-[9px] font-medium text-emerald-400">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-[9px] font-medium text-emerald-600">
                       <FiBarChart2 className="w-2.5 h-2.5" /> SMA
                     </span>
                   </div>
                 </div>
 
-                <div className="text-center p-3 bg-[#111d30] rounded-xl border border-[#1e3a5f]/30 hover:border-blue-500/30 transition-colors">
-                  <FiGlobe className="w-5 h-5 text-blue-400 mx-auto mb-1.5" />
-                  <p className="text-xl font-black text-white tabular-nums">{practitioners.length}</p>
+                <div className="text-center p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-blue-300 transition-colors">
+                  <FiGlobe className="w-5 h-5 text-blue-500 mx-auto mb-1.5" />
+                  <p className="text-xl font-black text-gray-900 tabular-nums">{practitioners.length}</p>
                   <p className="text-[9px] text-gray-500 uppercase tracking-wider mt-0.5">Cabinets</p>
                 </div>
-                <div className="text-center p-3 bg-[#111d30] rounded-xl border border-[#1e3a5f]/30 hover:border-cyan-500/30 transition-colors">
-                  <FiZap className="w-5 h-5 text-amber-400 mx-auto mb-1.5" />
-                  <p className="text-xl font-black text-cyan-400 tabular-nums">{animHealthScore}<span className="text-sm text-gray-500">%</span></p>
+                <div className="text-center p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-cyan-300 transition-colors">
+                  <FiZap className="w-5 h-5 text-amber-500 mx-auto mb-1.5" />
+                  <p className="text-xl font-black text-cyan-600 tabular-nums">{animHealthScore}<span className="text-sm text-gray-400">%</span></p>
                   <p className="text-[9px] text-gray-500 uppercase tracking-wider mt-0.5">Score Santé</p>
                 </div>
-                <div className="text-center p-3 bg-[#111d30] rounded-xl border border-[#1e3a5f]/30 hover:border-emerald-500/30 transition-colors">
-                  <FiShield className="w-5 h-5 text-emerald-400 mx-auto mb-1.5" />
-                  <p className="text-xl font-black text-emerald-400 tabular-nums">97<span className="text-sm text-gray-500">%</span></p>
+                <div className="text-center p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-emerald-300 transition-colors">
+                  <FiShield className="w-5 h-5 text-emerald-500 mx-auto mb-1.5" />
+                  <p className="text-xl font-black text-emerald-600 tabular-nums">97<span className="text-sm text-gray-400">%</span></p>
                   <p className="text-[9px] text-gray-500 uppercase tracking-wider mt-0.5">Fiabilité</p>
                 </div>
               </div>
@@ -341,15 +341,15 @@ export default function AdminDashboard() {
         </div>
 
         {/* Bannière Efficience */}
-        <div className={`relative overflow-hidden rounded-2xl mb-6 transition-colors ${isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700'}`} style={{ height: '120px' }}>
+        <div className={`relative overflow-hidden rounded-2xl mb-6 transition-colors ${isRayan ? 'bg-white border border-gray-200 shadow-sm' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700'}`} style={{ height: '120px' }}>
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <h2 className={`text-4xl font-black tracking-[0.08em] ${isRayan ? 'text-blue-400' : 'text-[#2956b2] dark:text-blue-400'}`} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+              <h2 className={`text-4xl font-black tracking-[0.08em] ${isRayan ? 'text-blue-600' : 'text-[#2956b2] dark:text-blue-400'}`} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
                 <span style={{ letterSpacing: '0.02em' }}>≡</span>FFICI
                 <span style={{ letterSpacing: '0.02em' }}>≡</span>NC
                 <span style={{ letterSpacing: '0.02em' }}>≡</span>
               </h2>
-              <p className={`text-[11px] mt-1 tracking-[0.05em] ${isRayan ? 'text-blue-300' : 'text-[#5a7cbf] dark:text-blue-300'}`} style={{ fontFamily: 'system-ui, sans-serif' }}>
+              <p className={`text-[11px] mt-1 tracking-[0.05em] ${isRayan ? 'text-blue-500' : 'text-[#5a7cbf] dark:text-blue-300'}`} style={{ fontFamily: 'system-ui, sans-serif' }}>
                 L'accompagnement personnalisé de votre cabinet dentaire
               </p>
             </div>
@@ -362,10 +362,10 @@ export default function AdminDashboard() {
             {/* Score Santé Global - Circular Gauge */}
             <div className="relative group">
               <div className="absolute -inset-0.5 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative bg-[#0d1929] border border-[#1e3a5f]/50 rounded-2xl p-5 h-full flex flex-col items-center justify-center">
+              <div className="relative bg-white border border-gray-200 shadow-sm rounded-2xl p-5 h-full flex flex-col items-center justify-center">
                 <div className="relative w-28 h-28 mb-3">
                   <svg className="w-28 h-28 -rotate-90" viewBox="0 0 120 120">
-                    <circle cx="60" cy="60" r="52" fill="none" stroke="#1e3a5f" strokeWidth="8" />
+                    <circle cx="60" cy="60" r="52" fill="none" stroke="#e5e7eb" strokeWidth="8" />
                     <circle cx="60" cy="60" r="52" fill="none" stroke="url(#scoreGradient)" strokeWidth="8" strokeLinecap="round" style={{ strokeDasharray: `${animHealthScore * 3.27} 327` }} />
                     <defs>
                       <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -376,33 +376,33 @@ export default function AdminDashboard() {
                     </defs>
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-3xl font-black text-white tabular-nums">{animHealthScore}</span>
-                    <span className="text-[10px] text-gray-500 font-medium">/ 100</span>
+                    <span className="text-3xl font-black text-gray-900 tabular-nums">{animHealthScore}</span>
+                    <span className="text-[10px] text-gray-400 font-medium">/ 100</span>
                   </div>
                 </div>
-                <h4 className="text-sm font-bold text-white">Score Santé IA</h4>
+                <h4 className="text-sm font-bold text-gray-900">Score Santé IA</h4>
                 <p className="text-[10px] text-gray-500 mt-0.5">Indice de performance global</p>
               </div>
             </div>
 
             {/* Prédictions IA */}
-            <div className="bg-[#0d1929] border border-[#1e3a5f]/50 rounded-2xl p-5 hover:border-violet-500/30 transition-colors">
+            <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5 hover:border-violet-400/40 transition-colors">
               <div className="flex items-center gap-2 mb-4">
-                <div className="p-1.5 bg-violet-500/10 rounded-lg"><FiTarget className="w-4 h-4 text-violet-400" /></div>
-                <h4 className="text-sm font-bold text-white">Prédictions IA</h4>
+                <div className="p-1.5 bg-violet-500/10 rounded-lg"><FiTarget className="w-4 h-4 text-violet-500" /></div>
+                <h4 className="text-sm font-bold text-gray-900">Prédictions IA</h4>
               </div>
               <div className="space-y-3">
                 {aiForecastValues.slice(0, 3).map((val, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 bg-[#111d30] rounded-lg">
-                    <span className="text-[11px] text-gray-400">{forecastMonthLabels[i]}</span>
-                    <span className="text-sm font-bold text-amber-400 tabular-nums">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val)}</span>
+                  <div key={i} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                    <span className="text-[11px] text-gray-500">{forecastMonthLabels[i]}</span>
+                    <span className="text-sm font-bold text-amber-600 tabular-nums">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val)}</span>
                   </div>
                 ))}
               </div>
-              <div className="mt-3 pt-3 border-t border-[#1e3a5f]/40">
+              <div className="mt-3 pt-3 border-t border-gray-200">
                 <div className="flex items-center gap-1.5">
-                  <FiTrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-[10px] text-emerald-400 font-medium">
+                  <FiTrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                  <span className="text-[10px] text-emerald-600 font-medium">
                     Tendance {trendCA !== null && trendCA >= 0 ? 'haussière' : 'baissière'}
                   </span>
                 </div>
@@ -410,15 +410,15 @@ export default function AdminDashboard() {
             </div>
 
             {/* Taux de Recouvrement */}
-            <div className="bg-[#0d1929] border border-[#1e3a5f]/50 rounded-2xl p-5 hover:border-emerald-500/30 transition-colors">
+            <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5 hover:border-emerald-400/40 transition-colors">
               <div className="flex items-center gap-2 mb-4">
-                <div className="p-1.5 bg-emerald-500/10 rounded-lg"><FiDollarSign className="w-4 h-4 text-emerald-400" /></div>
-                <h4 className="text-sm font-bold text-white">Recouvrement</h4>
+                <div className="p-1.5 bg-emerald-500/10 rounded-lg"><FiDollarSign className="w-4 h-4 text-emerald-500" /></div>
+                <h4 className="text-sm font-bold text-gray-900">Recouvrement</h4>
               </div>
               <div className="text-center mb-3">
-                <span className="text-4xl font-black text-white tabular-nums">{animEncaissePct}<span className="text-lg text-gray-500">%</span></span>
+                <span className="text-4xl font-black text-gray-900 tabular-nums">{animEncaissePct}<span className="text-lg text-gray-400">%</span></span>
               </div>
-              <div className="w-full bg-[#1e3a5f]/30 rounded-full h-2.5 mb-2">
+              <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
                 <div className={`h-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 ${isDynamic ? 'transition-all duration-[2000ms] ease-out' : ''}`} style={{ width: `${animEncaissePct}%` }}></div>
               </div>
               <div className="flex justify-between text-[10px] text-gray-500">
@@ -428,22 +428,22 @@ export default function AdminDashboard() {
             </div>
 
             {/* Présences / Absences */}
-            <div className="bg-[#0d1929] border border-[#1e3a5f]/50 rounded-2xl p-5 hover:border-blue-500/30 transition-colors">
+            <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5 hover:border-blue-400/40 transition-colors">
               <div className="flex items-center gap-2 mb-4">
-                <div className="p-1.5 bg-blue-500/10 rounded-lg"><FiUsers className="w-4 h-4 text-blue-400" /></div>
-                <h4 className="text-sm font-bold text-white">Présences RDV</h4>
+                <div className="p-1.5 bg-blue-500/10 rounded-lg"><FiUsers className="w-4 h-4 text-blue-500" /></div>
+                <h4 className="text-sm font-bold text-gray-900">Présences RDV</h4>
               </div>
               <div className="flex items-end gap-4 mb-3">
                 <div>
-                  <span className="text-3xl font-black text-emerald-400 tabular-nums">{animPresences}</span>
+                  <span className="text-3xl font-black text-emerald-600 tabular-nums">{animPresences}</span>
                   <p className="text-[10px] text-gray-500">Présents</p>
                 </div>
                 <div>
-                  <span className="text-xl font-bold text-red-400 tabular-nums">{animAbsences}</span>
+                  <span className="text-xl font-bold text-red-500 tabular-nums">{animAbsences}</span>
                   <p className="text-[10px] text-gray-500">Absents</p>
                 </div>
               </div>
-              <div className="w-full bg-[#1e3a5f]/30 rounded-full h-2 overflow-hidden flex">
+              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden flex">
                 <div className="h-2 bg-emerald-500 transition-all duration-1000" style={{ width: `${totalRdv > 0 ? (totalPresences / totalRdv) * 100 : 0}%` }}></div>
                 <div className="h-2 bg-red-500 transition-all duration-1000" style={{ width: `${totalRdv > 0 ? (totalAbsences / totalRdv) * 100 : 0}%` }}></div>
               </div>
@@ -454,64 +454,64 @@ export default function AdminDashboard() {
 
         {/* KPI Cards — Animated */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-          <div className={`group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50 hover:shadow-blue-900/30' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-blue-100/50 dark:hover:shadow-blue-900/30'}`}>
-            <div className={`absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isRayan ? 'from-blue-900/20' : 'from-blue-50/50 dark:from-blue-900/20'}`}></div>
+          <div className={`group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isRayan ? 'bg-white border border-gray-200 shadow-sm hover:shadow-blue-100/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-blue-100/50 dark:hover:shadow-blue-900/30'}`}>
+            <div className={`absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isRayan ? 'from-blue-50/50' : 'from-blue-50/50 dark:from-blue-900/20'}`}></div>
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
-                <div className={`p-3 rounded-xl transition-colors ${isRayan ? 'bg-blue-900/30 text-blue-400 group-hover:bg-blue-900/50' : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'}`}><FiDollarSign className="w-6 h-6" /></div>
+                <div className={`p-3 rounded-xl transition-colors ${isRayan ? 'bg-blue-50 text-blue-600 group-hover:bg-blue-100' : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'}`}><FiDollarSign className="w-6 h-6" /></div>
                 {trendCA !== null && (
                   <span className={`text-xs font-semibold px-2 py-1 rounded-full ${trendCA >= 0 ? 'text-green-500 bg-green-50' : 'text-red-500 bg-red-50'}`}>
                     {trendCA >= 0 ? '+' : ''}{trendCA}%
                   </span>
                 )}
               </div>
-              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(animCA)}</p>
-              <p className={`text-sm mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>CA Total</p>
-              <div className={`mt-3 w-full rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-700' : 'bg-gray-100 dark:bg-gray-700'}`}>
+              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(animCA)}</p>
+              <p className={`text-sm mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>CA Total</p>
+              <div className={`mt-3 w-full rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700'}`}>
                 <div className={`h-1.5 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 ${isDynamic ? 'transition-all duration-[2200ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
               </div>
             </div>
           </div>
-          <div className={`group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50 hover:shadow-indigo-900/30' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-indigo-100/50 dark:hover:shadow-indigo-900/30'}`}>
-            <div className={`absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isRayan ? 'from-indigo-900/20' : 'from-indigo-50/50 dark:from-indigo-900/20'}`}></div>
+          <div className={`group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isRayan ? 'bg-white border border-gray-200 shadow-sm hover:shadow-indigo-100/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-indigo-100/50 dark:hover:shadow-indigo-900/30'}`}>
+            <div className={`absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isRayan ? 'from-indigo-50/50' : 'from-indigo-50/50 dark:from-indigo-900/20'}`}></div>
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
-                <div className={`p-3 rounded-xl transition-colors ${isRayan ? 'bg-indigo-900/30 text-indigo-400 group-hover:bg-indigo-900/50' : 'bg-blue-50 text-blue-600 group-hover:bg-indigo-100'}`}><FiUsers className="w-6 h-6" /></div>
+                <div className={`p-3 rounded-xl transition-colors ${isRayan ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100' : 'bg-blue-50 text-blue-600 group-hover:bg-indigo-100'}`}><FiUsers className="w-6 h-6" /></div>
                 {trendPatients !== null && (
                   <span className={`text-xs font-semibold px-2 py-1 rounded-full ${trendPatients >= 0 ? 'text-green-500 bg-green-50' : 'text-red-500 bg-red-50'}`}>
                     {trendPatients >= 0 ? '+' : ''}{trendPatients}%
                   </span>
                 )}
               </div>
-              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{animPatients.toLocaleString('fr-FR')}</p>
-              <p className={`text-sm mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>Patients Total</p>
-              <div className={`mt-3 w-full rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-700' : 'bg-gray-100 dark:bg-gray-700'}`}>
+              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{animPatients.toLocaleString('fr-FR')}</p>
+              <p className={`text-sm mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>Patients Total</p>
+              <div className={`mt-3 w-full rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700'}`}>
                 <div className={`h-1.5 rounded-full bg-gradient-to-r from-indigo-400 to-indigo-600 ${isDynamic ? 'transition-all duration-[1800ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
               </div>
             </div>
           </div>
-          <div className={`group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50 hover:shadow-gray-900/30' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-gray-100/50 dark:hover:shadow-gray-900/30'}`}>
-            <div className={`absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isRayan ? 'from-gray-700/30' : 'from-gray-50/50 dark:from-gray-700/30'}`}></div>
+          <div className={`group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isRayan ? 'bg-white border border-gray-200 shadow-sm hover:shadow-gray-200/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-gray-100/50 dark:hover:shadow-gray-900/30'}`}>
+            <div className={`absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isRayan ? 'from-gray-50/50' : 'from-gray-50/50 dark:from-gray-700/30'}`}></div>
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
-                <div className={`p-3 rounded-xl transition-colors ${isRayan ? 'bg-gray-700/50 text-gray-300 group-hover:bg-gray-600' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 group-hover:bg-gray-100 dark:group-hover:bg-gray-600'}`}><FiFileText className="w-6 h-6" /></div>
+                <div className={`p-3 rounded-xl transition-colors ${isRayan ? 'bg-gray-100 text-gray-600 group-hover:bg-gray-200' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 group-hover:bg-gray-100 dark:group-hover:bg-gray-600'}`}><FiFileText className="w-6 h-6" /></div>
               </div>
-              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{animRapports}</p>
-              <p className={`text-sm mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>Rapports Générés</p>
-              <div className={`mt-3 w-full rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-700' : 'bg-gray-100 dark:bg-gray-700'}`}>
+              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{animRapports}</p>
+              <p className={`text-sm mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>Rapports Générés</p>
+              <div className={`mt-3 w-full rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700'}`}>
                 <div className={`h-1.5 rounded-full bg-gradient-to-r from-gray-400 to-gray-600 ${isDynamic ? 'transition-all duration-[1200ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
               </div>
             </div>
           </div>
-          <div className={`group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50 hover:shadow-emerald-900/30' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-emerald-100/50 dark:hover:shadow-emerald-900/30'}`}>
-            <div className={`absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isRayan ? 'from-emerald-900/20' : 'from-emerald-50/50 dark:from-emerald-900/20'}`}></div>
+          <div className={`group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isRayan ? 'bg-white border border-gray-200 shadow-sm hover:shadow-emerald-100/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-emerald-100/50 dark:hover:shadow-emerald-900/30'}`}>
+            <div className={`absolute inset-0 bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isRayan ? 'from-emerald-50/50' : 'from-emerald-50/50 dark:from-emerald-900/20'}`}></div>
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
-                <div className={`p-3 rounded-xl transition-colors ${isRayan ? 'bg-emerald-900/30 text-emerald-400 group-hover:bg-emerald-900/40' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40'}`}><FiMail className="w-6 h-6" /></div>
+                <div className={`p-3 rounded-xl transition-colors ${isRayan ? 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40'}`}><FiMail className="w-6 h-6" /></div>
               </div>
-              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{animEmails}</p>
-              <p className={`text-sm mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>Emails Envoyés</p>
-              <div className={`mt-3 w-full rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-700' : 'bg-gray-100 dark:bg-gray-700'}`}>
+              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{animEmails}</p>
+              <p className={`text-sm mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>Emails Envoyés</p>
+              <div className={`mt-3 w-full rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700'}`}>
                 <div className={`h-1.5 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 ${isDynamic ? 'transition-all duration-[1200ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
               </div>
             </div>
@@ -564,20 +564,20 @@ export default function AdminDashboard() {
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
-          <div className={`lg:col-span-2 rounded-2xl p-6 shadow-sm transition-all duration-300 ${isRayan ? 'bg-[#0d1929] border border-violet-500/20 shadow-[0_0_30px_rgba(139,92,246,0.08)] hover:shadow-[0_0_40px_rgba(139,92,246,0.12)]' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700'}`}>
+          <div className={`lg:col-span-2 rounded-2xl p-6 shadow-sm transition-all duration-300 ${isRayan ? 'bg-white border border-gray-200' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700'}`}>
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h3 className={`text-base font-bold ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>Évolution du Chiffre d'Affaires</h3>
+                <h3 className={`text-base font-bold ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>Évolution du Chiffre d'Affaires</h3>
                 <p className={`text-xs mt-0.5 ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>Analyse comparative facturé vs encaissé</p>
               </div>
               <div className="flex items-center gap-3">
-                <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full border ${isRayan ? 'text-green-400 bg-green-500/10 border-green-500/30' : 'text-green-600 bg-green-50 border-green-200'}`}>
+                <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full border ${isRayan ? 'text-green-600 bg-green-50 border-green-200' : 'text-green-600 bg-green-50 border-green-200'}`}>
                   <span className="relative flex h-2 w-2"><span className={`${isDynamic ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75`}></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
                   Temps réel
                 </span>
-                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${isRayan ? 'bg-violet-500/10 border-violet-500/30 shadow-[0_0_12px_rgba(139,92,246,0.15)]' : 'bg-violet-50 border-violet-200'}`}>
-                  <FiCpu className={`w-3 h-3 ${isRayan ? 'text-violet-400 animate-pulse' : 'text-violet-500'}`} />
-                  <span className={`text-[10px] font-semibold ${isRayan ? 'text-violet-300' : 'text-violet-600'}`}>Modèle IA — Régression + Holt</span>
+                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${isRayan ? 'bg-violet-50 border-violet-200' : 'bg-violet-50 border-violet-200'}`}>
+                  <FiCpu className={`w-3 h-3 ${isRayan ? 'text-violet-500' : 'text-violet-500'}`} />
+                  <span className={`text-[10px] font-semibold ${isRayan ? 'text-violet-600' : 'text-violet-600'}`}>Modèle IA — Régression + Holt</span>
                 </div>
               </div>
             </div>
@@ -622,10 +622,10 @@ export default function AdminDashboard() {
               }} />
             </div>
           </div>
-          <div className={`rounded-2xl p-6 transition-all duration-300 ${isRayan ? 'bg-[#0d1929] border border-blue-500/20 shadow-[0_0_25px_rgba(59,130,246,0.08)] hover:shadow-[0_0_35px_rgba(59,130,246,0.12)]' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700'}`}>
+          <div className={`rounded-2xl p-6 transition-all duration-300 ${isRayan ? 'bg-white border border-gray-200 shadow-sm' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700'}`}>
             <div className="flex items-center justify-between mb-1">
-              <h3 className={`text-base font-bold ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>Répartition CA par Cabinet</h3>
-              <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-full border ${isRayan ? 'text-green-400 bg-green-500/10 border-green-500/30' : 'text-green-600 bg-green-50 border-green-200'}`}>
+              <h3 className={`text-base font-bold ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>Répartition CA par Cabinet</h3>
+              <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-full border ${isRayan ? 'text-green-600 bg-green-50 border-green-200' : 'text-green-600 bg-green-50 border-green-200'}`}>
                 <span className="relative flex h-1.5 w-1.5"><span className={`${isDynamic ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75`}></span><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span></span>
                 Live
               </span>
@@ -671,11 +671,11 @@ export default function AdminDashboard() {
                   <div key={i} className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: doughnutColors[i % doughnutColors.length] }}></span>
-                      <span className={`font-medium ${isRayan ? 'text-gray-300' : 'text-gray-700 dark:text-gray-300'}`}>{p._id}</span>
+                      <span className={`font-medium ${isRayan ? 'text-gray-700' : 'text-gray-700 dark:text-gray-300'}`}>{p._id}</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className={`${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>{pct}%</span>
-                      <span className={`font-bold ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{formatMoney(p.totalFacture)}</span>
+                      <span className={`font-bold ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{formatMoney(p.totalFacture)}</span>
                     </div>
                   </div>
                 );
@@ -686,15 +686,15 @@ export default function AdminDashboard() {
 
         {/* AI Insight Panel */}
         {aiInsightCA && (
-          <div className={`rounded-2xl p-5 mb-6 transition-colors ${isRayan ? 'bg-gradient-to-r from-violet-900/30 via-blue-900/30 to-amber-900/30 border border-violet-800/50' : 'bg-gradient-to-r from-violet-50 via-blue-50 to-amber-50 dark:from-violet-900/30 dark:via-blue-900/30 dark:to-amber-900/30 border border-violet-100 dark:border-violet-800'}`}>
+          <div className={`rounded-2xl p-5 mb-6 transition-colors ${isRayan ? 'bg-gradient-to-r from-violet-50 via-blue-50 to-amber-50 border border-violet-200' : 'bg-gradient-to-r from-violet-50 via-blue-50 to-amber-50 dark:from-violet-900/30 dark:via-blue-900/30 dark:to-amber-900/30 border border-violet-100 dark:border-violet-800'}`}>
             <div className="flex items-center gap-2 mb-3">
-              <div className={`p-1.5 rounded-lg ${isRayan ? 'bg-violet-900/50' : 'bg-violet-100 dark:bg-violet-900/50'}`}><FiCpu className={`w-4 h-4 ${isRayan ? 'text-violet-400' : 'text-violet-600'}`} /></div>
-              <h4 className={`text-sm font-bold ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>Analyse IA — Chiffre d'Affaires</h4>
-              <span className={`ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full ${isRayan ? 'text-violet-400 bg-violet-500/20 border border-violet-500/30' : 'text-violet-500 bg-violet-100'}`}>Fiabilité {aiInsightCA.confidence}%</span>
+              <div className={`p-1.5 rounded-lg ${isRayan ? 'bg-violet-100' : 'bg-violet-100 dark:bg-violet-900/50'}`}><FiCpu className={`w-4 h-4 ${isRayan ? 'text-violet-600' : 'text-violet-600'}`} /></div>
+              <h4 className={`text-sm font-bold ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>Analyse IA — Chiffre d'Affaires</h4>
+              <span className={`ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full ${isRayan ? 'text-violet-600 bg-violet-100' : 'text-violet-500 bg-violet-100'}`}>Fiabilité {aiInsightCA.confidence}%</span>
             </div>
             <div className="space-y-1">
               {aiInsightCA.parts.map((part, i) => (
-                <p key={i} className={`text-xs leading-relaxed ${isRayan ? 'text-gray-300' : 'text-gray-700 dark:text-gray-300'}`}>{part}</p>
+                <p key={i} className={`text-xs leading-relaxed ${isRayan ? 'text-gray-700' : 'text-gray-700 dark:text-gray-300'}`}>{part}</p>
               ))}
             </div>
           </div>
@@ -704,28 +704,28 @@ export default function AdminDashboard() {
         <div className="mb-6">
           <h3 className={`text-base font-bold mb-4 ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>Alertes & Notifications</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className={`border-l-4 border-red-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isRayan ? 'bg-red-900/30' : 'bg-red-50 dark:bg-red-900/30'}`} onClick={() => navigate('/admin/statistics')}>
-              <p className={`text-sm font-bold ${isRayan ? 'text-red-400' : 'text-red-600'}`}>Encaissement faible <FiAlertTriangle className="inline w-4 h-4 ml-1" /></p>
-              <p className={`text-3xl font-black mt-1 tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{animFaible}</p>
-              <p className={`text-xs mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>cabinets &lt; 85% encaissement</p>
+            <div className={`border-l-4 border-red-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isRayan ? 'bg-red-50' : 'bg-red-50 dark:bg-red-900/30'}`} onClick={() => navigate('/admin/statistics')}>
+              <p className={`text-sm font-bold ${isRayan ? 'text-red-600' : 'text-red-600'}`}>Encaissement faible <FiAlertTriangle className="inline w-4 h-4 ml-1" /></p>
+              <p className={`text-3xl font-black mt-1 tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{animFaible}</p>
+              <p className={`text-xs mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>cabinets &lt; 85% encaissement</p>
               <p className="text-xs text-blue-600 mt-2 flex items-center gap-1 hover:underline">Voir les détails <FiArrowRight className="w-3 h-3" /></p>
             </div>
-            <div className={`border-l-4 border-orange-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isRayan ? 'bg-orange-900/30' : 'bg-orange-50 dark:bg-orange-900/30'}`} onClick={() => navigate('/admin/comparison')}>
-              <p className={`text-sm font-bold ${isRayan ? 'text-orange-400' : 'text-orange-600'}`}>Absences détectées <span className={`inline-block w-2 h-2 rounded-full bg-orange-400 ml-1 ${isDynamic ? 'animate-pulse' : ''}`}></span></p>
-              <p className={`text-3xl font-black mt-1 tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{animAbsences}</p>
-              <p className={`text-xs mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>RDV sans présence patient</p>
+            <div className={`border-l-4 border-orange-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isRayan ? 'bg-orange-50' : 'bg-orange-50 dark:bg-orange-900/30'}`} onClick={() => navigate('/admin/comparison')}>
+              <p className={`text-sm font-bold ${isRayan ? 'text-orange-600' : 'text-orange-600'}`}>Absences détectées <span className={`inline-block w-2 h-2 rounded-full bg-orange-400 ml-1 ${isDynamic ? 'animate-pulse' : ''}`}></span></p>
+              <p className={`text-3xl font-black mt-1 tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{animAbsences}</p>
+              <p className={`text-xs mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>RDV sans présence patient</p>
               <p className="text-xs text-blue-600 mt-2 flex items-center gap-1 hover:underline">Voir les détails <FiArrowRight className="w-3 h-3" /></p>
             </div>
-            <div className={`border-l-4 border-green-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isRayan ? 'bg-green-900/30' : 'bg-green-50 dark:bg-green-900/30'}`} onClick={() => navigate('/admin/comparison')}>
-              <p className={`text-sm font-bold ${isRayan ? 'text-green-400' : 'text-green-600'}`}>Total Présences <span className={`inline-block w-2 h-2 rounded-full bg-green-400 ml-1 ${isDynamic ? 'animate-pulse' : ''}`}></span></p>
-              <p className={`text-3xl font-black mt-1 tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{animPresences}</p>
-              <p className={`text-xs mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>présences confirmées</p>
+            <div className={`border-l-4 border-green-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isRayan ? 'bg-green-50' : 'bg-green-50 dark:bg-green-900/30'}`} onClick={() => navigate('/admin/comparison')}>
+              <p className={`text-sm font-bold ${isRayan ? 'text-green-600' : 'text-green-600'}`}>Total Présences <span className={`inline-block w-2 h-2 rounded-full bg-green-400 ml-1 ${isDynamic ? 'animate-pulse' : ''}`}></span></p>
+              <p className={`text-3xl font-black mt-1 tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{animPresences}</p>
+              <p className={`text-xs mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>présences confirmées</p>
               <p className="text-xs text-blue-600 mt-2 flex items-center gap-1 hover:underline">Voir les détails <FiArrowRight className="w-3 h-3" /></p>
             </div>
-            <div className={`border-l-4 border-pink-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isRayan ? 'bg-pink-900/30' : 'bg-pink-50 dark:bg-pink-900/30'}`} onClick={() => navigate('/admin/reports')}>
-              <p className={`text-sm font-bold ${isRayan ? 'text-pink-400' : 'text-pink-600'}`}>Rapports non envoyés <span className={`inline-block w-2 h-2 rounded-full bg-pink-400 ml-1 ${isDynamic ? 'animate-pulse' : ''}`}></span></p>
-              <p className={`text-3xl font-black mt-1 tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{animNonEnvoyes}</p>
-              <p className={`text-xs mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>rapports en attente</p>
+            <div className={`border-l-4 border-pink-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isRayan ? 'bg-pink-50' : 'bg-pink-50 dark:bg-pink-900/30'}`} onClick={() => navigate('/admin/reports')}>
+              <p className={`text-sm font-bold ${isRayan ? 'text-pink-600' : 'text-pink-600'}`}>Rapports non envoyés <span className={`inline-block w-2 h-2 rounded-full bg-pink-400 ml-1 ${isDynamic ? 'animate-pulse' : ''}`}></span></p>
+              <p className={`text-3xl font-black mt-1 tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{animNonEnvoyes}</p>
+              <p className={`text-xs mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>rapports en attente</p>
               <p className="text-xs text-blue-600 mt-2 flex items-center gap-1 hover:underline">Voir les détails <FiArrowRight className="w-3 h-3" /></p>
             </div>
           </div>
@@ -736,36 +736,36 @@ export default function AdminDashboard() {
           <div className="mb-6">
             <div className="relative group">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600/10 via-blue-500/10 to-cyan-500/10 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative bg-[#0d1929] border border-[#1e3a5f]/50 rounded-2xl p-6">
+              <div className="relative bg-white border border-gray-200 shadow-sm rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-2">
-                    <div className="p-2 bg-gradient-to-br from-violet-500/10 to-blue-500/10 rounded-lg border border-violet-500/20">
-                      <FiCpu className="w-4 h-4 text-violet-400" />
+                    <div className="p-2 bg-violet-50 rounded-lg border border-violet-200">
+                      <FiCpu className="w-4 h-4 text-violet-600" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-white">Journal d'Activité IA</h3>
+                      <h3 className="text-sm font-bold text-gray-900">Journal d'Activité IA</h3>
                       <p className="text-[10px] text-gray-500">Dernières analyses effectuées par le moteur</p>
                     </div>
                   </div>
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 border border-green-200 rounded-full">
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
                     </span>
-                    <span className="text-[10px] font-bold text-green-400">Actif</span>
+                    <span className="text-[10px] font-bold text-green-600">Actif</span>
                   </span>
                 </div>
                 <div className="space-y-2.5">
                   {aiActivities.map((activity, i) => (
-                    <div key={i} className="flex items-center gap-4 p-3 bg-[#0a1628]/60 rounded-xl border border-[#1e3a5f]/20 hover:border-violet-500/30 transition-all duration-300 hover:bg-[#0a1628]">
-                      <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center flex-shrink-0 border border-emerald-500/20">
-                        <FiCheck className="w-4 h-4 text-emerald-400" />
+                    <div key={i} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-violet-300 transition-all duration-300 hover:bg-gray-100">
+                      <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0 border border-emerald-200">
+                        <FiCheck className="w-4 h-4 text-emerald-500" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-white">{activity.action}</p>
+                        <p className="text-sm font-medium text-gray-900">{activity.action}</p>
                         <p className="text-[10px] text-gray-500 font-mono">{activity.model}</p>
                       </div>
-                      <span className="text-[10px] text-gray-600 flex-shrink-0 tabular-nums">{activity.time}</span>
+                      <span className="text-[10px] text-gray-400 flex-shrink-0 tabular-nums">{activity.time}</span>
                     </div>
                   ))}
                 </div>
@@ -776,25 +776,25 @@ export default function AdminDashboard() {
 
         {/* CA Total & Objectif Total — Animated */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className={`group rounded-2xl p-5 flex items-center gap-4 hover:shadow-lg transition-all duration-500 hover:-translate-y-0.5 relative overflow-hidden ${isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50 hover:shadow-green-900/30' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-green-100/50 dark:hover:shadow-green-900/30'}`}>
-            <div className={`absolute inset-0 bg-gradient-to-r to-transparent opacity-0 group-hover:opacity-100 transition-opacity ${isRayan ? 'from-green-900/20' : 'from-green-50/40 dark:from-green-900/20'}`}></div>
+          <div className={`group rounded-2xl p-5 flex items-center gap-4 hover:shadow-lg transition-all duration-500 hover:-translate-y-0.5 relative overflow-hidden ${isRayan ? 'bg-white border border-gray-200 shadow-sm hover:shadow-green-100/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-green-100/50 dark:hover:shadow-green-900/30'}`}>
+            <div className={`absolute inset-0 bg-gradient-to-r to-transparent opacity-0 group-hover:opacity-100 transition-opacity ${isRayan ? 'from-green-50/40' : 'from-green-50/40 dark:from-green-900/20'}`}></div>
             <div className="relative z-10 w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
               <FiTrendingUp className="w-6 h-6 text-white" />
             </div>
             <div className="relative z-10">
               <p className={`text-[10px] font-bold tracking-widest uppercase ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>CA TOTAL ({nbPractitioners} CABINETS)</p>
-              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{formatMoney(animCABottom)}</p>
+              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{formatMoney(animCABottom)}</p>
             </div>
           </div>
-          <div className={`group rounded-2xl p-5 flex items-center gap-4 hover:shadow-lg transition-all duration-500 hover:-translate-y-0.5 relative overflow-hidden ${isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50 hover:shadow-green-900/30' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-green-100/50 dark:hover:shadow-green-900/30'}`}>
-            <div className={`absolute inset-0 bg-gradient-to-r to-transparent opacity-0 group-hover:opacity-100 transition-opacity ${isRayan ? 'from-green-900/20' : 'from-green-50/40 dark:from-green-900/20'}`}></div>
+          <div className={`group rounded-2xl p-5 flex items-center gap-4 hover:shadow-lg transition-all duration-500 hover:-translate-y-0.5 relative overflow-hidden ${isRayan ? 'bg-white border border-gray-200 shadow-sm hover:shadow-green-100/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-green-100/50 dark:hover:shadow-green-900/30'}`}>
+            <div className={`absolute inset-0 bg-gradient-to-r to-transparent opacity-0 group-hover:opacity-100 transition-opacity ${isRayan ? 'from-green-50/40' : 'from-green-50/40 dark:from-green-900/20'}`}></div>
             <div className="relative z-10 w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
               <FiFileText className="w-6 h-6 text-white" />
             </div>
             <div className="relative z-10">
               <p className={`text-[10px] font-bold tracking-widest uppercase ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>TOTAL ENCAISSÉ ({nbPractitioners} CABINETS)</p>
-              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{formatMoney(animEncaisseBottom)}</p>
-              <div className={`mt-1 w-48 rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-700' : 'bg-gray-100 dark:bg-gray-700'}`}>
+              <p className={`text-2xl font-black tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{formatMoney(animEncaisseBottom)}</p>
+              <div className={`mt-1 w-48 rounded-full h-1.5 overflow-hidden ${isRayan ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700'}`}>
                 <div className={`h-1.5 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 ${isDynamic ? 'transition-all duration-[2400ms] ease-out' : ''}`} style={{ width: `${animEncaissePct}%` }}></div>
               </div>
             </div>
@@ -805,39 +805,39 @@ export default function AdminDashboard() {
         {isRayan && (
           <div className="mt-6 mb-2">
             <div className="flex items-center gap-2 mb-4">
-              <div className="p-1.5 bg-amber-500/10 rounded-lg border border-amber-500/20">
-                <FiStar className="w-4 h-4 text-amber-400" />
+              <div className="p-1.5 bg-amber-50 rounded-lg border border-amber-200">
+                <FiStar className="w-4 h-4 text-amber-600" />
               </div>
-              <h3 className="text-base font-bold text-white">Recommandations IA</h3>
-              <span className="ml-2 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded text-[9px] text-amber-400 font-bold uppercase tracking-wider">Auto-générées</span>
+              <h3 className="text-base font-bold text-gray-900">Recommandations IA</h3>
+              <span className="ml-2 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded text-[9px] text-amber-600 font-bold uppercase tracking-wider">Auto-générées</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="group bg-[#0d1929] border border-emerald-500/20 rounded-xl p-4 hover:border-emerald-500/40 transition-all duration-300 hover:shadow-[0_0_20px_rgba(16,185,129,0.06)]">
+              <div className="group bg-white border border-emerald-200 rounded-xl p-4 hover:border-emerald-400 transition-all duration-300 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 bg-emerald-500/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <FiTrendingUp className="w-4 h-4 text-emerald-400" />
+                  <div className="w-7 h-7 bg-emerald-50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <FiTrendingUp className="w-4 h-4 text-emerald-600" />
                   </div>
-                  <h4 className="text-xs font-bold text-emerald-400">Croissance</h4>
+                  <h4 className="text-xs font-bold text-emerald-600">Croissance</h4>
                 </div>
-                <p className="text-[11px] text-gray-400 leading-relaxed">{trendCA !== null && trendCA >= 0 ? 'Le CA montre une tendance positive. Maintenez cette dynamique pour maximiser la croissance.' : 'Le CA est en baisse. Analysez les causes et ajustez votre stratégie.'}</p>
+                <p className="text-[11px] text-gray-500 leading-relaxed">{trendCA !== null && trendCA >= 0 ? 'Le CA montre une tendance positive. Maintenez cette dynamique pour maximiser la croissance.' : 'Le CA est en baisse. Analysez les causes et ajustez votre stratégie.'}</p>
               </div>
-              <div className="group bg-[#0d1929] border border-blue-500/20 rounded-xl p-4 hover:border-blue-500/40 transition-all duration-300 hover:shadow-[0_0_20px_rgba(59,130,246,0.06)]">
+              <div className="group bg-white border border-blue-200 rounded-xl p-4 hover:border-blue-400 transition-all duration-300 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 bg-blue-500/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <FiUsers className="w-4 h-4 text-blue-400" />
+                  <div className="w-7 h-7 bg-blue-50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <FiUsers className="w-4 h-4 text-blue-600" />
                   </div>
-                  <h4 className="text-xs font-bold text-blue-400">Patients</h4>
+                  <h4 className="text-xs font-bold text-blue-600">Patients</h4>
                 </div>
-                <p className="text-[11px] text-gray-400 leading-relaxed">{totalAbsences > 0 ? `${totalAbsences} absences détectées. Envisagez un système de rappel SMS pour réduire le taux d'absence.` : 'Taux de présence excellent. Continuez ainsi.'}</p>
+                <p className="text-[11px] text-gray-500 leading-relaxed">{totalAbsences > 0 ? `${totalAbsences} absences détectées. Envisagez un système de rappel SMS pour réduire le taux d'absence.` : 'Taux de présence excellent. Continuez ainsi.'}</p>
               </div>
-              <div className="group bg-[#0d1929] border border-violet-500/20 rounded-xl p-4 hover:border-violet-500/40 transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,92,246,0.06)]">
+              <div className="group bg-white border border-violet-200 rounded-xl p-4 hover:border-violet-400 transition-all duration-300 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 bg-violet-500/10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <FiDollarSign className="w-4 h-4 text-violet-400" />
+                  <div className="w-7 h-7 bg-violet-50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <FiDollarSign className="w-4 h-4 text-violet-600" />
                   </div>
-                  <h4 className="text-xs font-bold text-violet-400">Recouvrement</h4>
+                  <h4 className="text-xs font-bold text-violet-600">Recouvrement</h4>
                 </div>
-                <p className="text-[11px] text-gray-400 leading-relaxed">{caFaibleEncaissement > 0 ? `${caFaibleEncaissement} cabinet(s) sous 85%. Priorisez le suivi des impayés et relancez les factures en retard.` : 'Tous les cabinets ont un bon taux d\'encaissement. Excellent !'}</p>
+                <p className="text-[11px] text-gray-500 leading-relaxed">{caFaibleEncaissement > 0 ? `${caFaibleEncaissement} cabinet(s) sous 85%. Priorisez le suivi des impayés et relancez les factures en retard.` : 'Tous les cabinets ont un bon taux d\'encaissement. Excellent !'}</p>
               </div>
             </div>
           </div>
