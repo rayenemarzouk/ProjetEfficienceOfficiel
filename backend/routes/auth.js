@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const nodemailer = require('nodemailer');
@@ -34,10 +33,7 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Un compte avec cet email existe déjà.' });
     }
 
-    // Generate verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-
-    // Create user (inactive until admin verifies)
+    // Create user — actif immédiatement, pas de vérification requise
     const user = await User.create({
       name,
       email: email.toLowerCase(),
@@ -45,9 +41,8 @@ router.post('/register', async (req, res) => {
       cabinetName: cabinetName || 'Cabinet Dentaire',
       practitionerCode: practitionerCode || null,
       role: 'practitioner',
-      isActive: false,
-      isVerified: false,
-      verificationToken
+      isActive: true,
+      isVerified: true
     });
 
     // Send notification email to admin
@@ -91,9 +86,9 @@ router.post('/register', async (req, res) => {
                   </tr>
                 </table>
               </div>
-              <div style="margin-top: 20px; padding: 16px; background: #eff6ff; border-radius: 12px; border: 1px solid #bfdbfe;">
-                <p style="margin: 0; font-size: 13px; color: #1e40af;">
-                  ℹ️ Ce compte est actuellement <strong>inactif</strong>. Connectez-vous à votre tableau de bord administrateur pour activer ce praticien.
+              <div style="margin-top: 20px; padding: 16px; background: #f0fdf4; border-radius: 12px; border: 1px solid #bbf7d0;">
+                <p style="margin: 0; font-size: 13px; color: #166534;">
+                  ✅ Ce compte est <strong>actif</strong> et le praticien peut se connecter immédiatement.
                 </p>
               </div>
             </div>
@@ -109,8 +104,24 @@ router.post('/register', async (req, res) => {
       // Don't fail the registration if email fails
     }
 
+    // Générer un token JWT pour connexion immédiate
+    const token = jwt.sign(
+      { id: user._id, role: user.role, practitionerCode: user.practitionerCode },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
     res.status(201).json({
-      message: 'Inscription réussie ! Votre compte est en attente de vérification par l\'administrateur. Vous recevrez un email de confirmation.'
+      message: 'Inscription réussie ! Bienvenue sur Efficience Analytics.',
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        practitionerCode: user.practitionerCode,
+        cabinetName: user.cabinetName
+      }
     });
   } catch (error) {
     console.error('Erreur inscription:', error);

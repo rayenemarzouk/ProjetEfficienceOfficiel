@@ -21,6 +21,21 @@ app.use('/api/data', require('./routes/data'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/practitioner', require('./routes/practitioner'));
 
+// Public settings endpoint (no auth required — for maintenance mode check)
+const AppSettings = require('./models/AppSettings');
+app.get('/api/settings/public', async (req, res) => {
+  try {
+    const s = await AppSettings.getSettings();
+    res.json({
+      maintenanceMode: s.maintenanceMode,
+      aiModelsEnabled: s.aiModelsEnabled,
+      importEnabled: s.importEnabled
+    });
+  } catch (err) {
+    res.json({ maintenanceMode: false, aiModelsEnabled: true, importEnabled: true });
+  }
+});
+
 // Route de test
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Efficience Analytics API opérationnelle' });

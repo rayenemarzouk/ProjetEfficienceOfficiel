@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import { getCabinetDetails, getAdminDashboard } from '../../services/api';
-import { FiDollarSign, FiUsers, FiClock, FiTrendingUp, FiCpu } from 'react-icons/fi';
+import { FiDollarSign, FiUsers, FiClock, FiTrendingUp, FiCpu, FiChevronDown, FiChevronUp, FiExternalLink } from 'react-icons/fi';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { linearRegression, detectAnomalies, cabinetHealthScore, generateAIInsight, analyzeTrend } from '../../utils/aiModels';
@@ -13,11 +14,13 @@ import { useTheme } from '../../context/ThemeContext';
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend);
 
 export default function CabinetAnalysis() {
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const { dark } = useTheme();
   const [practitioners, setPractitioners] = useState([]);
   const [loading, setLoading] = useState(true);
   const { isDynamic } = useDynamic();
+  const [expandedInsight, setExpandedInsight] = useState({ patients: false, activite: false });
   const patientsChartRef = useRef(null);
   const activiteChartRef = useRef(null);
 
@@ -235,10 +238,29 @@ export default function CabinetAnalysis() {
 
   const barOptions = {
     responsive: true,
-    plugins: { legend: { position: 'bottom', labels: { color: dark ? '#94a3b8' : '#64748b' } } },
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { color: dark ? '#94a3b8' : '#64748b', usePointStyle: true, padding: 16 },
+        onClick: (e, legendItem, legend) => {
+          const index = legendItem.datasetIndex;
+          const ci = legend.chart;
+          const meta = ci.getDatasetMeta(index);
+          meta.hidden = meta.hidden === null ? !ci.data.datasets[index].hidden : null;
+          ci.update();
+        },
+      },
+    },
     scales: {
       x: { ticks: { color: dark ? '#94a3b8' : '#64748b' }, grid: { display: false } },
       y: { beginAtZero: true, ticks: { color: dark ? '#94a3b8' : '#64748b' }, grid: { color: dark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)' } },
+    },
+    onClick: (e, elements) => {
+      if (elements.length > 0) {
+        const idx = elements[0].index;
+        const code = pracData[idx]?.code;
+        if (code) navigate(`/admin/cabinets`);
+      }
     },
   };
 
@@ -267,14 +289,30 @@ export default function CabinetAnalysis() {
               </span>
             </div>
             <Bar ref={patientsChartRef} data={patientsBarData} options={barOptions} plugins={isDynamic ? [streamingBarPlugin] : []} />
-            {/* AI Insight */}
-            <div className="mt-3 bg-gradient-to-r from-blue-50 to-violet-50 dark:from-blue-900/30 dark:to-violet-900/30 rounded-xl border border-blue-100 dark:border-blue-800 p-3">
+            {/* AI Insight — clickable */}
+            <div
+              className="mt-3 bg-gradient-to-r from-blue-50 to-violet-50 dark:from-blue-900/30 dark:to-violet-900/30 rounded-xl border border-blue-100 dark:border-blue-800 p-3 cursor-pointer hover:shadow-md transition-all"
+              onClick={() => setExpandedInsight(prev => ({ ...prev, patients: !prev.patients }))}
+            >
               <div className="flex items-center gap-1.5 mb-1">
                 <FiCpu className="w-3 h-3 text-blue-600" />
                 <span className="text-[10px] font-bold text-gray-800 dark:text-gray-200">Analyse IA — Patients</span>
-                <span className="ml-auto text-[8px] font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">Confiance {insightPatients.confidence}%</span>
+                <span className="ml-auto flex items-center gap-1.5">
+                  <span className="text-[8px] font-semibold text-blue-600 bg-blue-100 dark:bg-blue-900/50 px-2 py-0.5 rounded-full">Confiance {insightPatients.confidence}%</span>
+                  {expandedInsight.patients ? <FiChevronUp className="w-3 h-3 text-gray-400" /> : <FiChevronDown className="w-3 h-3 text-gray-400" />}
+                </span>
               </div>
-              {insightPatients.parts.map((p, i) => <p key={i} className="text-[10px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
+              {insightPatients.parts.slice(0, expandedInsight.patients ? undefined : 2).map((p, i) => <p key={i} className="text-[10px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
+              {expandedInsight.patients && insightPatients.forecast && (
+                <div className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-700">
+                  <p className="text-[10px] font-semibold text-blue-700 dark:text-blue-300 mb-1">📊 Prévisions détaillées :</p>
+                  <div className="flex gap-2">
+                    {insightPatients.forecast.map((v, i) => (
+                      <span key={i} className="text-[9px] bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-mono">P+{i+1}: {Math.round(v)}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-3 gap-3 mt-4">
               <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 border-l-4 border-blue-500 group hover:shadow-md transition-all">
@@ -310,14 +348,30 @@ export default function CabinetAnalysis() {
               </span>
             </div>
             <Bar ref={activiteChartRef} data={activiteBarData} options={barOptions} plugins={isDynamic ? [streamingBarPlugin] : []} />
-            {/* AI Insight */}
-            <div className="mt-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-xl border border-purple-100 dark:border-purple-800 p-3">
+            {/* AI Insight — clickable */}
+            <div
+              className="mt-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-xl border border-purple-100 dark:border-purple-800 p-3 cursor-pointer hover:shadow-md transition-all"
+              onClick={() => setExpandedInsight(prev => ({ ...prev, activite: !prev.activite }))}
+            >
               <div className="flex items-center gap-1.5 mb-1">
                 <FiCpu className="w-3 h-3 text-purple-600" />
                 <span className="text-[10px] font-bold text-gray-800 dark:text-gray-200">Analyse IA — Activité</span>
-                <span className="ml-auto text-[8px] font-semibold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Confiance {insightActivite.confidence}%</span>
+                <span className="ml-auto flex items-center gap-1.5">
+                  <span className="text-[8px] font-semibold text-purple-600 bg-purple-100 dark:bg-purple-900/50 px-2 py-0.5 rounded-full">Confiance {insightActivite.confidence}%</span>
+                  {expandedInsight.activite ? <FiChevronUp className="w-3 h-3 text-gray-400" /> : <FiChevronDown className="w-3 h-3 text-gray-400" />}
+                </span>
               </div>
-              {insightActivite.parts.map((p, i) => <p key={i} className="text-[10px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
+              {insightActivite.parts.slice(0, expandedInsight.activite ? undefined : 2).map((p, i) => <p key={i} className="text-[10px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
+              {expandedInsight.activite && insightActivite.forecast && (
+                <div className="mt-2 pt-2 border-t border-purple-200 dark:border-purple-700">
+                  <p className="text-[10px] font-semibold text-purple-700 dark:text-purple-300 mb-1">📊 Prévisions détaillées :</p>
+                  <div className="flex gap-2">
+                    {insightActivite.forecast.map((v, i) => (
+                      <span key={i} className="text-[9px] bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full font-mono">P+{i+1}: {Math.round(v)}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-3 gap-3 mt-4">
@@ -349,7 +403,7 @@ export default function CabinetAnalysis() {
             {pracData.map((p, i) => {
               const hs = pracHealthScores[i];
               return (
-                <div key={i} className="flex items-center gap-4 group hover:bg-gray-50/50 dark:hover:bg-gray-700/50 rounded-xl p-2 -mx-2 transition-all">
+                <div key={i} className="flex items-center gap-4 group hover:bg-gray-50/50 dark:hover:bg-gray-700/50 rounded-xl p-2 -mx-2 transition-all cursor-pointer" onClick={() => navigate('/admin/cabinets')}>
                   <span className="text-sm font-bold text-gray-700 dark:text-gray-300 w-12">{p.code}</span>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -431,11 +485,12 @@ export default function CabinetAnalysis() {
             {pracData.map((p, i) => {
               const hs = pracHealthScores[i];
               return (
-                <div key={i} className="bg-white/60 dark:bg-white/10 rounded-xl p-4">
+                <div key={i} className="bg-white/60 dark:bg-white/10 rounded-xl p-4 cursor-pointer hover:shadow-md hover:bg-white/80 dark:hover:bg-white/15 transition-all" onClick={() => navigate('/admin/cabinets')}>
                   <div className="flex items-center gap-2 mb-2">
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold ${hs.score >= 80 ? 'bg-green-500' : hs.score >= 60 ? 'bg-amber-500' : 'bg-red-500'}`}>{p.code}</div>
                     <span className="text-xs font-bold text-gray-800 dark:text-gray-200">{p.name}</span>
-                    <span className={`ml-auto text-[9px] font-bold px-2 py-0.5 rounded-full ${hs.score >= 80 ? 'bg-green-100 text-green-700' : hs.score >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>{hs.score}/100</span>
+                    <span className={`ml-auto text-[9px] font-bold px-2 py-0.5 rounded-full ${hs.score >= 80 ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' : hs.score >= 60 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400'}`}>{hs.score}/100</span>
+                    <FiExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100" />
                   </div>
                   <p className="text-[10px] text-gray-600 dark:text-gray-400">Patients: {p.patientsTraites} traités / {p.patientsRdv} agenda • Consultations: {p.consultations} • Heures: {p.heuresTravaillees}h</p>
                   <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">{hs.label} — Encaissement {p.score}%</p>

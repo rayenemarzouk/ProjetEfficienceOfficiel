@@ -3,7 +3,10 @@ const mongoose = require('mongoose');
 const appSettingsSchema = new mongoose.Schema({
   autoGeneration: { type: Boolean, default: true },
   autoEmail: { type: Boolean, default: true },
-  cronHeure: { type: String, default: '20:00' }
+  cronHeure: { type: String, default: '20:00' },
+  maintenanceMode: { type: Boolean, default: false },
+  aiModelsEnabled: { type: Boolean, default: true },
+  importEnabled: { type: Boolean, default: true }
 }, { timestamps: true });
 
 // Singleton pattern — only one settings document

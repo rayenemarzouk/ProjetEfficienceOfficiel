@@ -187,7 +187,7 @@ export default function CabinetManagement() {
         {/* Cabinet Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
           {filtered.map((cab, i) => (
-            <div key={i} className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700 p-6 hover:shadow-md transition-shadow transition-colors">
+            <div key={i} className="bg-white dark:bg-[#1e293b] rounded-xl border border-gray-100 dark:border-gray-700 p-6 hover:shadow-md transition-colors">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">{cab.code}</h3>

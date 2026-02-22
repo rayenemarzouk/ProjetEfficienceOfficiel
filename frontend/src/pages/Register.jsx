@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { register as registerAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { FiUser, FiMail, FiLock, FiArrowRight, FiShield, FiCheckCircle, FiAlertCircle, FiHome, FiHash, FiArrowLeft } from 'react-icons/fi';
 
 export default function Register() {
@@ -16,6 +17,12 @@ export default function Register() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user, loginUser } = useAuth();
+
+  // Si déjà connecté, rediriger (empêche le retour arrière vers register)
+  if (user) {
+    return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
+  }
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -46,6 +53,12 @@ export default function Register() {
         cabinetName: form.cabinetName,
         practitionerCode: form.practitionerCode
       });
+      // Connexion automatique après inscription
+      if (res.data.token && res.data.user) {
+        loginUser(res.data.user, res.data.token);
+        navigate('/dashboard', { replace: true });
+        return;
+      }
       setSuccess(res.data.message);
       setForm({ name: '', email: '', password: '', confirmPassword: '', cabinetName: '', practitionerCode: '' });
     } catch (err) {

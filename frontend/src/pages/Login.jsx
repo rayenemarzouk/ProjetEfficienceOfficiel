@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { login as loginAPI } from '../services/api';
 import { FiLock, FiMail, FiArrowRight, FiShield, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
@@ -10,7 +10,12 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { loginUser } = useAuth();
+  const { user, loginUser } = useAuth();
+
+  // Si déjà connecté, rediriger vers le dashboard (empêche le retour arrière vers login)
+  if (user) {
+    return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,9 +27,9 @@ export default function Login() {
       loginUser(res.data.user, res.data.token);
       
       if (res.data.user.role === 'admin') {
-        navigate('/admin');
+        navigate('/admin', { replace: true });
       } else {
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Erreur de connexion. Vérifiez vos identifiants.');

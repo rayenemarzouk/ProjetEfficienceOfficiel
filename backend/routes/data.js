@@ -8,6 +8,7 @@ const AnalyseRealisation = require('../models/AnalyseRealisation');
 const AnalyseRendezVous = require('../models/AnalyseRendezVous');
 const Encours = require('../models/Encours');
 
+const AppSettings = require('../models/AppSettings');
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Helper: parser un fichier TSV/CSV
@@ -29,6 +30,12 @@ function parseTSV(content, delimiter = '\t') {
 // POST /api/data/import/:type - Importer un fichier de données
 router.post('/import/:type', auth, adminOnly, upload.single('file'), async (req, res) => {
   try {
+    // Vérifier si l'import est autorisé
+    const appSettings = await AppSettings.getSettings();
+    if (!appSettings.importEnabled) {
+      return res.status(403).json({ message: 'L\'import de données est actuellement désactivé par l\'administrateur.' });
+    }
+
     const { type } = req.params;
     if (!req.file) {
       return res.status(400).json({ message: 'Fichier requis.' });

@@ -32,10 +32,11 @@ function toRGBA(color, alpha) {
 export const streamingBarPlugin = {
   id: 'streamingBar',
   afterDatasetDraw(chart, args) {
-    // Animer tous les datasets (barres)
+    // Only process bar-type datasets (skip line/scatter overlays to avoid NaN crashes)
     try {
     const { ctx } = chart;
     const meta = chart.getDatasetMeta(args.index);
+    if (meta.type !== 'bar') return;
     const now = Date.now();
     const isHorizontal = chart.options?.indexAxis === 'y';
 
@@ -57,9 +58,10 @@ export const streamingBarPlugin = {
         barHeight = Math.abs(base - y);
       }
 
-      if (barWidth < 3 || barHeight < 3) return;
+      if (barWidth < 3 || barHeight < 3 || isNaN(barWidth) || isNaN(barHeight)) return;
 
       ctx.save();
+      try {
       ctx.beginPath();
       ctx.rect(barLeft, barTop, barWidth, barHeight);
       ctx.clip();
@@ -97,7 +99,7 @@ export const streamingBarPlugin = {
         ctx.fillRect(barLeft, barTop, barWidth, barHeight);
       }
 
-      ctx.restore();
+      } finally { ctx.restore(); }
     });
     } catch (e) { /* prevent plugin errors from crashing chart render */ }
   },

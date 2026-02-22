@@ -16,9 +16,17 @@
  *  Aucune dépendance externe requise.
  */
 
+// ─── KILL SWITCH GLOBAL — Désactive tous les modèles IA ─────────
+let _aiEnabled = true;
+export function setAIEnabled(val) { _aiEnabled = !!val; }
+export function isAIEnabled() { return _aiEnabled; }
+
+const AI_DISABLED_MSG = '⛔ Les analyses IA sont actuellement désactivées par l\'administrateur.';
+
 // ─── 1. RÉGRESSION LINÉAIRE (OLS - Ordinary Least Squares) ───────
 // Calcule la droite y = slope * x + intercept par moindres carrés
 export function linearRegression(data) {
+  if (!_aiEnabled) return { slope: 0, intercept: 0, r2: 0, predict: () => 0 };
   const n = data.length;
   if (n < 2) return { slope: 0, intercept: data[0] || 0, r2: 0, predict: () => data[0] || 0 };
 
@@ -52,6 +60,7 @@ export function linearRegression(data) {
 // ─── 2. LISSAGE EXPONENTIEL (Simple Exponential Smoothing) ───────
 // Alpha = facteur de lissage (0.1 à 0.9, plus élevé = plus réactif)
 export function exponentialSmoothing(data, alpha = 0.3) {
+  if (!_aiEnabled) return [...data];
   if (data.length === 0) return [];
   const smoothed = [data[0]];
   for (let i = 1; i < data.length; i++) {
@@ -63,6 +72,7 @@ export function exponentialSmoothing(data, alpha = 0.3) {
 // ─── 3. LISSAGE EXPONENTIEL DOUBLE (Holt) — pour tendance ───────
 // Capture à la fois le niveau et la tendance
 export function holtSmoothing(data, alpha = 0.3, beta = 0.1) {
+  if (!_aiEnabled) return { smoothed: [...data], forecast: () => 0 };
   if (data.length < 2) return { smoothed: [...data], forecast: (h) => data[0] || 0 };
 
   let level = data[0];
@@ -84,6 +94,7 @@ export function holtSmoothing(data, alpha = 0.3, beta = 0.1) {
 
 // ─── 4. MOYENNE MOBILE (Simple Moving Average) ──────────────────
 export function movingAverage(data, window = 3) {
+  if (!_aiEnabled) return [...data];
   if (data.length < window) return [...data];
   const result = [];
   for (let i = 0; i < data.length; i++) {
@@ -103,6 +114,7 @@ export function movingAverage(data, window = 3) {
 // ─── 5. DÉTECTION D'ANOMALIES (Z-Score) ─────────────────────────
 // Retourne un tableau de booleans (true = anomalie) + détails
 export function detectAnomalies(data, threshold = 2.0) {
+  if (!_aiEnabled) return data.map(() => ({ isAnomaly: false, zScore: 0, direction: 'normal' }));
   const n = data.length;
   if (n < 3) return data.map(() => ({ isAnomaly: false, zScore: 0 }));
 
@@ -125,6 +137,7 @@ export function detectAnomalies(data, threshold = 2.0) {
 // ─── 6. PRÉVISION COMBINÉE (Forecast) ───────────────────────────
 // Combine régression linéaire + Holt pour une prévision pondérée
 export function forecast(data, stepsAhead = 3) {
+  if (!_aiEnabled) return new Array(stepsAhead).fill(0);
   if (data.length < 2) return new Array(stepsAhead).fill(data[0] || 0);
 
   const lr = linearRegression(data);
@@ -148,11 +161,12 @@ export function forecast(data, stepsAhead = 3) {
 // ─── 7. ANALYSE DE TENDANCE ─────────────────────────────────────
 // Retourne une analyse textuelle basée sur les modèles
 export function analyzeTrend(data, labels = []) {
+  if (!_aiEnabled) return { trend: 'disabled', text: AI_DISABLED_MSG, confidence: 0, mean: 0, lastValue: 0, slope: 0, r2: 0, pctChange: 0, nbAnomalies: 0, severity: 'neutral' };
   if (!data || data.length === 0) {
     return { trend: 'insufficient', text: 'Aucune donnée disponible.', confidence: 0, mean: 0, lastValue: 0, slope: 0, r2: 0, pctChange: 0, nbAnomalies: 0, severity: 'neutral' };
   }
   const safeMean = data.reduce((s, v) => s + v, 0) / data.length;
-  if (data.length < 3) {
+  if (data.length < 2) {
     return { trend: 'insufficient', text: 'Données insuffisantes pour l\'analyse.', confidence: 0, mean: Math.round(safeMean), lastValue: data[data.length - 1] || 0, slope: 0, r2: 0, pctChange: 0, nbAnomalies: 0, severity: 'neutral' };
   }
 
@@ -201,6 +215,7 @@ export function cabinetHealthScore({
   productionHoraire = 0,    // €/h
   tauxNouveauxPatients = 0, // % nouveaux / total
 }) {
+  if (!_aiEnabled) return { globalScore: 0, score: 0, scores: {}, weights: {}, level: 'disabled', label: 'IA désactivée' };
   // Normalisation sur 0-100 pour chaque critère
   const scores = {
     encaissement: Math.min(100, Math.max(0, tauxEncaissement)),
@@ -242,6 +257,13 @@ export function cabinetHealthScore({
 // ─── 9. GÉNÉRATION DE LIGNE DE TENDANCE POUR CHART.JS ───────────
 // Produit un dataset Chart.js de la ligne de régression + forecast
 export function generateTrendLineDataset(data, forecastSteps = 3, color = '#8b5cf6') {
+  if (!_aiEnabled) {
+    return {
+      trendData: [], forecastData: [], r2: 0, slope: 0,
+      dataset: { label: 'Tendance IA', data: [], borderColor: color, borderDash: [6,4], borderWidth: 2, pointRadius: 0, fill: false, tension: 0 },
+      forecastDataset: { label: 'Prévision IA', data: [], borderColor: color, borderDash: [3,3], borderWidth: 2.5, pointRadius: 0, fill: false, tension: 0 }
+    };
+  }
   const lr = linearRegression(data);
   const n = data.length;
 
@@ -288,6 +310,7 @@ export function generateTrendLineDataset(data, forecastSteps = 3, color = '#8b5c
 
 // ─── 10. GÉNÉRATION DE TEXTE D'ANALYSE IA ───────────────────────
 export function generateAIInsight(data, metricName = 'indicateur') {
+  if (!_aiEnabled) return { text: AI_DISABLED_MSG, parts: [AI_DISABLED_MSG], trend: 'disabled', confidence: 0, forecast: [], nbAnomalies: 0 };
   const trend = analyzeTrend(data);
   const fc = forecast(data, 3);
   const anomalies = detectAnomalies(data);

@@ -10,6 +10,7 @@ import { Line, Doughnut } from 'react-chartjs-2';
 import { generateTrendLineDataset, generateAIInsight, forecast as aiForecast } from '../../utils/aiModels';
 import { streamingLinePlugin, streamingDoughnutPlugin, startChartAnimation } from '../../utils/chartPlugins';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, Filler);
 
@@ -18,6 +19,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { isDynamic } = useDynamic();
+  const { user } = useAuth();
   const { dark } = useTheme();
   const chartTextColor = dark ? '#94a3b8' : '#64748b';
   const chartGridColor = dark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)';
@@ -232,6 +234,14 @@ export default function AdminDashboard() {
       <Header title="Dashboard Général" subtitle="Vue d'ensemble de tous les cabinets" />
       
       <div className="p-6">
+        {/* Greeting personnalisé */}
+        <div className="mb-4">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Bonjour {user?.name?.split(' ')[0] === 'Mr' || user?.name?.split(' ')[0] === 'Mr.' ? user.name : user?.name?.split(' ')[0] || 'Admin'} 👋
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Bienvenue sur votre tableau de bord</p>
+        </div>
+
         {/* Bannière Efficience */}
         <div className="relative overflow-hidden rounded-2xl mb-6 bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 transition-colors" style={{ height: '120px' }}>
           <div className="flex items-center justify-center h-full">

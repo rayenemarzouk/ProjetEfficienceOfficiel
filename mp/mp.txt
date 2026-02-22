@@ -1,0 +1,11 @@
+Voici tous les comptes et mots de passe :
+
+Administrateurs
+Nom	Email	Mot de passe
+Younis Admin	younis@efficience.fr	younis@efficience
+Mr Robert	mrrobert@efficience.fr	mrrobert.efficience
+Rayan Maarzouk	maarzoukrayan3@gmail.com	rayan@efficience
+Praticiens
+Nom	Email	Mot de passe
+Dr. Jean-Claude	jc@efficience.fr	jc@efficience
+Dr. David Vernet	dv@efficience.fr	dv@efficience

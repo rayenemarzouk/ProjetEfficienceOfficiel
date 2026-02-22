@@ -34,6 +34,9 @@ export const login = (email, password) => api.post('/auth/login', { email, passw
 export const register = (data) => api.post('/auth/register', data);
 export const getMe = () => api.get('/auth/me');
 
+// Public settings (no auth — for maintenance check)
+export const getPublicSettings = () => api.get('/settings/public');
+
 // Admin
 export const getAdminDashboard = () => api.get('/admin/dashboard');
 export const getComparison = (p1, p2) => api.get(`/admin/comparison?practitioner1=${p1}&practitioner2=${p2}`);
@@ -41,6 +44,9 @@ export const getCabinetDetails = (code) => api.get(`/admin/cabinet/${code}`);
 export const getStatistics = () => api.get('/admin/statistics');
 export const getSettings = () => api.get('/admin/settings');
 export const updateSettings = (data) => api.put('/admin/settings', data);
+export const impersonateUser = (practitionerId) => api.post('/admin/impersonate', { practitionerId });
+export const deactivateSendCode = (userId) => api.post('/admin/deactivate-send-code', { userId });
+export const deactivateConfirm = (userId, code) => api.post('/admin/deactivate-confirm', { userId, code });
 
 // Practitioner
 export const getPractitionerDashboard = () => api.get('/practitioner/dashboard');

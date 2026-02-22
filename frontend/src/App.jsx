@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { DynamicProvider } from './context/DynamicContext';
+import { AppSettingsProvider } from './context/AppSettingsContext';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
@@ -28,6 +29,7 @@ export default function App() {
     <DynamicProvider>
     <ThemeProvider>
     <AuthProvider>
+    <AppSettingsProvider>
       <Router>
         <Routes>
           {/* Public */}
@@ -63,6 +65,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>
+    </AppSettingsProvider>
     </AuthProvider>
     </ThemeProvider>
     </DynamicProvider>
