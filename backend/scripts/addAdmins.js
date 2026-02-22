@@ -10,20 +10,10 @@ async function addAdmins() {
     const admins = [
       {
         email: 'mrrobert@efficience.fr',
-        password: 'mrRobert',
+        password: 'mrrobert.efficience',
         role: 'admin',
         name: 'Mr Robert',
-        practitionerCode: 'ADMIN2',
-        cabinetName: 'Efficience Dentaire',
-        isActive: true,
-        isVerified: true
-      },
-      {
-        email: 'maarzoukrayan3@gmail.com',
-        password: 'rayan@efficience',
-        role: 'admin',
-        name: 'Rayan Maarzouk',
-        practitionerCode: 'ADMIN3',
+        practitionerCode: 'ADMIN',
         cabinetName: 'Efficience Dentaire',
         isActive: true,
         isVerified: true
