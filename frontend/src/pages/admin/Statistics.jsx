@@ -29,9 +29,9 @@ export default function Statistics() {
   const { dark } = useTheme();
   const { user } = useAuth();
   const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
-  const cardCls = isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700';
-  const chartTextColor = (isRayan || dark) ? '#94a3b8' : '#64748b';
-  const chartGridColor = dark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)';
+  const cardCls = isRayan ? 'bg-white border border-gray-200 shadow-sm' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700';
+  const chartTextColor = (dark && !isRayan) ? '#94a3b8' : '#64748b';
+  const chartGridColor = (dark && !isRayan) ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)';
   const caChartRef = useRef(null);
   const patientsChartRef = useRef(null);
 

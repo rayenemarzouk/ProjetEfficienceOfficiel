@@ -11,7 +11,7 @@ export default function CabinetManagement() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
-  const cardCls = isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700';
+  const cardCls = isRayan ? 'bg-white border border-gray-200 shadow-sm' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700';
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

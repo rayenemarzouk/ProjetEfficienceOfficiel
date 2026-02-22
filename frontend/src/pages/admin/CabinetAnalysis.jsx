@@ -20,7 +20,7 @@ export default function CabinetAnalysis() {
   const { dark } = useTheme();
   const { user } = useAuth();
   const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
-  const cardCls = isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700';
+  const cardCls = isRayan ? 'bg-white border border-gray-200 shadow-sm' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700';
   const [practitioners, setPractitioners] = useState([]);
   const [loading, setLoading] = useState(true);
   const { isDynamic } = useDynamic();
@@ -245,7 +245,7 @@ export default function CabinetAnalysis() {
     plugins: {
       legend: {
         position: 'bottom',
-        labels: { color: dark ? '#94a3b8' : '#64748b', usePointStyle: true, padding: 16 },
+        labels: { color: (dark && !isRayan) ? '#94a3b8' : '#64748b', usePointStyle: true, padding: 16 },
         onClick: (e, legendItem, legend) => {
           const index = legendItem.datasetIndex;
           const ci = legend.chart;
@@ -256,8 +256,8 @@ export default function CabinetAnalysis() {
       },
     },
     scales: {
-      x: { ticks: { color: dark ? '#94a3b8' : '#64748b' }, grid: { display: false } },
-      y: { beginAtZero: true, ticks: { color: dark ? '#94a3b8' : '#64748b' }, grid: { color: dark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)' } },
+      x: { ticks: { color: (dark && !isRayan) ? '#94a3b8' : '#64748b' }, grid: { display: false } },
+      y: { beginAtZero: true, ticks: { color: (dark && !isRayan) ? '#94a3b8' : '#64748b' }, grid: { color: (dark && !isRayan) ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)' } },
     },
     onClick: (e, elements) => {
       if (elements.length > 0) {
@@ -402,7 +402,7 @@ export default function CabinetAnalysis() {
         {/* Scoring Performance — IA Health Score */}
         <div className={`${cardCls} rounded-2xl p-6 mb-6 transition-colors`}>
           <div className="flex items-center justify-between mb-5">
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">Scoring Performance</h3>
+            <h3 className={`text-base font-bold ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>Scoring Performance</h3>
             <span className="flex items-center gap-1 text-[9px] font-bold text-violet-600 bg-violet-50 px-2.5 py-1 rounded-full">
               <FiCpu className="w-3 h-3" /> Score Multi-KPI Pondéré
             </span>
@@ -411,17 +411,17 @@ export default function CabinetAnalysis() {
             {pracData.map((p, i) => {
               const hs = pracHealthScores[i];
               return (
-                <div key={i} className="flex items-center gap-4 group hover:bg-gray-50/50 dark:hover:bg-gray-700/50 rounded-xl p-2 -mx-2 transition-all cursor-pointer" onClick={() => navigate('/admin/cabinets')}>
-                  <span className="text-sm font-bold text-gray-700 dark:text-gray-300 w-12">{p.code}</span>
+                <div key={i} className={`flex items-center gap-4 group rounded-xl p-2 -mx-2 transition-all cursor-pointer ${isRayan ? 'hover:bg-gray-50' : 'hover:bg-gray-50/50 dark:hover:bg-gray-700/50'}`} onClick={() => navigate('/admin/cabinets')}>
+                  <span className={`text-sm font-bold w-12 ${isRayan ? 'text-gray-700' : 'text-gray-700 dark:text-gray-300'}`}>{p.code}</span>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] text-gray-400">Encaissement: {p.score}%</span>
-                      <span className="text-[10px] text-gray-400">•</span>
-                      <span className="text-[10px] text-gray-400">Score IA: <span className={`font-bold ${hs.score >= 80 ? 'text-green-600' : hs.score >= 60 ? 'text-amber-500' : 'text-red-500'}`}>{hs.score}/100</span></span>
-                      <span className="text-[10px] text-gray-400">•</span>
-                      <span className="text-[10px] text-gray-400">{hs.label}</span>
+                      <span className={`text-[10px] ${isRayan ? 'text-gray-500' : 'text-gray-400'}`}>Encaissement: {p.score}%</span>
+                      <span className={`text-[10px] ${isRayan ? 'text-gray-500' : 'text-gray-400'}`}>•</span>
+                      <span className={`text-[10px] ${isRayan ? 'text-gray-500' : 'text-gray-400'}`}>Score IA: <span className={`font-bold ${hs.score >= 80 ? 'text-green-600' : hs.score >= 60 ? 'text-amber-500' : 'text-red-500'}`}>{hs.score}/100</span></span>
+                      <span className={`text-[10px] ${isRayan ? 'text-gray-500' : 'text-gray-400'}`}>•</span>
+                      <span className={`text-[10px] ${isRayan ? 'text-gray-500' : 'text-gray-400'}`}>{hs.label}</span>
                     </div>
-                    <div className="bg-gray-100 dark:bg-gray-700 rounded-full h-4 relative overflow-hidden">
+                    <div className={`rounded-full h-4 relative overflow-hidden ${isRayan ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700'}`}>
                       <div
                         className={`h-4 rounded-full ${isDynamic ? 'transition-all duration-[1800ms] ease-out' : ''} relative overflow-hidden`}
                         style={{
@@ -442,7 +442,7 @@ export default function CabinetAnalysis() {
 
         {/* Répartition des Scores — Animated */}
         <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
-          <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4">Répartition des Scores</h3>
+          <h3 className={`text-base font-bold mb-4 ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>Répartition des Scores</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {pracData.map((p, i) => (
               <div key={i} className="text-center group">
@@ -456,7 +456,7 @@ export default function CabinetAnalysis() {
                     </defs>
                     <path
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none" stroke={dark ? '#334155' : '#e5e7eb'} strokeWidth="3"
+                      fill="none" stroke={isRayan ? '#e5e7eb' : (dark ? '#334155' : '#e5e7eb')} strokeWidth="3"
                     />
                     <path
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
@@ -472,21 +472,21 @@ export default function CabinetAnalysis() {
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-xl font-black text-gray-900 dark:text-white tabular-nums group-hover:scale-110 transition-transform">{p.score}%</span>
+                    <span className={`text-xl font-black tabular-nums group-hover:scale-110 transition-transform ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{p.score}%</span>
                   </div>
                 </div>
-                <p className="text-sm font-bold text-gray-900 dark:text-white">{p.name}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">({p.code})</p>
+                <p className={`text-sm font-bold ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{p.name}</p>
+                <p className={`text-xs ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>({p.code})</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* AI Global Insight Panel */}
-        <div className="bg-gradient-to-r from-violet-50 via-blue-50 to-amber-50 dark:from-violet-900/30 dark:via-blue-900/30 dark:to-amber-900/30 rounded-2xl border border-violet-100 dark:border-violet-800 p-6 transition-colors">
+        <div className={`${isRayan ? 'bg-gradient-to-r from-violet-50 via-blue-50 to-amber-50 border border-violet-200' : 'bg-gradient-to-r from-violet-50 via-blue-50 to-amber-50 dark:from-violet-900/30 dark:via-blue-900/30 dark:to-amber-900/30 border border-violet-100 dark:border-violet-800'} rounded-2xl p-6 transition-colors`}>
           <div className="flex items-center gap-2 mb-4">
             <FiCpu className="w-4 h-4 text-violet-600" />
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Analyse IA Globale — Cabinets</h3>
+            <h3 className={`text-sm font-bold ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>Analyse IA Globale — Cabinets</h3>
             <span className="ml-auto text-[9px] font-semibold text-violet-600 bg-white/60 px-2.5 py-1 rounded-full">5 modèles ML exécutés</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

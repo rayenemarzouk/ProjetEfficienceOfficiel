@@ -12,7 +12,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const { loginUser, user } = useAuth();
   const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
-  const cardCls = isRayan ? 'bg-[#111d30] border border-[#1e3a5f]/50' : 'bg-white dark:bg-[#111c44] border border-gray-200 dark:border-blue-800/60';
+  const cardCls = isRayan ? 'bg-white border border-gray-200 shadow-sm' : 'bg-white dark:bg-[#111c44] border border-gray-200 dark:border-blue-800/60';
   const { refreshSettings } = useAppSettings();
   const { isDynamic, refreshDynamic } = useDynamic();
   const [users, setUsers] = useState([]);
