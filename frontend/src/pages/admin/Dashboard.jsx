@@ -18,10 +18,11 @@ export default function AdminDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { isDynamic } = useDynamic();
+  const { isDynamic: _isDynamic } = useDynamic();
   const { user } = useAuth();
   const { dark } = useTheme();
   const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const isDynamic = isRayan || _isDynamic; // Rayan toujours dynamique
   const chartTextColor = (dark && !isRayan) ? '#94a3b8' : '#64748b';
   const chartGridColor = (dark && !isRayan) ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)';
   const lineChartRef = useRef(null);

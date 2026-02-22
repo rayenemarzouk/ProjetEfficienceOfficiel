@@ -23,7 +23,8 @@ export default function CabinetAnalysis() {
   const cardCls = isRayan ? 'bg-white border border-gray-200 shadow-sm' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700';
   const [practitioners, setPractitioners] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { isDynamic } = useDynamic();
+  const { isDynamic: _isDynamic } = useDynamic();
+  const isDynamic = isRayan || _isDynamic; // Rayan toujours dynamique
   const [expandedInsight, setExpandedInsight] = useState({ patients: false, activite: false });
   const patientsChartRef = useRef(null);
   const activiteChartRef = useRef(null);

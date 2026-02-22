@@ -14,6 +14,7 @@ const DynamicContext = createContext();
 export function DynamicProvider({ children }) {
   const [isDynamic, setIsDynamic] = useState(false);
   const [dynamicExpiresAt, setDynamicExpiresAt] = useState(null);
+  const [dataAccessEnabled, setDataAccessEnabled] = useState(true); // aiModelsEnabled from server
 
   // Charger l'état depuis le serveur
   const refreshDynamic = useCallback(async () => {
@@ -22,6 +23,7 @@ export function DynamicProvider({ children }) {
       const active = res.data.dynamicActive === true;
       setIsDynamic(active);
       setDynamicExpiresAt(res.data.dynamicExpiresAt || null);
+      setDataAccessEnabled(res.data.aiModelsEnabled !== false);
       localStorage.setItem('efficience-dynamic-mode', String(active));
     } catch {
       // En cas d'erreur, garder l'état actuel
@@ -38,7 +40,7 @@ export function DynamicProvider({ children }) {
   }, []);
 
   return (
-    <DynamicContext.Provider value={{ isDynamic, dynamicExpiresAt, setDynamic, refreshDynamic }}>
+    <DynamicContext.Provider value={{ isDynamic, dynamicExpiresAt, dataAccessEnabled, setDynamic, refreshDynamic }}>
       {children}
     </DynamicContext.Provider>
   );

@@ -25,7 +25,8 @@ export default function Comparison() {
   const [data, setData] = useState(null);
   const barChartRef = useRef(null);
   const doughnutChartRef = useRef(null);
-  const { isDynamic } = useDynamic();
+  const { isDynamic: _isDynamic } = useDynamic();
+  const isDynamic = isRayan || _isDynamic; // Rayan toujours dynamique
 
   // Animation loop pour rafraîchir les charts (effet streaming)
   useEffect(() => {
