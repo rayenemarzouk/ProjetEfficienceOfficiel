@@ -18,7 +18,8 @@ export default function MyStats() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { isDynamic } = useDynamic();
+  const { isDynamic, dataAccessEnabled } = useDynamic();
+  const showAI = dataAccessEnabled;
   const { dark } = useTheme();
   const chartTextColor = dark ? '#94a3b8' : '#64748b';
   const chartGridColor = dark ? 'rgba(148, 163, 184, 0.08)' : 'rgba(226, 232, 240, 0.6)';
@@ -259,6 +260,14 @@ export default function MyStats() {
         </div>
 
         {/* Graphiques */}
+        {!showAI && (
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 p-12 text-center mb-8">
+            <FiCpu className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-gray-400 dark:text-gray-500 mb-2">Modèles IA désactivés</h3>
+            <p className="text-sm text-gray-400 dark:text-gray-500">Les graphiques et analyses IA sont temporairement indisponibles.<br/>Contactez l'administrateur pour réactiver les modèles.</p>
+          </div>
+        )}
+        {showAI && <>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* CA */}
           <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
@@ -302,6 +311,7 @@ export default function MyStats() {
             {insightRenta.parts.map((p, i) => <p key={i} className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
           </div>
         </div>
+        </>}
 
         {/* Tableau détaillé */}
         <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">

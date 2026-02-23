@@ -11,13 +11,7 @@ const app = express();
 connectDB();
 
 // Middleware
-const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL || 'https://ton-domaine-hostinger.com'].filter(Boolean)
-    : '*',
-  credentials: true
-};
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -51,19 +45,16 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Efficience Analytics API opérationnelle' });
 });
 
-// Servir le frontend buildé en production (si le dossier dist existe)
-const fs = require('fs');
-const frontendPath = path.join(__dirname, '..', 'frontend', 'dist');
-if (process.env.NODE_ENV === 'production' && fs.existsSync(frontendPath)) {
-  app.use(express.static(frontendPath));
-  
-  // Toute route non-API renvoie vers index.html (SPA)
-  app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(frontendPath, 'index.html'));
-    }
-  });
-}
+// Servir le frontend buildé
+const frontendPath = path.join(__dirname, 'public');
+app.use(express.static(frontendPath));
+
+// Toute route non-API renvoie vers index.html (SPA React)
+app.get('*', (req, res) => {
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  }
+});
 
 // Initialiser les tâches cron
 initCronJobs();

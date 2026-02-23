@@ -3,6 +3,7 @@ import Header from '../../components/Header';
 import { getPractitionerStatistics } from '../../services/api';
 import { FiCpu, FiTrendingUp, FiTrendingDown, FiAlertTriangle, FiCheckCircle, FiTarget, FiActivity, FiBarChart2, FiZap, FiHeart, FiUsers, FiDollarSign, FiCalendar } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
+import { useDynamic } from '../../context/DynamicContext';
 import {
   linearRegression,
   forecast as aiForecast,
@@ -15,6 +16,7 @@ import {
 
 export default function AIAnalysis() {
   const { user } = useAuth();
+  const { dataAccessEnabled } = useDynamic();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -36,6 +38,23 @@ export default function AIAnalysis() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  if (!dataAccessEnabled) {
+    return (
+      <div>
+        <Header title="Analyse du Cabinet" subtitle="Bilan et prévisions" />
+        <div className="p-8">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 p-16 text-center">
+              <FiCpu className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-6" />
+              <h3 className="text-xl font-bold text-gray-400 dark:text-gray-500 mb-3">Modèles IA désactivés</h3>
+              <p className="text-sm text-gray-400 dark:text-gray-500">Les analyses IA sont temporairement indisponibles.<br/>Contactez l'administrateur pour réactiver les modèles.</p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

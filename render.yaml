@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: efficience-analytics-api
+    name: efficience-analytics
     runtime: node
     rootDir: backend
     buildCommand: npm install
@@ -11,6 +11,18 @@ services:
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
-        generateValue: true
-      - key: FRONTEND_URL
+        sync: false
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: ADMIN_AI_CODE
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: REPORT_RECIPIENT
         sync: false

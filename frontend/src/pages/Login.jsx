@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useAppSettings } from '../context/AppSettingsContext';
 import { login as loginAPI } from '../services/api';
-import { FiLock, FiMail, FiArrowRight, FiShield, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { FiLock, FiMail, FiArrowRight, FiShield, FiCheckCircle, FiAlertCircle, FiAlertTriangle } from 'react-icons/fi';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -11,11 +12,11 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user, loginUser } = useAuth();
+  const appSettings = useAppSettings();
+  const isMaintenance = appSettings?.maintenanceMode;
 
-  // Si déjà connecté, rediriger vers le dashboard (empêche le retour arrière vers login)
-  if (user) {
-    return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
-  }
+  // Plus de redirection automatique — l'utilisateur reste sur la page login
+  // La navigation vers le dashboard se fait uniquement après soumission du formulaire
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -97,6 +98,14 @@ export default function Login() {
               BIENVENUE<span className="text-blue-500"> .</span>
             </h2>
           </div>
+
+          {/* Maintenance warning */}
+          {isMaintenance && (
+            <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2 text-amber-700 text-sm">
+              <FiAlertTriangle className="w-4 h-4 flex-shrink-0" />
+              Mode maintenance actif — seul l'administrateur peut se connecter.
+            </div>
+          )}
 
           {/* Error message */}
           {error && (

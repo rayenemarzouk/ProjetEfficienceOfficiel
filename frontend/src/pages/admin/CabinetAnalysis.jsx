@@ -23,8 +23,9 @@ export default function CabinetAnalysis() {
   const cardCls = isRayan ? 'bg-white border border-gray-200 shadow-sm' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700';
   const [practitioners, setPractitioners] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { isDynamic: _isDynamic } = useDynamic();
+  const { isDynamic: _isDynamic, dataAccessEnabled } = useDynamic();
   const isDynamic = isRayan || _isDynamic; // Rayan toujours dynamique
+  const showAI = dataAccessEnabled || isRayan;
   const [expandedInsight, setExpandedInsight] = useState({ patients: false, activite: false });
   const patientsChartRef = useRef(null);
   const activiteChartRef = useRef(null);
@@ -275,6 +276,14 @@ export default function CabinetAnalysis() {
       
       <div className="p-6">
         {/* Charts: Patients + Activité side by side */}
+        {!showAI && (
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 p-12 text-center mb-6">
+            <FiCpu className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-gray-400 dark:text-gray-500 mb-2">Modèles IA désactivés</h3>
+            <p className="text-sm text-gray-400 dark:text-gray-500">Les graphiques et analyses IA sont temporairement indisponibles.<br/>Contactez l'administrateur pour réactiver les modèles.</p>
+          </div>
+        )}
+        {showAI && <>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
           <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
             <div className="flex items-center justify-between mb-1">
@@ -508,6 +517,7 @@ export default function CabinetAnalysis() {
             })}
           </div>
         </div>
+        </>}
       </div>
     </div>
   );

@@ -30,8 +30,8 @@ export default function PrivateRoute({ allowedRoles }) {
     return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
   }
 
-  // ═══ Mode Maintenance — bloque les non-admin ═══
-  if (appSettings?.maintenanceMode && user.role !== 'admin') {
+  // ═══ Mode Maintenance — bloque les non-admin (Rayan toujours autorisé) ═══
+  if (appSettings?.maintenanceMode && user.role !== 'admin' && !isRayan) {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
         <div className="text-center max-w-md p-8">
@@ -56,7 +56,7 @@ export default function PrivateRoute({ allowedRoles }) {
   // Quand désactivé, seul Rayan voit les données. Les autres voient un écran d'attente.
   // La page Réglages reste accessible pour que Rayan puisse réactiver.
   const isSettingsPage = location.pathname === '/admin/settings';
-  if (!dataAccessEnabled && !isRayan && !isSettingsPage) {
+  if (!dataAccessEnabled && !isRayan && !isSettingsPage && user.role !== 'admin') {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
         <div className="text-center max-w-md p-8">

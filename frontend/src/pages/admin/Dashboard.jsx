@@ -18,11 +18,12 @@ export default function AdminDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { isDynamic: _isDynamic } = useDynamic();
+  const { isDynamic: _isDynamic, dataAccessEnabled } = useDynamic();
   const { user } = useAuth();
   const { dark } = useTheme();
   const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
   const isDynamic = isRayan || _isDynamic; // Rayan toujours dynamique
+  const showAI = dataAccessEnabled || isRayan; // Rayan voit toujours les graphes
   const chartTextColor = (dark && !isRayan) ? '#94a3b8' : '#64748b';
   const chartGridColor = (dark && !isRayan) ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)';
   const lineChartRef = useRef(null);
@@ -208,7 +209,7 @@ export default function AdminDashboard() {
     const taux = p.totalFacture > 0 ? (p.totalEncaisse / p.totalFacture) * 100 : 100;
     return taux < 85;
   }).length;
-  const rapportsNonEnvoyes = Math.max(0, nbPractitioners - (data?.reportsEnvoyes || 0));
+  const rapportsEnvoyes = data?.reportsEnvoyes || 0;
 
   // ═══ ANIMATED COUNTERS ═══
   const dyn = isDynamic && !loading;
@@ -219,7 +220,7 @@ export default function AdminDashboard() {
   const animAbsences = useCountUp(totalAbsences, 1400, dyn);
   const animPresences = useCountUp(totalPresences, 1400, dyn);
   const animFaible = useCountUp(caFaibleEncaissement, 1000, dyn);
-  const animNonEnvoyes = useCountUp(rapportsNonEnvoyes, 1000, dyn);
+  const animEnvoyes = useCountUp(rapportsEnvoyes, 1000, dyn);
   const animCABottom = useCountUp(Math.round(totalCA), 2400, dyn);
   const animEncaisseBottom = useCountUp(Math.round(totalEncaisse), 2400, dyn);
   const animEncaissePct = useCountUp(totalCA > 0 ? Math.round((totalEncaisse / totalCA) * 100) : 0, 1800, dyn);
@@ -633,7 +634,14 @@ export default function AdminDashboard() {
         </div>
 
         {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+        {!showAI && (
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 p-12 text-center mb-6">
+            <FiCpu className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-gray-400 dark:text-gray-500 mb-2">Modèles IA désactivés</h3>
+            <p className="text-sm text-gray-400 dark:text-gray-500">Les graphiques et analyses IA sont temporairement indisponibles.<br/>Contactez l'administrateur pour réactiver les modèles.</p>
+          </div>
+        )}
+        {showAI && <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
           <div className={`lg:col-span-2 rounded-2xl p-6 shadow-sm transition-all duration-300 ${isRayan ? 'bg-white border border-gray-200' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700'}`}>
             <div className="flex items-center justify-between mb-5">
               <div>
@@ -752,10 +760,10 @@ export default function AdminDashboard() {
               })}
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* AI Insight Panel */}
-        {aiInsightCA && (
+        {showAI && aiInsightCA && (
           <div className={`rounded-2xl p-5 mb-6 transition-colors ${isRayan ? 'bg-gradient-to-r from-violet-50 via-blue-50 to-amber-50 border border-violet-200' : 'bg-gradient-to-r from-violet-50 via-blue-50 to-amber-50 dark:from-violet-900/30 dark:via-blue-900/30 dark:to-amber-900/30 border border-violet-100 dark:border-violet-800'}`}>
             <div className="flex items-center gap-2 mb-3">
               <div className={`p-1.5 rounded-lg ${isRayan ? 'bg-violet-100' : 'bg-violet-100 dark:bg-violet-900/50'}`}><FiCpu className={`w-4 h-4 ${isRayan ? 'text-violet-600' : 'text-violet-600'}`} /></div>
@@ -792,10 +800,10 @@ export default function AdminDashboard() {
               <p className={`text-xs mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>présences confirmées</p>
               <p className="text-xs text-blue-600 mt-2 flex items-center gap-1 hover:underline">Voir les détails <FiArrowRight className="w-3 h-3" /></p>
             </div>
-            <div className={`border-l-4 border-pink-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isRayan ? 'bg-pink-50' : 'bg-pink-50 dark:bg-pink-900/30'}`} onClick={() => navigate('/admin/reports')}>
-              <p className={`text-sm font-bold ${isRayan ? 'text-pink-600' : 'text-pink-600'}`}>Rapports non envoyés <span className={`inline-block w-2 h-2 rounded-full bg-pink-400 ml-1 ${isDynamic ? 'animate-pulse' : ''}`}></span></p>
-              <p className={`text-3xl font-black mt-1 tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{animNonEnvoyes}</p>
-              <p className={`text-xs mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>rapports en attente</p>
+            <div className={`border-l-4 border-green-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isRayan ? 'bg-green-50' : 'bg-green-50 dark:bg-green-900/30'}`} onClick={() => navigate('/admin/reports')}>
+              <p className={`text-sm font-bold ${isRayan ? 'text-green-600' : 'text-green-600'}`}>Rapports envoyés <span className={`inline-block w-2 h-2 rounded-full bg-green-400 ml-1 ${isDynamic ? 'animate-pulse' : ''}`}></span></p>
+              <p className={`text-3xl font-black mt-1 tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{animEnvoyes}</p>
+              <p className={`text-xs mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>rapports envoyés par email</p>
               <p className="text-xs text-blue-600 mt-2 flex items-center gap-1 hover:underline">Voir les détails <FiArrowRight className="w-3 h-3" /></p>
             </div>
           </div>
