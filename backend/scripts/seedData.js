@@ -265,14 +265,19 @@ async function seedDatabase() {
     await AnalyseDevis.insertMany(devisData);
     console.log(`${devisData.length} enregistrements Devis insérés.`);
 
-    console.log('\n══════════════════════════════════════');
+    console.log('\n══════════════════════════════════════════════════════════');
     console.log('✅ SEED TERMINÉ AVEC SUCCÈS !');
-    console.log('══════════════════════════════════════');
-    console.log('\nComptes créés:');
-    console.log('  Admin:  younis@efficience.fr / younis@efficience');
-    console.log('  JC:     jc@efficience.fr / jc@efficience');
-    console.log('  DV:     dv@efficience.fr / dv@efficience');
-    console.log('══════════════════════════════════════\n');
+    console.log('══════════════════════════════════════════════════════════');
+    console.log('\n📋 Tous les comptes créés :');
+    console.log('──────────────────────────────────────────────────────────');
+    users.forEach((u, i) => {
+      const roleTag = u.role === 'admin' ? '🔑 Admin' : '👤 Praticien';
+      const pad = u.email.length < 30 ? ' '.repeat(30 - u.email.length) : ' ';
+      console.log(`  ${i + 1}. [${roleTag}]  ${u.email}${pad}mdp: ${u.password}`);
+    });
+    console.log('──────────────────────────────────────────────────────────');
+    console.log(`  Total : ${users.length} comptes (${users.filter(u => u.role === 'admin').length} admins, ${users.filter(u => u.role === 'practitioner').length} praticiens)`);
+    console.log('══════════════════════════════════════════════════════════\n');
 
     process.exit(0);
   } catch (error) {

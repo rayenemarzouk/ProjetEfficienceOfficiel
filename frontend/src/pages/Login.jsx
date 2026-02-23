@@ -66,13 +66,23 @@ export default function Login() {
 
           {/* Badges */}
           <div className="flex flex-col gap-3">
-            <div className="inline-flex items-center gap-2 px-4 py-2.5 border border-blue-500/30 rounded-full w-fit bg-blue-500/5">
+            <div className="relative group inline-flex items-center gap-2 px-4 py-2.5 border border-blue-500/30 rounded-full w-fit bg-blue-500/5 cursor-default">
               <FiShield className="w-4 h-4 text-blue-400" />
               <span className="text-blue-400 text-xs font-medium tracking-wide uppercase">Protection nos certifiées</span>
+              {/* Tooltip */}
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-4 py-2.5 bg-gray-900 text-white text-xs rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
+                Vos données sont chiffrées et protégées selon les normes de sécurité en vigueur.
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+              </div>
             </div>
-            <div className="inline-flex items-center gap-2 px-4 py-2.5 border border-blue-500/30 rounded-full w-fit bg-blue-500/5">
+            <div className="relative group inline-flex items-center gap-2 px-4 py-2.5 border border-blue-500/30 rounded-full w-fit bg-blue-500/5 cursor-default">
               <FiCheckCircle className="w-4 h-4 text-blue-400" />
               <span className="text-blue-400 text-xs font-medium tracking-wide uppercase">Vérification par email</span>
+              {/* Tooltip */}
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-4 py-2.5 bg-gray-900 text-white text-xs rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50">
+                Chaque action sensible nécessite une confirmation par code envoyé à votre email.
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+              </div>
             </div>
           </div>
         </div>
