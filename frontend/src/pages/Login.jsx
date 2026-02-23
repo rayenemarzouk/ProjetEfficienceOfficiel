@@ -96,7 +96,7 @@ export default function Login() {
               <span className="text-sm font-black tracking-[0.12em] text-gray-800 uppercase" style={{ fontFamily: 'monospace' }}>RM PROD</span>
             </div>
             <h2 className="text-3xl font-black text-gray-900 tracking-tight">
-              CONNECTEZ-VOUS À<br />EFFICIENCE<span className="text-blue-500"> 😊</span>
+              CONNEXION<br />AU COMPTE<span className="text-blue-500"> .</span>
             </h2>
           </div>
 
