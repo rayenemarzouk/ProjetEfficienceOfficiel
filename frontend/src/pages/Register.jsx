@@ -53,14 +53,15 @@ export default function Register() {
         cabinetName: form.cabinetName,
         practitionerCode: form.practitionerCode || undefined
       });
-      // Connexion automatique après inscription
-      if (res.data.token && res.data.user) {
-        loginUser(res.data.user, res.data.token);
-        navigate('/dashboard', { replace: true });
-        return;
-      }
-      setSuccess(res.data.message);
+      
+      // Afficher message de succès
+      setSuccess('🎉 Félicitations ! Votre compte a été créé avec succès.');
       setForm({ name: '', email: '', password: '', confirmPassword: '', cabinetName: '', practitionerCode: '' });
+      
+      // Rediriger vers la page de connexion après 3 secondes
+      setTimeout(() => {
+        navigate('/login', { replace: true });
+      }, 3000);
     } catch (err) {
       setError(err.response?.data?.message || "Erreur lors de l'inscription. Veuillez réessayer.");
     } finally {
@@ -77,14 +78,9 @@ export default function Register() {
         <div className="absolute bottom-1/4 right-0 w-56 h-56 bg-emerald-500 rounded-full opacity-5 blur-3xl"></div>
 
         <div className="relative z-10">
-          {/* Logo RM DEV */}
+          {/* Logo Efficience */}
           <div className="flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-emerald-400 flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
-              </svg>
-            </div>
-            <span className="text-white font-semibold text-sm tracking-wider">RM DEV</span>
+            <img src="/efficience-logo.svg" alt="Efficience" className="h-12 w-auto drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
           </div>
 
           {/* Main title */}
@@ -128,11 +124,15 @@ export default function Register() {
 
           {/* Success message */}
           {success && (
-            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3 text-emerald-700 text-sm">
-              <FiCheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold mb-1">Inscription réussie !</p>
-                <p>{success}</p>
+            <div className="mb-6 p-6 bg-emerald-50 border border-emerald-200 rounded-xl text-center">
+              <FiCheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
+              <p className="font-bold text-emerald-700 text-lg mb-2">Inscription réussie !</p>
+              <p className="text-emerald-600 text-sm mb-4">{success}</p>
+              <p className="text-gray-500 text-xs">Redirection vers la page de connexion dans quelques secondes...</p>
+              <div className="mt-3">
+                <div className="w-full bg-emerald-100 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-emerald-500 h-1.5 rounded-full animate-[shrink_3s_linear_forwards]" style={{width: '100%'}}></div>
+                </div>
               </div>
             </div>
           )}

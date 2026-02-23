@@ -451,7 +451,8 @@ router.post('/deactivate-send-code', auth, adminOnly, async (req, res) => {
     const code = crypto.randomInt(100000, 999999).toString();
     deactivateCodes.set(userId, { code, expiresAt: Date.now() + 10 * 60 * 1000 }); // 10 min
 
-    // Send email to admin
+    // Send email to the admin who is requesting the deletion
+    const adminEmail = req.user.email;
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: parseInt(process.env.EMAIL_PORT),
@@ -459,12 +460,15 @@ router.post('/deactivate-send-code', auth, adminOnly, async (req, res) => {
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
-      }
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000
     });
 
     await transporter.sendMail({
       from: `"Efficience Analytics" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
+      to: adminEmail,
       subject: `🗑️ Code de vérification — Suppression de ${targetUser.name}`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:30px;background:#f8fafc;border-radius:16px;">
@@ -487,8 +491,8 @@ router.post('/deactivate-send-code', auth, adminOnly, async (req, res) => {
       `
     });
 
-    console.log(`Code de suppression envoyé pour ${targetUser.name} (${targetUser.email})`);
-    res.json({ message: 'Code de vérification envoyé par email.' });
+    console.log(`Code de suppression envoyé pour ${targetUser.name} (${targetUser.email}) → email envoyé à ${adminEmail}`);
+    res.json({ message: `Code de vérification envoyé à ${adminEmail}.` });
   } catch (error) {
     console.error('Erreur envoi code suppression:', error);
     res.status(500).json({ message: 'Erreur lors de l\'envoi du code.' });
