@@ -24,7 +24,7 @@ async function seedDatabase() {
         email: 'younis@efficience.fr',
         password: 'younis@efficience',
         role: 'admin',
-        name: 'Younis Admin',
+        name: 'Younis',
         practitionerCode: 'ADMIN',
         cabinetName: 'Efficience Dentaire',
         isActive: true
@@ -43,7 +43,7 @@ async function seedDatabase() {
         email: 'maarzoukrayan3@gmail.com',
         password: 'maarzoukrayan3@gmail',
         role: 'admin',
-        name: 'Rayan Admin 2',
+        name: 'Rayene',
         practitionerCode: 'ADMIN',
         cabinetName: 'Efficience Dentaire',
         isActive: true,
