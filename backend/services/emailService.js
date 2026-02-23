@@ -515,4 +515,17 @@ async function sendReportEmail({ to, subject, practitionerName, mois, kpi, pdfBu
   }
 }
 
-module.exports = { sendReportEmail, buildEmailHTML };
+module.exports = {
+  createTransporter,
+  buildEmailHTML,
+  sendReportEmail,
+  sendMail: async function({ to, subject, html }) {
+    const transporter = createTransporter();
+    await transporter.sendMail({
+      from: `"Efficience Analytics" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      html
+    });
+  }
+};
