@@ -14,7 +14,10 @@ const createTransporter = () => {
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
-    }
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000
   });
 };
 
@@ -45,12 +48,33 @@ router.post('/register', async (req, res) => {
       isVerified: true
     });
 
-    // Send notification email to admin
+    // Générer un token JWT pour connexion immédiate
+    const token = jwt.sign(
+      { id: user._id, role: user.role, practitionerCode: user.practitionerCode },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Répondre immédiatement au client
+    res.status(201).json({
+      message: 'Inscription réussie ! Bienvenue sur Efficience Analytics.',
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        practitionerCode: user.practitionerCode,
+        cabinetName: user.cabinetName
+      }
+    });
+
+    // Send notification email to admin (en arrière-plan, ne bloque pas la réponse)
     try {
       const transporter = createTransporter();
       const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
 
-      await transporter.sendMail({
+      transporter.sendMail({
         from: `"Efficience Analytics" <${process.env.EMAIL_USER}>`,
         to: adminEmail,
         subject: '🆕 Nouvelle inscription - Efficience Analytics',
@@ -97,32 +121,14 @@ router.post('/register', async (req, res) => {
             </div>
           </div>
         `
+      }).then(() => {
+        console.log('Email de notification envoyé à', adminEmail);
+      }).catch((emailErr) => {
+        console.error('Erreur envoi email notification inscription:', emailErr.message);
       });
-      console.log('Email de notification envoyé à', adminEmail);
     } catch (emailErr) {
       console.error('Erreur envoi email notification inscription:', emailErr.message);
-      // Don't fail the registration if email fails
     }
-
-    // Générer un token JWT pour connexion immédiate
-    const token = jwt.sign(
-      { id: user._id, role: user.role, practitionerCode: user.practitionerCode },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.status(201).json({
-      message: 'Inscription réussie ! Bienvenue sur Efficience Analytics.',
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        practitionerCode: user.practitionerCode,
-        cabinetName: user.cabinetName
-      }
-    });
   } catch (error) {
     console.error('Erreur inscription:', error);
     res.status(500).json({ message: 'Erreur lors de l\'inscription. Veuillez réessayer.' });
