@@ -50,7 +50,7 @@ export default function Login() {
         <div className="relative z-10">
           {/* Logo Efficience */}
           <div className="flex items-center gap-3 mb-12">
-            <img src="/efficience-logo.svg" alt="Efficience" className="h-8 w-auto drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
+            <img src="/efficience-logo.svg" alt="Efficience" className="h-12 w-auto drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
           </div>
 
           {/* Main title */}
@@ -137,7 +137,7 @@ export default function Login() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder=""
+                  placeholder="••••••••"
                   required
                   className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
                 />
