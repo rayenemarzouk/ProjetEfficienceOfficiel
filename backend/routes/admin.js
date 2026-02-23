@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const { auth, adminOnly } = require('../middleware/auth');
@@ -631,8 +632,9 @@ router.post('/ai-toggle-confirm', auth, adminOnly, async (req, res) => {
     const trimmedCode = code.trim();
 
     if (type === 'admin') {
-      // Méthode 1 : Code fixe admin (ADMIN_AI_CODE dans .env)
-      if (process.env.ADMIN_AI_CODE && trimmedCode === process.env.ADMIN_AI_CODE) {
+      // Méthode 1 : Code fixe admin (ADMIN_AI_CODE hashé en bcrypt dans .env)
+      const isMatch = process.env.ADMIN_AI_CODE ? await bcrypt.compare(trimmedCode, process.env.ADMIN_AI_CODE) : false;
+      if (isMatch) {
         if (aiToggleCode && Date.now() <= aiToggleCode.expiresAt) {
           targetState = aiToggleCode.targetState;
           aiToggleCode = null;
