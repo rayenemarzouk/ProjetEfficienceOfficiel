@@ -48,16 +48,9 @@ export default function Login() {
         <div className="absolute bottom-1/4 right-0 w-56 h-56 bg-blue-500 rounded-full opacity-5 blur-3xl"></div>
 
         <div className="relative z-10">
-          {/* Logo Rayene Marzouk Dev AI */}
+          {/* Logo Efficience */}
           <div className="flex items-center gap-3 mb-12">
-            <div className="relative w-10 h-10 rounded-lg bg-gradient-to-br from-blue-700 to-blue-600 flex items-center justify-center shadow-[0_0_12px_rgba(59,130,246,0.3),0_0_24px_rgba(59,130,246,0.1)]">
-              <div className="absolute inset-0 rounded-lg bg-blue-600 opacity-20 blur-lg animate-pulse"></div>
-              <div className="absolute -inset-1 rounded-xl bg-blue-600 opacity-10 blur-xl animate-[pulse_1.5s_ease-in-out_infinite]"></div>
-              <svg className="relative w-5 h-5 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.9)]" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
-              </svg>
-            </div>
-            <span className="text-blue-400 font-semibold text-sm tracking-wider drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]">Rayene Marzouk Dev AI</span>
+            <img src="/efficience-logo.svg" alt="Efficience" className="h-8 w-auto drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
           </div>
 
           {/* Main title */}
@@ -127,7 +120,7 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="younis@efficience.fr"
+                  placeholder="votre@adresse-email.fr"
                   required
                   className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
                 />
@@ -144,7 +137,7 @@ export default function Login() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••"
+                  placeholder=""
                   required
                   className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
                 />
