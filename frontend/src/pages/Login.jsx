@@ -93,7 +93,7 @@ export default function Login() {
                 <rect width="28" height="28" rx="8" fill="#1a56db"/>
                 <path d="M7 14l4 4 10-10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <span className="text-sm font-black tracking-[0.12em] text-gray-800 uppercase" style={{ fontFamily: 'monospace' }}>RM PROD</span>
+              <span className="text-sm font-black tracking-[0.12em] text-gray-800 uppercase" style={{ fontFamily: 'monospace' }}>EFFICIENCE</span>
             </div>
             <h2 className="text-3xl font-black text-gray-900 tracking-tight">
               CONNEXION<br />AU COMPTE<span className="text-blue-500"> .</span>
@@ -115,6 +115,15 @@ export default function Login() {
               {error}
             </div>
           )}
+
+          {/* Dental badge */}
+          <div className="flex items-center gap-3 mb-6 p-3 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl border border-blue-100">
+            <img src="/dental-logo.svg" alt="Dentaire" className="w-10 h-10" />
+            <div>
+              <p className="text-sm font-bold text-gray-800">Santé & Dentaire</p>
+              <p className="text-[10px] text-gray-400">Plateforme de gestion de cabinet</p>
+            </div>
+          </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
