@@ -453,22 +453,29 @@ router.post('/deactivate-send-code', auth, adminOnly, async (req, res) => {
 
     // Send email to the admin who is requesting the deletion
     const adminEmail = req.user.email;
+    console.log(`[DELETE-CODE] Tentative d'envoi du code à ${adminEmail} pour supprimer ${targetUser.name}`);
+    console.log(`[DELETE-CODE] SMTP: host=${process.env.EMAIL_HOST}, port=${process.env.EMAIL_PORT}, user=${process.env.EMAIL_USER}`);
+    
     const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: parseInt(process.env.EMAIL_PORT),
+      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.EMAIL_PORT || '587'),
       secure: false,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
       },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000
     });
+
+    // Vérifier la connexion SMTP avant d'envoyer
+    await transporter.verify();
+    console.log(`[DELETE-CODE] Connexion SMTP vérifiée OK`);
 
     await transporter.sendMail({
       from: `"Efficience Analytics" <${process.env.EMAIL_USER}>`,
-      to: adminEmail,
+      to: process.env.EMAIL_USER,
       subject: `🗑️ Code de vérification — Suppression de ${targetUser.name}`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:30px;background:#f8fafc;border-radius:16px;">
@@ -491,11 +498,12 @@ router.post('/deactivate-send-code', auth, adminOnly, async (req, res) => {
       `
     });
 
-    console.log(`Code de suppression envoyé pour ${targetUser.name} (${targetUser.email}) → email envoyé à ${adminEmail}`);
-    res.json({ message: `Code de vérification envoyé à ${adminEmail}.` });
+    console.log(`Code de suppression envoyé pour ${targetUser.name} (${targetUser.email}) → email envoyé à ${process.env.EMAIL_USER}`);
+    res.json({ message: `Code de vérification envoyé à ${process.env.EMAIL_USER}.` });
   } catch (error) {
-    console.error('Erreur envoi code suppression:', error);
-    res.status(500).json({ message: 'Erreur lors de l\'envoi du code.' });
+    console.error('Erreur envoi code suppression:', error.message || error);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ message: `Erreur lors de l'envoi du code: ${error.message}` });
   }
 });
 
