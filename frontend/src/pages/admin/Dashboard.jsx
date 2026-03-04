@@ -905,7 +905,7 @@ export default function AdminDashboard() {
                 Live
               </span>}
             </div>
-            <p className={`text-xs mb-4 ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>Part de chaque cabinet dans le CA global</p>
+            <p className={`text-xs mb-4 ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>Part de chaque cabinet dans le CA global — depuis 2024 jusqu'à présent</p>
             <Doughnut ref={doughnutChartRef} data={doughnutData} plugins={(isDynamic && isRayan) ? [streamingDoughnutPlugin] : []} options={{
               responsive: true,
               cutout: '60%',
