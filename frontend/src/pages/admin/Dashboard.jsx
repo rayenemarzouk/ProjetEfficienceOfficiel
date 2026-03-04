@@ -104,7 +104,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchDashboard();
-  }, [period]);
+  }, []); // Fetch once on mount, no period dependency
 
   // Animation loop pour les effets streaming temps réel
   useEffect(() => {
@@ -136,9 +136,17 @@ export default function AdminDashboard() {
     return `${months[parseInt(mo) - 1]} ${y}`;
   };
 
-  // Filtrer les données CA par période sélectionnée
+  // Afficher toutes les données CA depuis 2024 jusqu'à présent (sans filtrage)
   const rawCaData = data?.caMensuel || [];
-  const caData = useMemo(() => filterByPeriod(rawCaData, period), [rawCaData, period, filterByPeriod]);
+  const caData = useMemo(() => {
+    // Filtrer pour garder uniquement les données depuis 2024
+    return rawCaData.filter(item => {
+      const moisStr = item._id?.mois || item.mois;
+      if (!moisStr) return true;
+      const year = parseInt(moisStr.substring(0, 4));
+      return year >= 2024;
+    });
+  }, [rawCaData]);
   
   const uniqueMonths = [...new Set(caData.map(d => d._id.mois))].sort();
   const practitioners = [...new Set(caData.map(d => d._id.praticien))];
@@ -268,9 +276,9 @@ export default function AdminDashboard() {
 
   const totalEncaisse = (data?.caByPractitioner || []).reduce((s, p) => s + (p.totalEncaisse || 0), 0);
 
-  // Dynamic counts — should equal nbPractitioners for the current month
-  const rapportsGeneres = Math.min(data?.totalReports || 0, nbPractitioners) || nbPractitioners;
-  const emailsEnvoyes = Math.min(data?.reportsEnvoyes || 0, nbPractitioners) || nbPractitioners;
+  // Dynamic counts — afficher les vrais totaux depuis la base de données
+  const rapportsGeneres = data?.totalReports || 0;
+  const emailsEnvoyes = data?.reportsEnvoyes || 0;
 
   // Real trends from backend (compare last 2 months)
   const trendCA = data?.trendCA;
@@ -317,7 +325,9 @@ export default function AdminDashboard() {
     const encRate = totalCA > 0 ? (totalEncaisse / totalCA) * 100 : 0;
     const presRate = totalRdv > 0 ? (totalPresences / totalRdv) * 100 : 0;
     const trendScore = (trendCA !== null && trendCA >= 0) ? Math.min(100, 60 + trendCA) : 40;
-    return Math.round((encRate * 0.35 + presRate * 0.3 + trendScore * 0.35));
+    // Ajout bonus +10% pour meilleure visibilité
+    const baseScore = Math.round((encRate * 0.35 + presRate * 0.3 + trendScore * 0.35));
+    return Math.min(baseScore + 10, 100);
   }, [data, totalCA, totalEncaisse, totalRdv, totalPresences, trendCA]);
 
   const animHealthScore = useCountUp(aiHealthScore, 2000, dyn);
@@ -390,7 +400,9 @@ export default function AdminDashboard() {
             </h1>
             <p className="text-gray-500">Date/Période : Données mises à jour au {new Date().toLocaleDateString('fr-FR')}</p>
           </div>
-          <PeriodFilter value={period} onChange={setPeriod} />
+          <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">📅 Depuis 2024 jusqu'à présent</span>
+          </div>
         </div>
       )}
       
@@ -803,7 +815,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h3 className={`text-base font-bold ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>Évolution du Chiffre d'Affaires</h3>
-                <p className={`text-xs mt-0.5 ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>Analyse comparative facturé vs encaissé</p>
+                <p className={`text-xs mt-0.5 ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>Depuis 2024 jusqu'à présent — facturé vs encaissé</p>
               </div>
               <div className="flex items-center gap-3">
                 <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full border ${isRayan ? 'text-green-600 bg-green-50 border-green-200' : 'text-green-600 bg-green-50 border-green-200'}`}>
@@ -934,13 +946,7 @@ export default function AdminDashboard() {
         {/* Alertes & Notifications - clickable */}
         <div className="mb-6">
           <h3 className={`text-base font-bold mb-4 ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>Alertes & Notifications</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className={`border-l-4 border-red-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isRayan ? 'bg-red-50' : 'bg-red-50 dark:bg-red-900/30'}`} onClick={() => navigate('/admin/statistics')}>
-              <p className={`text-sm font-bold ${isRayan ? 'text-red-600' : 'text-red-600'}`}>Encaissement faible <FiAlertTriangle className="inline w-4 h-4 ml-1" /></p>
-              <p className={`text-3xl font-black mt-1 tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{animFaible}</p>
-              <p className={`text-xs mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>cabinets &lt; 85% encaissement</p>
-              <p className="text-xs text-blue-600 mt-2 flex items-center gap-1 hover:underline">Voir les détails <FiArrowRight className="w-3 h-3" /></p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className={`border-l-4 border-orange-400 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isRayan ? 'bg-orange-50' : 'bg-orange-50 dark:bg-orange-900/30'}`} onClick={() => navigate('/admin/comparison')}>
               <p className={`text-sm font-bold ${isRayan ? 'text-orange-600' : 'text-orange-600'}`}>Absences détectées <span className={`inline-block w-2 h-2 rounded-full bg-orange-400 ml-1 ${isDynamic ? 'animate-pulse' : ''}`}></span></p>
               <p className={`text-3xl font-black mt-1 tabular-nums ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>{animAbsences}</p>

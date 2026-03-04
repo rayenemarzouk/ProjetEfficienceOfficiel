@@ -204,11 +204,12 @@ router.get('/dashboard', auth, consultantOnly, async (req, res) => {
       const h = (heures.totalMinutes || 0) / 60;
       const practitioner = practitioners.find(pr => getPraticienId(pr) === p._id);
       
-      // Score de performance
+      // Score de performance avec bonus +10%
       const tauxEnc = p.totalFacture > 0 ? (p.totalEncaisse / p.totalFacture) * 100 : 0;
       const prodHoraire = h > 0 ? p.totalFacture / h : 0;
       const tauxDevis = devis.totalDevis > 0 ? (devis.totalAcceptes / devis.totalDevis) * 100 : 0;
-      const score = Math.round((tauxEnc * 0.3 + Math.min(100, prodHoraire / 4) * 0.4 + tauxDevis * 0.3));
+      const baseScore = Math.round((tauxEnc * 0.3 + Math.min(100, prodHoraire / 4) * 0.4 + tauxDevis * 0.3));
+      const score = Math.min(baseScore + 10, 100);
       
       return {
         praticien: p._id,
@@ -382,7 +383,8 @@ router.get('/analyses', auth, consultantOnly, async (req, res) => {
       const tauxEnc = totalCA > 0 ? (totalEnc / totalCA) * 100 : 0;
       const prodH = totalH > 0 ? totalCA / totalH : 0;
       const tauxDevis = totalDevis > 0 ? (totalAcceptes / totalDevis) * 100 : 0;
-      const score = Math.round((tauxEnc * 0.3 + Math.min(100, prodH / 4) * 0.4 + tauxDevis * 0.3));
+      const baseScore = Math.round((tauxEnc * 0.3 + Math.min(100, prodH / 4) * 0.4 + tauxDevis * 0.3));
+      const score = Math.min(baseScore + 10, 100);
       
       return {
         code,
@@ -462,7 +464,8 @@ router.get('/clients', auth, consultantOnly, async (req, res) => {
       const tauxEnc = totalFacture > 0 ? (totalEncaisse / totalFacture) * 100 : 0;
       const prodH = totalH > 0 ? totalFacture / totalH : 0;
       const tauxDevis = nbDevis > 0 ? (nbAcceptes / nbDevis) * 100 : 0;
-      const scoreMoyen = Math.round((tauxEnc * 0.3 + Math.min(100, prodH / 4) * 0.4 + tauxDevis * 0.3));
+      const baseScoreMoyen = Math.round((tauxEnc * 0.3 + Math.min(100, prodH / 4) * 0.4 + tauxDevis * 0.3));
+      const scoreMoyen = Math.min(baseScoreMoyen + 10, 100);
       
       // % analysé par IA (simulation)
       const pctAnalyseIA = totalEnregistrements > 0 ? Math.min(100, Math.round((totalEnregistrements / 12) * 100)) : 0;

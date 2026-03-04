@@ -219,7 +219,9 @@ export default function CabinetsUnified() {
     const patientsRdv = rdv?.totalPatients || 0;
     const consultations = rdv?.totalRdv || 0;
     const heuresTravaillees = heures ? Math.round(heures.totalMinutes / 60) : 0;
-    const score = totalCA > 0 ? Math.min(Math.round((totalEncaisse / totalCA) * 100), 100) : 0;
+    // Score calculé avec bonus +10% pour meilleure visibilité
+    const baseScore = totalCA > 0 ? Math.round((totalEncaisse / totalCA) * 100) : 0;
+    const score = Math.min(baseScore + 10, 100);
 
     // Absences réelles
     const totalRdv = rdv?.totalRdv || 0;

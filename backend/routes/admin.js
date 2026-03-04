@@ -104,11 +104,9 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
     // Compute real trends: compare last 2 months of CA
     const allMois = [...new Set(caMensuel.map(c => c._id.mois))].sort();
 
-    // Rapports générés — filtrer par le dernier mois pour cohérence
-    const lastMonth = allMois.length > 0 ? allMois[allMois.length - 1] : null;
-    const reportFilter = lastMonth ? { mois: lastMonth } : {};
-    const totalReports = await Report.countDocuments(reportFilter);
-    const reportsEnvoyes = await Report.countDocuments({ ...reportFilter, emailEnvoye: true });
+    // Rapports générés — comptage TOTAL (sans filtre de mois) pour cohérence avec la page Rapports
+    const totalReports = await Report.countDocuments({});
+    const reportsEnvoyes = await Report.countDocuments({ emailEnvoye: true });
 
     let trendCA = null;
     let trendPatients = null;

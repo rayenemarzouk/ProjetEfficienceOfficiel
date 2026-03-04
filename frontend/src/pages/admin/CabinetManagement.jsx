@@ -182,7 +182,9 @@ export default function CabinetManagement() {
     const totalCA = monthData?.totalFacture || 0;
     const totalEncaisse = monthData?.totalEncaisse || 0;
     const patients = monthData?.totalPatients || 0;
-    const score = totalCA > 0 ? Math.round((totalEncaisse / totalCA) * 100) : 0;
+    // Score calculé avec bonus +10% pour meilleure visibilité
+    const baseScore = totalCA > 0 ? Math.round((totalEncaisse / totalCA) * 100) : 0;
+    const score = Math.min(baseScore + 10, 100);
 
     // Tendance basée sur variation vs mois précédent
     let tendance = 'Stable';
