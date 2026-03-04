@@ -286,9 +286,6 @@ export default function Reports() {
               Générer & Envoyer
             </button>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            💡 Nb rapports générés = Nb emails envoyés = Nb praticiens actifs ({practitioners.length})
-          </p>
         </div>
 
         {/* Liste des rapports */}

@@ -72,7 +72,7 @@ export default function Comparison() {
     return { startDate, endDate };
   }, []);
 
-  // Filtrer les données par période
+  // Filtrer les données par période (format mois: YYYYMMDD, YYYY-MM ou YYYYMM)
   const filterByPeriod = useCallback((dataArray, periodObj) => {
     if (!dataArray || !Array.isArray(dataArray)) return [];
     const { startDate, endDate } = getPeriodDates(periodObj);
@@ -81,8 +81,21 @@ export default function Comparison() {
       let moisStr = item._id?.mois || item.mois;
       if (!moisStr) return true;
       
-      const year = parseInt(moisStr.substring(0, 4));
-      const month = parseInt(moisStr.substring(4, 6)) - 1;
+      let year, month;
+      if (moisStr.includes('-')) {
+        // Format YYYY-MM
+        const parts = moisStr.split('-');
+        year = parseInt(parts[0]);
+        month = parseInt(parts[1]) - 1;
+      } else if (moisStr.length === 8) {
+        // Format YYYYMMDD
+        year = parseInt(moisStr.substring(0, 4));
+        month = parseInt(moisStr.substring(4, 6)) - 1;
+      } else {
+        // Format YYYYMM
+        year = parseInt(moisStr.substring(0, 4));
+        month = parseInt(moisStr.substring(4, 6)) - 1;
+      }
       const itemDate = new Date(year, month, 1);
       
       return itemDate >= startDate && itemDate <= endDate;

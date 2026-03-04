@@ -67,10 +67,17 @@ export default function CabinetManagement() {
     );
   }
 
-  // Convertir YYYYMM vers YYYY-MM (format base de données) - pour handleViewDetails
-  const toDbFormatLocal = (yyyymm) => {
-    if (!yyyymm || yyyymm.length !== 6) return yyyymm;
-    return `${yyyymm.substring(0, 4)}-${yyyymm.substring(4, 6)}`;
+  // Convertir et normaliser les formats de date
+  const normalizeMonth = (moisStr) => {
+    if (!moisStr) return '';
+    if (moisStr.includes('-')) return moisStr.replace('-', '');
+    return moisStr.substring(0, 6);
+  };
+
+  // Trouver les données pour un mois donné (supporte tous les formats)
+  const findByMonth = (arr, mois) => {
+    const moisNorm = normalizeMonth(mois);
+    return arr?.find(r => normalizeMonth(r._id) === moisNorm);
   };
 
   const handleViewDetails = async (cab) => {
@@ -80,24 +87,23 @@ export default function CabinetManagement() {
       const res = await getCabinetDetails(cab.code);
       const d = res.data;
       
-      // Convertir le mois sélectionné au format DB (YYYY-MM)
-      const moisDb = toDbFormatLocal(selectedMonth);
+      // Calculer le mois précédent
       const prevMonthValue = parseInt(selectedMonth.substring(4, 6)) - 1;
-      const prevMonthYear = prevMonthValue === 0 
-        ? `${parseInt(selectedMonth.substring(0, 4)) - 1}-12`
-        : `${selectedMonth.substring(0, 4)}-${String(prevMonthValue).padStart(2, '0')}`;
+      const prevMonthStr = prevMonthValue === 0 
+        ? `${parseInt(selectedMonth.substring(0, 4)) - 1}12`
+        : `${selectedMonth.substring(0, 4)}${String(prevMonthValue).padStart(2, '0')}`;
       
-      // Trouver les données du mois sélectionné
-      const monthData = d.realisation?.find(r => r._id === moisDb);
-      const prevMonth = d.realisation?.find(r => r._id === prevMonthYear);
+      // Trouver les données du mois sélectionné (supporte tous les formats dans la DB)
+      const monthData = findByMonth(d.realisation, selectedMonth);
+      const prevMonth = findByMonth(d.realisation, prevMonthStr);
       
-      const rdvMonth = d.rdv?.find(r => r._id === moisDb);
-      const prevRdvMonth = d.rdv?.find(r => r._id === prevMonthYear);
+      const rdvMonth = findByMonth(d.rdv, selectedMonth);
+      const prevRdvMonth = findByMonth(d.rdv, prevMonthStr);
       
-      const heuresMonth = d.heures?.find(r => r._id === moisDb);
-      const prevHeuresMonth = d.heures?.find(r => r._id === prevMonthYear);
+      const heuresMonth = findByMonth(d.heures, selectedMonth);
+      const prevHeuresMonth = findByMonth(d.heures, prevMonthStr);
       
-      const devisMonth = d.devis?.find(r => r._id === moisDb);
+      const devisMonth = findByMonth(d.devis, selectedMonth);
 
       const heuresTrav = heuresMonth ? (heuresMonth.nbHeures / 60).toFixed(0) : 0;
       const prevHeuresTrav = prevHeuresMonth ? (prevHeuresMonth.nbHeures / 60).toFixed(0) : 0;
@@ -147,16 +153,21 @@ export default function CabinetManagement() {
   const rdvByP = data?.rdvByPractitioner || [];
   const caMensuel = data?.caMensuel || [];
 
-  // Convertir YYYYMM vers YYYY-MM (format base de données)
-  const toDbFormat = (yyyymm) => {
-    if (!yyyymm || yyyymm.length !== 6) return yyyymm;
-    return `${yyyymm.substring(0, 4)}-${yyyymm.substring(4, 6)}`;
+  // Normaliser tout format de date (YYYYMMDD, YYYY-MM, YYYYMM) vers YYYYMM pour comparaison
+  const toYYYYMM = (str) => {
+    if (!str) return '';
+    if (str.includes('-')) {
+      // Format YYYY-MM -> YYYYMM
+      return str.replace('-', '');
+    }
+    // Format YYYYMMDD ou YYYYMM -> prend les 6 premiers caractères
+    return str.substring(0, 6);
   };
 
   // Filtrer les données par mois sélectionné
   const getDataForMonth = (praticienCode, mois) => {
-    const moisDb = toDbFormat(mois);
-    return caMensuel.find(c => c._id?.praticien === praticienCode && c._id?.mois === moisDb);
+    const moisNorm = toYYYYMM(mois);
+    return caMensuel.find(c => c._id?.praticien === praticienCode && toYYYYMM(c._id?.mois) === moisNorm);
   };
 
   const cabinets = practitioners.map((p) => {

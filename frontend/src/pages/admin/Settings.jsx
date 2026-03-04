@@ -550,11 +550,6 @@ export default function Settings() {
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Destinataire rapports</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">maarzoukrayan3@gmail.com</p>
               </div>
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-xl border border-blue-100 dark:border-blue-800">
-                <p className="text-xs font-medium text-blue-600">
-                  💡 Nb rapports = Nb emails = Nb praticiens actifs
-                </p>
-              </div>
             </div>
           </div>
         </div>

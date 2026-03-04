@@ -72,7 +72,7 @@ export default function AdminDashboard() {
     return { startDate, endDate };
   }, []);
 
-  // Filtrer les données par période (format mois: YYYYMMDD ou YYYYMM)
+  // Filtrer les données par période (format mois: YYYYMMDD, YYYY-MM ou YYYYMM)
   const filterByPeriod = useCallback((dataArray, periodObj) => {
     if (!dataArray || !Array.isArray(dataArray)) return [];
     const { startDate, endDate } = getPeriodDates(periodObj);
@@ -81,8 +81,21 @@ export default function AdminDashboard() {
       let moisStr = item._id?.mois || item.mois;
       if (!moisStr) return true;
       
-      const year = parseInt(moisStr.substring(0, 4));
-      const month = parseInt(moisStr.substring(4, 6)) - 1;
+      let year, month;
+      if (moisStr.includes('-')) {
+        // Format YYYY-MM
+        const parts = moisStr.split('-');
+        year = parseInt(parts[0]);
+        month = parseInt(parts[1]) - 1;
+      } else if (moisStr.length === 8) {
+        // Format YYYYMMDD
+        year = parseInt(moisStr.substring(0, 4));
+        month = parseInt(moisStr.substring(4, 6)) - 1;
+      } else {
+        // Format YYYYMM
+        year = parseInt(moisStr.substring(0, 4));
+        month = parseInt(moisStr.substring(4, 6)) - 1;
+      }
       const itemDate = new Date(year, month, 1);
       
       return itemDate >= startDate && itemDate <= endDate;
@@ -329,7 +342,7 @@ export default function AdminDashboard() {
     <div className={isRayan ? '' : 'space-y-6'}>
       {/* Header Rayan */}
       {isRayan && (
-        <div className="bg-[#0a1628] px-6 py-4 flex items-center justify-between border-b border-gray-800">
+        <div className="sticky top-0 z-40 bg-[#0a1628] px-6 py-4 flex items-center justify-between border-b border-gray-800">
           <div>
             <h1 className="text-xl font-bold text-white">Dashboard Général</h1>
             <p className="text-sm text-gray-400">Vue d'ensemble de tous les cabinets</p>
@@ -434,23 +447,7 @@ export default function AdminDashboard() {
                       <p className="text-[11px] text-gray-500">Intelligence artificielle temps réel</p>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-violet-500/10 border border-violet-500/20 rounded-md text-[9px] font-medium text-violet-600">
-                      <FiZap className="w-2.5 h-2.5" /> Régression OLS
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded-md text-[9px] font-medium text-blue-600">
-                      <FiActivity className="w-2.5 h-2.5" /> Holt-Winters
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/20 rounded-md text-[9px] font-medium text-cyan-600">
-                      <FiShield className="w-2.5 h-2.5" /> Z-Score
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded-md text-[9px] font-medium text-amber-600">
-                      <FiTarget className="w-2.5 h-2.5" /> Multi-KPI
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-[9px] font-medium text-emerald-600">
-                      <FiBarChart2 className="w-2.5 h-2.5" /> SMA
-                    </span>
-                  </div>
+
                 </div>
 
                 <div className="text-center p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-blue-300 transition-colors">
@@ -813,10 +810,6 @@ export default function AdminDashboard() {
                   <span className="relative flex h-2 w-2"><span className={`${isDynamic ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75`}></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
                   Temps réel
                 </span>
-                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${isRayan ? 'bg-violet-50 border-violet-200' : 'bg-violet-50 border-violet-200'}`}>
-                  <FiCpu className={`w-3 h-3 ${isRayan ? 'text-violet-500' : 'text-violet-500'}`} />
-                  <span className={`text-[10px] font-semibold ${isRayan ? 'text-violet-600' : 'text-violet-600'}`}>Modèle IA — Régression + Holt</span>
-                </div>
               </div>
             </div>
             <div style={{ height: '280px' }}>
@@ -1001,7 +994,6 @@ export default function AdminDashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                        <p className="text-[10px] text-gray-500 font-mono">{activity.model}</p>
                       </div>
                       <span className="text-[10px] text-gray-400 flex-shrink-0 tabular-nums">{activity.time}</span>
                     </div>
