@@ -79,7 +79,7 @@ export default function ConsultantLayout({ children }) {
 
       {/* Sidebar */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50
+        fixed inset-y-0 left-0 z-50 h-screen
         w-64 bg-[#1a2b4f] text-white
         transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -187,7 +187,7 @@ export default function ConsultantLayout({ children }) {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen lg:ml-64">
         {/* Top header */}
         <header className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between lg:justify-end">
           <button
