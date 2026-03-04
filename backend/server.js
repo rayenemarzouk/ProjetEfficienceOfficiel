@@ -16,6 +16,7 @@ app.use((req, res, next) => {
     'https://efficience-analytics-eu-783177.hostingersite.com',
     'https://efficience-analytics.onrender.com',
     'https://projetefficienceofficiel.onrender.com',
+    'https://projetefficienceofficiel-mk01.onrender.com',
     'http://localhost:5173',
     'http://localhost:5000'
   ];
@@ -39,6 +40,7 @@ app.use(cors({
     'https://efficience-analytics-eu-783177.hostingersite.com',
     'https://efficience-analytics.onrender.com',
     'https://projetefficienceofficiel.onrender.com',
+    'https://projetefficienceofficiel-mk01.onrender.com',
     'http://localhost:5173',
     'http://localhost:5000'
   ],
