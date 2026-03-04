@@ -294,7 +294,28 @@ export default function CabinetsUnified() {
         position: 'bottom',
         labels: { color: chartTextColor, usePointStyle: true, padding: 16 },
       },
-      tooltip: { backgroundColor: '#1e293b', titleColor: '#fff', bodyColor: '#e2e8f0', cornerRadius: 8 },
+      tooltip: { 
+        backgroundColor: 'rgba(15, 23, 42, 0.95)', 
+        titleColor: '#fff', 
+        bodyColor: '#e2e8f0', 
+        cornerRadius: 8,
+        padding: 12,
+        callbacks: {
+          afterBody: (context) => {
+            if (context.length === 0) return [];
+            const dataIndex = context[0].dataIndex;
+            const p = pracData[dataIndex];
+            if (!p) return [];
+            const total = p.presents + p.absents;
+            const tauxPresence = total > 0 ? ((p.presents / total) * 100).toFixed(1) : 0;
+            return [
+              '',
+              `📊 Taux présence: ${tauxPresence}%`,
+              `📈 Score santé: ${p.health?.score || 0}/100`
+            ];
+          }
+        }
+      },
     },
     scales: {
       x: { ticks: { color: chartTextColor }, grid: { display: false } },
@@ -347,6 +368,48 @@ export default function CabinetsUnified() {
       backgroundColor: ['#10b981', '#ef4444'],
       borderWidth: 0,
     }]
+  };
+
+  // Options avancées pour le Doughnut avec tooltip détaillé par praticien
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { color: chartTextColor, padding: 16 } },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const label = context.label || '';
+            const value = context.raw || 0;
+            const total = totalPresents + totalAbsents;
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+            return `${label}: ${value.toLocaleString()} (${percentage}%)`;
+          },
+          afterLabel: (context) => {
+            // Afficher la répartition par praticien
+            const isAbsents = context.dataIndex === 1;
+            const lines = [];
+            lines.push(''); // Ligne vide pour séparer
+            lines.push('── Détail par cabinet ──');
+            pracData.forEach(p => {
+              const val = isAbsents ? p.absents : p.presents;
+              if (val > 0) {
+                lines.push(`  ${p.code}: ${val.toLocaleString()}`);
+              }
+            });
+            return lines;
+          }
+        },
+        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderColor: 'rgba(59, 130, 246, 0.3)',
+        borderWidth: 1,
+        padding: 12,
+        bodySpacing: 4,
+        displayColors: true,
+      }
+    }
   };
 
   const renderAnalysisView = () => (
@@ -507,13 +570,7 @@ export default function CabinetsUnified() {
             <Doughnut 
               ref={doughnutChartRef}
               data={doughnutData} 
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: { position: 'bottom', labels: { color: chartTextColor, padding: 16 } }
-                }
-              }} 
+              options={doughnutOptions} 
             />
           </div>
         </div>

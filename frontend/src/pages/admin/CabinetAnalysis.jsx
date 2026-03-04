@@ -40,29 +40,6 @@ export default function CabinetAnalysis() {
     { value: 'all', label: 'Tout' },
   ];
 
-  // Fonction pour obtenir les mois dans la période sélectionnée
-  const getMonthsInPeriod = (period) => {
-    const now = new Date();
-    const months = [];
-    let numMonths = 1;
-    
-    switch (period) {
-      case 'last_month': numMonths = 1; break;
-      case 'last_3_months': numMonths = 3; break;
-      case 'last_6_months': numMonths = 6; break;
-      case 'last_year': numMonths = 12; break;
-      case 'all': return null; // null = pas de filtre
-      default: numMonths = 1;
-    }
-    
-    for (let i = 0; i < numMonths; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const mois = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      months.push(mois);
-    }
-    return months;
-  };
-
   // Animation loop pour les effets streaming
   useEffect(() => {
     if (!isDynamic) return;
@@ -103,6 +80,32 @@ export default function CabinetAnalysis() {
   const rdvMensuel = data?.dashboard?.rdvMensuel || [];
   const heuresByP = data?.dashboard?.heuresByPractitioner || [];
 
+  // Extraire tous les mois disponibles dans les données (triés du plus récent au plus ancien)
+  const availableMonths = useMemo(() => {
+    const months = new Set();
+    caMensuel.forEach(c => { if (c._id?.mois) months.add(c._id.mois); });
+    rdvMensuel.forEach(r => { if (r._id?.mois) months.add(r._id.mois); });
+    return [...months].sort().reverse(); // Plus récent en premier
+  }, [caMensuel, rdvMensuel]);
+
+  // Fonction pour obtenir les mois filtrés selon la période sélectionnée
+  const getMonthsInPeriod = (period) => {
+    if (!availableMonths.length) return null;
+    if (period === 'all') return null; // Pas de filtre = toutes les données
+    
+    let numMonths = 1;
+    switch (period) {
+      case 'last_month': numMonths = 1; break;
+      case 'last_3_months': numMonths = 3; break;
+      case 'last_6_months': numMonths = 6; break;
+      case 'last_year': numMonths = 12; break;
+      default: numMonths = 1;
+    }
+    
+    // Prendre les N premiers mois disponibles (les plus récents)
+    return availableMonths.slice(0, numMonths);
+  };
+
   // Filtrer les données par période sélectionnée
   const filteredData = useMemo(() => {
     const allowedMonths = getMonthsInPeriod(selectedPeriod);
@@ -118,7 +121,7 @@ export default function CabinetAnalysis() {
       : rdvMensuel;
     
     return { filteredCA, filteredRdv };
-  }, [caMensuel, rdvMensuel, selectedPeriod]);
+  }, [caMensuel, rdvMensuel, selectedPeriod, availableMonths]);
 
   // Agréger les données filtrées par praticien
   const aggregatedByPractitioner = useMemo(() => {
