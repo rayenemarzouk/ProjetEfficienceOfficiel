@@ -90,13 +90,6 @@ export default function Login() {
         <div className="w-full max-w-md px-8 py-12">
           {/* Header */}
           <div className="mb-10">
-            <div className="flex items-center gap-3 mb-4">
-              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="28" height="28" rx="8" fill="#1a56db"/>
-                <path d="M7 14l4 4 10-10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span className="text-sm font-black tracking-[0.12em] text-gray-800 uppercase" style={{ fontFamily: 'monospace' }}>EFFICIENCE</span>
-            </div>
             <h2 className="text-3xl font-black text-gray-900 tracking-tight">
               CONNEXION<br />AU COMPTE<span className="text-blue-500"> .</span>
             </h2>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" fill="none">
+  <!-- Tooth body -->
+  <path d="M100 10 C60 10 25 40 25 80 C25 110 35 130 50 160 C58 178 65 200 75 210 C80 215 85 215 90 205 C95 190 98 170 100 155 C102 170 105 190 110 205 C115 215 120 215 125 210 C135 200 142 178 150 160 C165 130 175 110 175 80 C175 40 140 10 100 10Z" fill="url(#toothGrad)" stroke="#4da8da" stroke-width="3"/>
+  <!-- Implant lines -->
+  <path d="M75 160 L125 160" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <path d="M78 172 L122 172" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  <path d="M82 184 L118 184" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <path d="M86 196 L114 196" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+  <!-- Orange accent -->
+  <path d="M130 20 C145 30 160 50 165 75 C155 45 140 30 130 20Z" fill="#f5a623"/>
+  <defs>
+    <linearGradient id="toothGrad" x1="25" y1="10" x2="175" y2="210" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5bb8f0"/>
+      <stop offset="50%" stop-color="#1a3a5c"/>
+      <stop offset="100%" stop-color="#4da8da"/>
+    </linearGradient>
+  </defs>
+</svg>
