@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import { getAdminDashboard } from '../../services/api';
+import PeriodFilter from '../../components/PeriodFilter';
 import { FiTrendingUp, FiTrendingDown, FiUsers, FiFileText, FiMail, FiDollarSign, FiActivity, FiAlertTriangle, FiArrowRight, FiCpu, FiZap, FiShield, FiTarget, FiBarChart2, FiClock, FiCheck, FiStar, FiGlobe, FiLayers, FiSettings } from 'react-icons/fi';
 import { useCountUp } from '../../utils/useCountUp';
 import { useDynamic } from '../../context/DynamicContext';
@@ -17,6 +18,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineEleme
 export default function AdminDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState({ period: 'last_year' });
   const navigate = useNavigate();
   const { isDynamic: _isDynamic, dataAccessEnabled } = useDynamic();
   const { user } = useAuth();
@@ -29,9 +31,67 @@ export default function AdminDashboard() {
   const lineChartRef = useRef(null);
   const doughnutChartRef = useRef(null);
 
+  // Helper pour calculer les dates de début/fin basées sur la période
+  const getPeriodDates = useCallback((periodObj) => {
+    const now = new Date();
+    let startDate, endDate;
+    
+    switch (periodObj?.period) {
+      case 'this_month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case 'last_month':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        break;
+      case '3_months':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case '6_months':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case 'this_year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear(), 11, 31);
+        break;
+      case 'last_year':
+        startDate = new Date(now.getFullYear() - 1, 0, 1);
+        endDate = new Date(now.getFullYear() - 1, 11, 31);
+        break;
+      case 'custom':
+        startDate = periodObj.startDate ? new Date(periodObj.startDate) : new Date(now.getFullYear(), 0, 1);
+        endDate = periodObj.endDate ? new Date(periodObj.endDate) : now;
+        break;
+      default:
+        startDate = new Date(now.getFullYear() - 1, 0, 1);
+        endDate = new Date(now.getFullYear(), 11, 31);
+    }
+    return { startDate, endDate };
+  }, []);
+
+  // Filtrer les données par période (format mois: YYYYMMDD ou YYYYMM)
+  const filterByPeriod = useCallback((dataArray, periodObj) => {
+    if (!dataArray || !Array.isArray(dataArray)) return [];
+    const { startDate, endDate } = getPeriodDates(periodObj);
+    
+    return dataArray.filter(item => {
+      let moisStr = item._id?.mois || item.mois;
+      if (!moisStr) return true;
+      
+      const year = parseInt(moisStr.substring(0, 4));
+      const month = parseInt(moisStr.substring(4, 6)) - 1;
+      const itemDate = new Date(year, month, 1);
+      
+      return itemDate >= startDate && itemDate <= endDate;
+    });
+  }, [getPeriodDates]);
+
   useEffect(() => {
     fetchDashboard();
-  }, []);
+  }, [period]);
 
   // Animation loop pour les effets streaming temps réel
   useEffect(() => {
@@ -43,6 +103,7 @@ export default function AdminDashboard() {
   }, [loading, isDynamic, isRayan]);
 
   const fetchDashboard = async () => {
+    setLoading(true);
     try {
       const res = await getAdminDashboard();
       setData(res.data);
@@ -62,7 +123,10 @@ export default function AdminDashboard() {
     return `${months[parseInt(mo) - 1]} ${y}`;
   };
 
-  const caData = data?.caMensuel || [];
+  // Filtrer les données CA par période sélectionnée
+  const rawCaData = data?.caMensuel || [];
+  const caData = useMemo(() => filterByPeriod(rawCaData, period), [rawCaData, period, filterByPeriod]);
+  
   const uniqueMonths = [...new Set(caData.map(d => d._id.mois))].sort();
   const practitioners = [...new Set(caData.map(d => d._id.praticien))];
   const nbPractitioners = data?.practitioners?.length || 0;
@@ -272,6 +336,7 @@ export default function AdminDashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
+            <PeriodFilter value={period} onChange={setPeriod} />
             <button className="p-2 bg-[#1e293b] border border-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors">
               <FiSettings className="w-5 h-5" />
             </button>
@@ -303,6 +368,7 @@ export default function AdminDashboard() {
             </h1>
             <p className="text-gray-500">Date/Période : Données mises à jour au {new Date().toLocaleDateString('fr-FR')}</p>
           </div>
+          <PeriodFilter value={period} onChange={setPeriod} />
         </div>
       )}
       

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import { getCabinetDetails, getAdminDashboard } from '../../services/api';
@@ -39,7 +39,7 @@ export default function CabinetsUnified() {
   const [data, setData] = useState(null);
   const [practitioners, setPractitioners] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState({ period: 'this_month' });
+  const [period, setPeriod] = useState({ period: 'last_year' });
   const [expandedInsight, setExpandedInsight] = useState({ patients: false, activite: false });
   
   const { isDynamic: _isDynamic, dataAccessEnabled } = useDynamic();
@@ -52,6 +52,65 @@ export default function CabinetsUnified() {
   const barChartRef = useRef(null);
   const doughnutChartRef = useRef(null);
 
+  // Helper pour calculer les dates de début/fin basées sur la période
+  const getPeriodDates = useCallback((periodObj) => {
+    const now = new Date();
+    let startDate, endDate;
+    
+    switch (periodObj?.period) {
+      case 'this_month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case 'last_month':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        break;
+      case '3_months':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case '6_months':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case 'this_year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear(), 11, 31);
+        break;
+      case 'last_year':
+        startDate = new Date(now.getFullYear() - 1, 0, 1);
+        endDate = new Date(now.getFullYear() - 1, 11, 31);
+        break;
+      case 'custom':
+        startDate = periodObj.startDate ? new Date(periodObj.startDate) : new Date(now.getFullYear(), 0, 1);
+        endDate = periodObj.endDate ? new Date(periodObj.endDate) : now;
+        break;
+      default:
+        startDate = new Date(now.getFullYear() - 1, 0, 1);
+        endDate = new Date(now.getFullYear(), 11, 31);
+    }
+    return { startDate, endDate };
+  }, []);
+
+  // Filtrer les données par période (format mois: YYYYMMDD ou YYYYMM)
+  const filterByPeriod = useCallback((dataArray, periodObj, dateField = 'mois') => {
+    if (!dataArray || !Array.isArray(dataArray)) return [];
+    const { startDate, endDate } = getPeriodDates(periodObj);
+    
+    return dataArray.filter(item => {
+      let moisStr = item[dateField] || item._id?.[dateField] || item._id?.mois;
+      if (!moisStr) return true; // Garder si pas de date
+      
+      // Convertir le format YYYYMMDD ou YYYYMM en Date
+      const year = parseInt(moisStr.substring(0, 4));
+      const month = parseInt(moisStr.substring(4, 6)) - 1;
+      const itemDate = new Date(year, month, 1);
+      
+      return itemDate >= startDate && itemDate <= endDate;
+    });
+  }, [getPeriodDates]);
+
   // Animation loop
   useEffect(() => {
     if (!isDynamic) return;
@@ -63,9 +122,10 @@ export default function CabinetsUnified() {
 
   useEffect(() => {
     fetchAllData();
-  }, []);
+  }, [period]); // Re-fetch quand la période change
 
   const fetchAllData = async () => {
+    setLoading(true);
     try {
       const dashRes = await getAdminDashboard();
       const pracs = dashRes.data.practitioners || [];
@@ -89,12 +149,26 @@ export default function CabinetsUnified() {
   };
 
   // ═══════════════════════════════════════════════════════════════════
-  // DONNÉES COMMUNES
+  // DONNÉES COMMUNES - Filtrées par période
   // ═══════════════════════════════════════════════════════════════════
-  const caByP = data?.dashboard?.caByPractitioner || [];
-  const heuresByP = data?.dashboard?.heuresByPractitioner || [];
-  const rdvByP = data?.dashboard?.rdvByPractitioner || [];
-  const rdvMensuel = data?.dashboard?.rdvMensuel || [];
+  const rawCaByP = data?.dashboard?.caByPractitioner || [];
+  const rawHeuresByP = data?.dashboard?.heuresByPractitioner || [];
+  const rawRdvByP = data?.dashboard?.rdvByPractitioner || [];
+  const rawRdvMensuel = data?.dashboard?.rdvMensuel || [];
+  
+  // Appliquer le filtre de période aux données mensuelles
+  const rdvMensuelFiltered = useMemo(() => {
+    return filterByPeriod(rawRdvMensuel, period, '_id.mois').map(item => ({
+      ...item,
+      _id: item._id || {}
+    }));
+  }, [rawRdvMensuel, period, filterByPeriod]);
+  
+  // Pour les données agrégées (caByP, heuresByP, rdvByP), recalculer basé sur rdvMensuel filtré
+  const caByP = rawCaByP; // Ces données viennent déjà agrégées du backend
+  const heuresByP = rawHeuresByP;
+  const rdvByP = rawRdvByP;
+  const rdvMensuel = rdvMensuelFiltered;
 
   // Calculate per-practitioner data
   const pracData = practitioners.map((p, idx) => {

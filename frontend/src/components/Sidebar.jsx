@@ -57,11 +57,11 @@ export default function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 flex flex-col z-50" style={{ backgroundColor: '#0f172a' }}>
       {/* Logo */}
-      <div className="px-5 py-6">
-        <h1 className="text-base font-black text-white whitespace-nowrap" style={{ fontFamily: 'monospace' }}>
+      <div className="px-4 py-5">
+        <h1 className="text-sm font-black text-white whitespace-nowrap tracking-[0.08em]" style={{ fontFamily: 'Consolas, Monaco, monospace', letterSpacing: '0.08em' }}>
           EFFICIENCE ANALYTICS
         </h1>
-        <p className="text-[10px] font-semibold text-gray-500 tracking-[0.1em] mt-2 uppercase">
+        <p className="text-[10px] font-semibold text-gray-500 tracking-[0.1em] mt-1 uppercase">
           {isRayan ? 'Cabinet Source' : (user?.role === 'admin' ? 'Administration' : `CABINET ${user?.practitionerCode || user?.name || ''}`)}
         </p>
       </div>

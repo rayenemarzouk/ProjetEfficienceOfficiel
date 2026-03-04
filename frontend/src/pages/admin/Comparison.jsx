@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Header from '../../components/Header';
 import { getAdminDashboard } from '../../services/api';
+import PeriodFilter from '../../components/PeriodFilter';
 import { FiArrowLeft, FiAlertTriangle, FiUsers, FiTrendingDown, FiCalendar, FiCpu } from 'react-icons/fi';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
@@ -23,11 +24,70 @@ export default function Comparison() {
   const chartGridColor = (dark && !isRayan) ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)';
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
+  const [period, setPeriod] = useState({ period: 'last_year' });
   const barChartRef = useRef(null);
   const doughnutChartRef = useRef(null);
   const { isDynamic: _isDynamic, dataAccessEnabled } = useDynamic();
   const isDynamic = isRayan || _isDynamic; // Rayan toujours dynamique
   const showAI = dataAccessEnabled || isRayan;
+
+  // Helper pour calculer les dates de début/fin basées sur la période
+  const getPeriodDates = useCallback((periodObj) => {
+    const now = new Date();
+    let startDate, endDate;
+    
+    switch (periodObj?.period) {
+      case 'this_month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case 'last_month':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        break;
+      case '3_months':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case '6_months':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case 'this_year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear(), 11, 31);
+        break;
+      case 'last_year':
+        startDate = new Date(now.getFullYear() - 1, 0, 1);
+        endDate = new Date(now.getFullYear() - 1, 11, 31);
+        break;
+      case 'custom':
+        startDate = periodObj.startDate ? new Date(periodObj.startDate) : new Date(now.getFullYear(), 0, 1);
+        endDate = periodObj.endDate ? new Date(periodObj.endDate) : now;
+        break;
+      default:
+        startDate = new Date(now.getFullYear() - 1, 0, 1);
+        endDate = new Date(now.getFullYear(), 11, 31);
+    }
+    return { startDate, endDate };
+  }, []);
+
+  // Filtrer les données par période
+  const filterByPeriod = useCallback((dataArray, periodObj) => {
+    if (!dataArray || !Array.isArray(dataArray)) return [];
+    const { startDate, endDate } = getPeriodDates(periodObj);
+    
+    return dataArray.filter(item => {
+      let moisStr = item._id?.mois || item.mois;
+      if (!moisStr) return true;
+      
+      const year = parseInt(moisStr.substring(0, 4));
+      const month = parseInt(moisStr.substring(4, 6)) - 1;
+      const itemDate = new Date(year, month, 1);
+      
+      return itemDate >= startDate && itemDate <= endDate;
+    });
+  }, [getPeriodDates]);
 
   // Animation loop pour rafraîchir les charts (effet streaming)
   useEffect(() => {
@@ -38,6 +98,7 @@ export default function Comparison() {
 
   useEffect(() => {
     const fetchAll = async () => {
+      setLoading(true);
       try {
         const res = await getAdminDashboard();
         setData(res.data);
@@ -48,7 +109,7 @@ export default function Comparison() {
       }
     };
     fetchAll();
-  }, []);
+  }, [period]);
 
   if (loading) {
     return (
@@ -62,7 +123,9 @@ export default function Comparison() {
   const practitioners = data?.practitioners || [];
   const rdvByP = data?.rdvByPractitioner || [];
   const caByP = data?.caByPractitioner || [];
-  const rdvMensuel = data?.rdvMensuel || [];
+  // Filtrer les données mensuelles par période
+  const rawRdvMensuel = data?.rdvMensuel || [];
+  const rdvMensuel = useMemo(() => filterByPeriod(rawRdvMensuel, period), [rawRdvMensuel, period, filterByPeriod]);
 
   const doctors = practitioners.map((p, idx) => {
     const rdvData = rdvByP.find(r => r._id === p.code);
@@ -223,17 +286,20 @@ export default function Comparison() {
       <Header title="Statistiques et comparaison des cabinets" subtitle="Suivi détaillé des absences par cabinet" />
       
       <div className="p-6">
-        {/* Alert badge */}
+        {/* Alert badge + Period Filter */}
         <div className="flex justify-between items-center mb-6">
           <button className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
             <FiArrowLeft className="w-4 h-4" />
           </button>
-          {cabinetsEnAlerte > 0 && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-full">
-              <FiAlertTriangle className="w-4 h-4 text-red-500" />
-              <span className="text-sm font-semibold text-red-600">{cabinetsEnAlerte} cabinet(s) en alerte</span>
-            </div>
-          )}
+          <div className="flex items-center gap-4">
+            <PeriodFilter value={period} onChange={setPeriod} />
+            {cabinetsEnAlerte > 0 && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-full">
+                <FiAlertTriangle className="w-4 h-4 text-red-500" />
+                <span className="text-sm font-semibold text-red-600">{cabinetsEnAlerte} cabinet(s) en alerte</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* KPI Cards */}

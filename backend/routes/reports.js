@@ -421,6 +421,74 @@ router.post('/send-now', auth, async (req, res) => {
     }
 
     const sent = results.filter(r => r.status === 'sent').length;
+    
+    // Envoyer notification récapitulative à maarzoukrayan3@gmail.com
+    try {
+      const emailService = require('../services/emailService');
+      const now = new Date();
+      const dateAction = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      const successList = results.filter(r => r.status === 'sent').map(r => `✅ ${r.practitioner} (${r.code})`).join('<br>');
+      const errorList = results.filter(r => r.status === 'error').map(r => `❌ ${r.practitioner}: ${r.error}`).join('<br>');
+      
+      const notificationHtml = `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8fafc; border-radius: 16px; overflow: hidden;">
+          <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 32px; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 800;">📊 RAPPORTS GÉNÉRÉS & ENVOYÉS</h1>
+            <p style="color: #d1fae5; margin: 8px 0 0; font-size: 13px;">Efficience Analytics</p>
+          </div>
+          <div style="padding: 32px;">
+            <div style="background: white; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+              <h2 style="margin: 0 0 16px; font-size: 18px; color: #1e293b;">📋 Récapitulatif de l'action</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px; border-bottom: 1px solid #f1f5f9;">Date & Heure</td>
+                  <td style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 14px; border-bottom: 1px solid #f1f5f9;">📅 ${dateAction}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px; border-bottom: 1px solid #f1f5f9;">Période</td>
+                  <td style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 14px; border-bottom: 1px solid #f1f5f9;">${moisLabel}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px; border-bottom: 1px solid #f1f5f9;">Rapports envoyés</td>
+                  <td style="padding: 10px 0; font-weight: 600; font-size: 14px; border-bottom: 1px solid #f1f5f9;">
+                    <span style="background: #dcfce7; color: #166534; padding: 4px 12px; border-radius: 20px; font-size: 12px;">✅ ${sent}/${practitioners.length}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px;">Destinataire</td>
+                  <td style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 14px;">${process.env.REPORT_RECIPIENT}</td>
+                </tr>
+              </table>
+            </div>
+            ${successList ? `
+            <div style="background: #f0fdf4; border-radius: 12px; padding: 16px; border: 1px solid #bbf7d0; margin-bottom: 16px;">
+              <p style="margin: 0 0 10px; font-weight: 700; color: #166534; font-size: 14px;">Rapports envoyés avec succès :</p>
+              <p style="margin: 0; font-size: 13px; color: #15803d; line-height: 1.8;">${successList}</p>
+            </div>
+            ` : ''}
+            ${errorList ? `
+            <div style="background: #fef2f2; border-radius: 12px; padding: 16px; border: 1px solid #fecaca;">
+              <p style="margin: 0 0 10px; font-weight: 700; color: #991b1b; font-size: 14px;">Erreurs :</p>
+              <p style="margin: 0; font-size: 13px; color: #dc2626; line-height: 1.8;">${errorList}</p>
+            </div>
+            ` : ''}
+          </div>
+          <div style="padding: 16px 32px 24px; text-align: center; background: #f1f5f9;">
+            <p style="margin: 0; font-size: 11px; color: #94a3b8;">Efficience Analytics — Notification automatique</p>
+          </div>
+        </div>
+      `;
+      
+      await emailService.sendMail({
+        to: 'maarzoukrayan3@gmail.com',
+        subject: `📊 Rapports ${moisLabel} - ${sent}/${practitioners.length} envoyés`,
+        html: notificationHtml
+      });
+      console.log('✅ Notification récapitulative envoyée à maarzoukrayan3@gmail.com');
+    } catch (notifErr) {
+      console.error('Erreur envoi notification récap:', notifErr.message);
+    }
+    
     res.json({
       message: `${sent}/${practitioners.length} rapports générés et envoyés à ${process.env.REPORT_RECIPIENT}.`,
       results

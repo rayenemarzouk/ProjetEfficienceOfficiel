@@ -232,13 +232,13 @@ export default function Reports() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4 items-end">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mois</label>
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-white"
+                className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-white text-sm"
               >
                 {availableMonths.map(m => (
                   <option key={m.value} value={m.value}>{m.label}</option>
@@ -250,7 +250,7 @@ export default function Reports() {
               <select
                 value={selectedPractitioner}
                 onChange={(e) => setSelectedPractitioner(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-white"
+                className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-white text-sm"
               >
                 <option value="">Tous les praticiens</option>
                 {practitioners.map(p => (
@@ -258,32 +258,30 @@ export default function Reports() {
                 ))}
               </select>
             </div>
-            <div className="flex items-end gap-3">
-              <button
-                onClick={handleGenerate}
-                disabled={generating}
-                className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {generating ? <FiRefreshCw className="animate-spin" /> : <FiFileText />}
-                Générer
-              </button>
-              <button
-                onClick={handleSend}
-                disabled={sending}
-                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {sending ? <FiRefreshCw className="animate-spin" /> : <FiSend />}
-                Envoyer
-              </button>
-              <button
-                onClick={handleSendNow}
-                disabled={sendingNow}
-                className="flex-1 px-4 py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {sendingNow ? <FiRefreshCw className="animate-spin" /> : <FiZap />}
-                Générer & Envoyer
-              </button>
-            </div>
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="px-3 py-2.5 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm"
+            >
+              {generating ? <FiRefreshCw className="animate-spin w-4 h-4" /> : <FiFileText className="w-4 h-4" />}
+              Générer
+            </button>
+            <button
+              onClick={handleSend}
+              disabled={sending}
+              className="px-3 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm"
+            >
+              {sending ? <FiRefreshCw className="animate-spin w-4 h-4" /> : <FiSend className="w-4 h-4" />}
+              Envoyer
+            </button>
+            <button
+              onClick={handleSendNow}
+              disabled={sendingNow}
+              className="px-3 py-2.5 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm whitespace-nowrap"
+            >
+              {sendingNow ? <FiRefreshCw className="animate-spin w-4 h-4" /> : <FiZap className="w-4 h-4" />}
+              Générer & Envoyer
+            </button>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             💡 Nb rapports générés = Nb emails envoyés = Nb praticiens actifs ({practitioners.length})

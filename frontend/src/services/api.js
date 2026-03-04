@@ -40,7 +40,7 @@ export const getMe = () => api.get('/auth/me');
 export const getPublicSettings = () => api.get('/settings/public');
 
 // Admin
-export const getAdminDashboard = () => api.get('/admin/dashboard');
+export const getAdminDashboard = (params) => api.get('/admin/dashboard', { params });
 export const getComparison = (p1, p2) => api.get(`/admin/comparison?practitioner1=${p1}&practitioner2=${p2}`);
 export const getCabinetDetails = (code) => api.get(`/admin/cabinet/${code}`);
 export const getStatistics = () => api.get('/admin/statistics');
