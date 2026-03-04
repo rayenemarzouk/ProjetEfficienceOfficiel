@@ -70,10 +70,19 @@ app.get('/api/settings/public', async (req, res) => {
       aiModelsEnabled: s.aiModelsEnabled,
       importEnabled: s.importEnabled,
       dynamicActive,
-      dynamicExpiresAt: s.dynamicExpiresAt
+      dynamicExpiresAt: s.dynamicExpiresAt,
+      // UI controls
+      chartsEnabled: s.chartsEnabled !== false,
+      alertsEnabled: s.alertsEnabled !== false,
+      animationsEnabled: s.animationsEnabled !== false,
+      forecastEnabled: s.forecastEnabled !== false,
+      scoresEnabled: s.scoresEnabled !== false,
+      statsCardsEnabled: s.statsCardsEnabled !== false,
+      trendLinesEnabled: s.trendLinesEnabled !== false,
+      kpisEnabled: s.kpisEnabled !== false
     });
   } catch (err) {
-    res.json({ maintenanceMode: false, aiModelsEnabled: true, importEnabled: true, dynamicActive: false, dynamicExpiresAt: null });
+    res.json({ maintenanceMode: false, aiModelsEnabled: true, importEnabled: true, dynamicActive: false, dynamicExpiresAt: null, chartsEnabled: true, alertsEnabled: true, animationsEnabled: true, forecastEnabled: true, scoresEnabled: true, statsCardsEnabled: true, trendLinesEnabled: true, kpisEnabled: true });
   }
 });
 
@@ -110,4 +119,4 @@ server.on('error', (err) => {
 });
 
 module.exports = app;
- 
+

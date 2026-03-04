@@ -20,12 +20,32 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState({ period: 'last_year' });
   const navigate = useNavigate();
-  const { isDynamic: _isDynamic, dataAccessEnabled } = useDynamic();
+  const { 
+    isDynamic: _isDynamic, 
+    dataAccessEnabled,
+    chartsEnabled: _chartsEnabled,
+    alertsEnabled: _alertsEnabled,
+    animationsEnabled: _animationsEnabled,
+    forecastEnabled: _forecastEnabled,
+    scoresEnabled: _scoresEnabled,
+    statsCardsEnabled: _statsCardsEnabled,
+    trendLinesEnabled: _trendLinesEnabled,
+    kpisEnabled: _kpisEnabled
+  } = useDynamic();
   const { user } = useAuth();
   const { dark } = useTheme();
   const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
   const isDynamic = isRayan || _isDynamic; // Rayan toujours dynamique
   const showAI = dataAccessEnabled || isRayan; // Rayan voit toujours les graphes
+  // UI Controls — Rayan always sees everything, others depend on settings
+  const chartsEnabled = isRayan || _chartsEnabled;
+  const alertsEnabled = isRayan || _alertsEnabled;
+  const animationsEnabled = isRayan || _animationsEnabled;
+  const forecastEnabled = isRayan || _forecastEnabled;
+  const scoresEnabled = isRayan || _scoresEnabled;
+  const statsCardsEnabled = isRayan || _statsCardsEnabled;
+  const trendLinesEnabled = isRayan || _trendLinesEnabled;
+  const kpisEnabled = isRayan || _kpisEnabled;
   const chartTextColor = (dark && !isRayan) ? '#94a3b8' : '#64748b';
   const chartGridColor = (dark && !isRayan) ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)';
   const lineChartRef = useRef(null);
@@ -177,12 +197,11 @@ export default function AdminDashboard() {
 
   const allLabels = [...last12.map(formatMonth), ...forecastMonthLabels];
 
-  const lineChartData = {
-    labels: allLabels,
-    datasets: [
+  const lineChartData = useMemo(() => {
+    const datasets = [
       {
         label: 'Facturé',
-        data: [...factureValues, ...new Array(3).fill(null)],
+        data: [...factureValues, ...new Array(forecastEnabled ? 3 : 0).fill(null)],
         borderColor: '#8b5cf6',
         backgroundColor: (ctx) => {
           const chart = ctx.chart;
@@ -207,7 +226,7 @@ export default function AdminDashboard() {
       },
       {
         label: 'Encaissé',
-        data: [...encaisseValues, ...new Array(3).fill(null)],
+        data: [...encaisseValues, ...new Array(forecastEnabled ? 3 : 0).fill(null)],
         borderColor: '#3b82f6',
         backgroundColor: (ctx) => {
           const chart = ctx.chart;
@@ -229,14 +248,20 @@ export default function AdminDashboard() {
         pointHoverBackgroundColor: '#3b82f6',
         pointHoverBorderColor: '#ffffff',
         pointHoverBorderWidth: 3,
-      },
-      // IA: Ligne de tendance (régression linéaire)
-      {
+      }
+    ];
+    
+    // Ajouter la ligne de tendance si activée
+    if (trendLinesEnabled) {
+      datasets.push({
         ...aiTrend.dataset,
-        data: [...(aiTrend.trendData || []), ...new Array(3).fill(null)],
-      },
-      // IA: Prévision 3 mois
-      {
+        data: [...(aiTrend.trendData || []), ...new Array(forecastEnabled ? 3 : 0).fill(null)],
+      });
+    }
+    
+    // Ajouter les prévisions IA si activées
+    if (forecastEnabled) {
+      datasets.push({
         label: 'Prévision IA',
         data: [...new Array(Math.max(0, factureValues.length - 1)).fill(null), factureValues.length > 0 ? factureValues[factureValues.length - 1] : null, ...aiForecastValues],
         borderColor: '#f59e0b',
@@ -249,9 +274,14 @@ export default function AdminDashboard() {
         pointStyle: 'triangle',
         fill: false,
         tension: 0.3,
-      },
-    ]
-  };
+      });
+    }
+    
+    return {
+      labels: forecastEnabled ? allLabels : last12.map(formatMonth),
+      datasets
+    };
+  }, [factureValues, encaisseValues, forecastEnabled, trendLinesEnabled, aiTrend, aiForecastValues, allLabels, last12]);
 
   const totalCA = data?.caByPractitioner?.reduce((sum, p) => sum + p.totalFacture, 0) || 0;
   const totalPatients = data?.caByPractitioner?.reduce((sum, p) => sum + p.totalPatients, 0) || 0;
@@ -306,7 +336,7 @@ export default function AdminDashboard() {
   const pulseClass = isDynamic ? 'animate-pulse-soft' : '';
 
   // ═══ ANIMATED COUNTERS ═══
-  const dyn = isDynamic && !loading;
+  const dyn = isDynamic && !loading && animationsEnabled;
   const animCA = useCountUp(Math.round(totalCA), 2200, dyn);
   const animPatients = useCountUp(totalPatients, 1800, dyn);
   const animRapports = useCountUp(rapportsGeneres, 1200, dyn);
@@ -482,6 +512,7 @@ export default function AdminDashboard() {
           </div>
         )}
         {/* Synthèse Globale - KPI Cards */}
+        {statsCardsEnabled && (
         <div className={`bg-white border border-gray-100 rounded-2xl p-6 shadow-sm ${isDynamic ? 'animate-fade-in' : ''}`}>
           <h3 className="text-lg font-bold text-gray-900 mb-4">Synthèse Globale</h3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -519,7 +550,7 @@ export default function AdminDashboard() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-amber-600 font-medium">Performance Moyenne</p>
-                  <p className="text-3xl font-bold text-amber-600 mt-1">{animHealthScore}%</p>
+                  <p className="text-3xl font-bold text-amber-600 mt-1">{scoresEnabled ? `${animHealthScore}%` : '--'}</p>
                   <p className="text-xs text-amber-500 mt-1">+5% vs mois dernier</p>
                 </div>
                 <FiActivity className="w-6 h-6 text-amber-400" />
@@ -527,6 +558,7 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+        )}
 
         {/* ═══ AI HEALTH SCORE + QUICK METRICS (Rayan) ═══ */}
         {isRayan && (
@@ -803,14 +835,14 @@ export default function AdminDashboard() {
         </div>
 
         {/* Charts */}
-        {!showAI && (
+        {!showAI && chartsEnabled && (
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 p-12 text-center mb-6">
             <FiCpu className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <h3 className="text-lg font-bold text-gray-400 dark:text-gray-500 mb-2">Modèles IA désactivés</h3>
             <p className="text-sm text-gray-400 dark:text-gray-500">Les graphiques et analyses IA sont temporairement indisponibles.<br/>Contactez l'administrateur pour réactiver les modèles.</p>
           </div>
         )}
-        {showAI && <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+        {showAI && chartsEnabled && <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
           <div className={`lg:col-span-2 rounded-2xl p-6 shadow-sm transition-all duration-300 ${isRayan ? 'bg-white border border-gray-200' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700'}`}>
             <div className="flex items-center justify-between mb-5">
               <div>
@@ -944,6 +976,7 @@ export default function AdminDashboard() {
         )}
 
         {/* Alertes & Notifications - clickable */}
+        {alertsEnabled && (
         <div className="mb-6">
           <h3 className={`text-base font-bold mb-4 ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>Alertes & Notifications</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -967,6 +1000,7 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+        )}
 
         {/* ═══ AI ACTIVITY TIMELINE (Rayan) ═══ */}
         {isRayan && (

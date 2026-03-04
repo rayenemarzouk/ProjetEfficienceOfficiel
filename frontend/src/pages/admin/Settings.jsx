@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useAppSettings } from '../../context/AppSettingsContext';
 import { useDynamic } from '../../context/DynamicContext';
 import { setAIEnabled } from '../../utils/aiModels';
-import { FiUser, FiMail, FiShield, FiActivity, FiCalendar, FiCheck, FiLogIn, FiX, FiAlertCircle, FiLoader, FiTool, FiCpu, FiDatabase, FiAlertTriangle, FiTrash2, FiLock, FiZap, FiClock, FiSend, FiKey } from 'react-icons/fi';
+import { FiUser, FiMail, FiShield, FiActivity, FiCalendar, FiCheck, FiLogIn, FiX, FiAlertCircle, FiLoader, FiTool, FiCpu, FiDatabase, FiAlertTriangle, FiTrash2, FiLock, FiZap, FiClock, FiSend, FiKey, FiBarChart2, FiBell, FiPlay, FiTrendingUp, FiTarget, FiGrid, FiLayers } from 'react-icons/fi';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -24,6 +24,16 @@ export default function Settings() {
   const [importEnabled, setImportEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
+
+  // ═══ UI Controls state (Rayan only) ═══
+  const [chartsEnabled, setChartsEnabled] = useState(true);
+  const [alertsEnabled, setAlertsEnabled] = useState(true);
+  const [animationsEnabled, setAnimationsEnabled] = useState(true);
+  const [forecastEnabled, setForecastEnabled] = useState(true);
+  const [scoresEnabled, setScoresEnabled] = useState(true);
+  const [statsCardsEnabled, setStatsCardsEnabled] = useState(true);
+  const [trendLinesEnabled, setTrendLinesEnabled] = useState(true);
+  const [kpisEnabled, setKpisEnabled] = useState(true);
 
   // ═══ Impersonation state ═══
   const [impModal, setImpModal] = useState(null); // { user, step: 'confirm' | 'switching' }
@@ -54,6 +64,15 @@ export default function Settings() {
           setAiModelsEnabled(res.data.appSettings.aiModelsEnabled !== false);
           setImportEnabled(res.data.appSettings.importEnabled !== false);
           setDynamicExpiresAt(res.data.appSettings.dynamicExpiresAt || null);
+          // UI Controls
+          setChartsEnabled(res.data.appSettings.chartsEnabled !== false);
+          setAlertsEnabled(res.data.appSettings.alertsEnabled !== false);
+          setAnimationsEnabled(res.data.appSettings.animationsEnabled !== false);
+          setForecastEnabled(res.data.appSettings.forecastEnabled !== false);
+          setScoresEnabled(res.data.appSettings.scoresEnabled !== false);
+          setStatsCardsEnabled(res.data.appSettings.statsCardsEnabled !== false);
+          setTrendLinesEnabled(res.data.appSettings.trendLinesEnabled !== false);
+          setKpisEnabled(res.data.appSettings.kpisEnabled !== false);
         }
       } catch (err) {
         console.error(err);
@@ -70,18 +89,38 @@ export default function Settings() {
   };
 
   const handleToggle = async (field) => {
-    const stateMap = { autoGeneration, autoEmail, maintenanceMode, importEnabled };
+    const stateMap = { 
+      autoGeneration, autoEmail, maintenanceMode, importEnabled,
+      chartsEnabled, alertsEnabled, animationsEnabled, forecastEnabled,
+      scoresEnabled, statsCardsEnabled, trendLinesEnabled, kpisEnabled
+    };
     const setterMap = {
       autoGeneration: setAutoGeneration,
       autoEmail: setAutoEmail,
       maintenanceMode: setMaintenanceMode,
-      importEnabled: setImportEnabled
+      importEnabled: setImportEnabled,
+      chartsEnabled: setChartsEnabled,
+      alertsEnabled: setAlertsEnabled,
+      animationsEnabled: setAnimationsEnabled,
+      forecastEnabled: setForecastEnabled,
+      scoresEnabled: setScoresEnabled,
+      statsCardsEnabled: setStatsCardsEnabled,
+      trendLinesEnabled: setTrendLinesEnabled,
+      kpisEnabled: setKpisEnabled
     };
     const labelMap = {
       autoGeneration: (v) => `Génération automatique ${v ? 'activée' : 'désactivée'}`,
       autoEmail: (v) => `Envoi par email ${v ? 'activé' : 'désactivé'}`,
       maintenanceMode: (v) => `Mode maintenance ${v ? 'ACTIVÉ — site bloqué pour les praticiens' : 'désactivé'}`,
       importEnabled: (v) => `Import de données ${v ? 'autorisé' : 'BLOQUÉ'}`,
+      chartsEnabled: (v) => `Graphiques ${v ? 'visibles' : 'masqués'}`,
+      alertsEnabled: (v) => `Alertes ${v ? 'visibles' : 'masquées'}`,
+      animationsEnabled: (v) => `Animations ${v ? 'activées' : 'désactivées'}`,
+      forecastEnabled: (v) => `Prévisions IA ${v ? 'visibles' : 'masquées'}`,
+      scoresEnabled: (v) => `Scores de santé ${v ? 'visibles' : 'masqués'}`,
+      statsCardsEnabled: (v) => `Cartes stats ${v ? 'visibles' : 'masquées'}`,
+      trendLinesEnabled: (v) => `Lignes de tendance ${v ? 'visibles' : 'masquées'}`,
+      kpisEnabled: (v) => `KPIs détaillés ${v ? 'visibles' : 'masqués'}`,
     };
 
     const newVal = !stateMap[field];
@@ -481,6 +520,232 @@ export default function Settings() {
             )}
           </div>
         </div>
+
+        {/* ═══ UI Controls (Rayan uniquement) — Contrôle visuel pour Younis ═══ */}
+        {isRayan && (
+        <div className={`${cardCls} rounded-2xl overflow-hidden mb-8 transition-colors`}>
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-blue-800/40 flex items-center justify-between bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
+                <FiGrid className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Contrôles Interface (Younis)</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Activer/désactiver les éléments visuels pour le compte Younis</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Charts */}
+            <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+              chartsEnabled ? 'bg-purple-50/50 dark:bg-purple-900/10 border-purple-200 dark:border-purple-800' : 'bg-gray-50 dark:bg-gray-800 border-transparent'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${chartsEnabled ? 'bg-purple-100 dark:bg-purple-900/40' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                  <FiBarChart2 className={`w-4 h-4 ${chartsEnabled ? 'text-purple-600' : 'text-gray-500'}`} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Graphiques</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Afficher les graphiques</p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleToggle('chartsEnabled')}
+                disabled={saving}
+                className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
+                  chartsEnabled ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
+                  chartsEnabled ? 'translate-x-[22px]' : 'translate-x-1'
+                }`}></div>
+              </button>
+            </div>
+
+            {/* Alerts */}
+            <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+              alertsEnabled ? 'bg-orange-50/50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-800' : 'bg-gray-50 dark:bg-gray-800 border-transparent'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${alertsEnabled ? 'bg-orange-100 dark:bg-orange-900/40' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                  <FiBell className={`w-4 h-4 ${alertsEnabled ? 'text-orange-600' : 'text-gray-500'}`} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Alertes</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Afficher les alertes</p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleToggle('alertsEnabled')}
+                disabled={saving}
+                className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
+                  alertsEnabled ? 'bg-orange-600' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
+                  alertsEnabled ? 'translate-x-[22px]' : 'translate-x-1'
+                }`}></div>
+              </button>
+            </div>
+
+            {/* Animations */}
+            <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+              animationsEnabled ? 'bg-cyan-50/50 dark:bg-cyan-900/10 border-cyan-200 dark:border-cyan-800' : 'bg-gray-50 dark:bg-gray-800 border-transparent'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${animationsEnabled ? 'bg-cyan-100 dark:bg-cyan-900/40' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                  <FiPlay className={`w-4 h-4 ${animationsEnabled ? 'text-cyan-600' : 'text-gray-500'}`} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Animations</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Compteurs animés</p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleToggle('animationsEnabled')}
+                disabled={saving}
+                className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
+                  animationsEnabled ? 'bg-cyan-600' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
+                  animationsEnabled ? 'translate-x-[22px]' : 'translate-x-1'
+                }`}></div>
+              </button>
+            </div>
+
+            {/* Forecast */}
+            <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+              forecastEnabled ? 'bg-amber-50/50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800' : 'bg-gray-50 dark:bg-gray-800 border-transparent'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${forecastEnabled ? 'bg-amber-100 dark:bg-amber-900/40' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                  <FiTrendingUp className={`w-4 h-4 ${forecastEnabled ? 'text-amber-600' : 'text-gray-500'}`} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Prévisions IA</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Courbes prévisionnelles</p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleToggle('forecastEnabled')}
+                disabled={saving}
+                className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
+                  forecastEnabled ? 'bg-amber-600' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
+                  forecastEnabled ? 'translate-x-[22px]' : 'translate-x-1'
+                }`}></div>
+              </button>
+            </div>
+
+            {/* Scores */}
+            <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+              scoresEnabled ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800' : 'bg-gray-50 dark:bg-gray-800 border-transparent'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${scoresEnabled ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                  <FiTarget className={`w-4 h-4 ${scoresEnabled ? 'text-emerald-600' : 'text-gray-500'}`} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Scores de santé</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Indicateurs performance</p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleToggle('scoresEnabled')}
+                disabled={saving}
+                className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
+                  scoresEnabled ? 'bg-emerald-600' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
+                  scoresEnabled ? 'translate-x-[22px]' : 'translate-x-1'
+                }`}></div>
+              </button>
+            </div>
+
+            {/* Stats Cards */}
+            <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+              statsCardsEnabled ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800' : 'bg-gray-50 dark:bg-gray-800 border-transparent'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${statsCardsEnabled ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                  <FiLayers className={`w-4 h-4 ${statsCardsEnabled ? 'text-blue-600' : 'text-gray-500'}`} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Cartes stats</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Cartes de statistiques</p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleToggle('statsCardsEnabled')}
+                disabled={saving}
+                className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
+                  statsCardsEnabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
+                  statsCardsEnabled ? 'translate-x-[22px]' : 'translate-x-1'
+                }`}></div>
+              </button>
+            </div>
+
+            {/* Trend Lines */}
+            <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+              trendLinesEnabled ? 'bg-indigo-50/50 dark:bg-indigo-900/10 border-indigo-200 dark:border-indigo-800' : 'bg-gray-50 dark:bg-gray-800 border-transparent'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${trendLinesEnabled ? 'bg-indigo-100 dark:bg-indigo-900/40' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                  <FiTrendingUp className={`w-4 h-4 ${trendLinesEnabled ? 'text-indigo-600' : 'text-gray-500'}`} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Tendances</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Lignes de tendance</p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleToggle('trendLinesEnabled')}
+                disabled={saving}
+                className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
+                  trendLinesEnabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
+                  trendLinesEnabled ? 'translate-x-[22px]' : 'translate-x-1'
+                }`}></div>
+              </button>
+            </div>
+
+            {/* KPIs */}
+            <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+              kpisEnabled ? 'bg-rose-50/50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-800' : 'bg-gray-50 dark:bg-gray-800 border-transparent'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${kpisEnabled ? 'bg-rose-100 dark:bg-rose-900/40' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                  <FiActivity className={`w-4 h-4 ${kpisEnabled ? 'text-rose-600' : 'text-gray-500'}`} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">KPIs détaillés</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Indicateurs avancés</p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleToggle('kpisEnabled')}
+                disabled={saving}
+                className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
+                  kpisEnabled ? 'bg-rose-600' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
+                  kpisEnabled ? 'translate-x-[22px]' : 'translate-x-1'
+                }`}></div>
+              </button>
+            </div>
+          </div>
+        </div>
+        )}
 
         {/* Configuration */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

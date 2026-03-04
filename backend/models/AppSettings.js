@@ -8,7 +8,17 @@ const appSettingsSchema = new mongoose.Schema({
   aiModelsEnabled: { type: Boolean, default: true },
   importEnabled: { type: Boolean, default: true },
   // Mode dynamique — expire après 15 jours, requiert un code de vérification pour le renouveler
-  dynamicExpiresAt: { type: Date, default: null }
+  dynamicExpiresAt: { type: Date, default: null },
+  
+  // ═══ Contrôles UI dynamiques (gérés par Rayan) ═══
+  chartsEnabled: { type: Boolean, default: true },      // Afficher les graphiques
+  alertsEnabled: { type: Boolean, default: true },      // Afficher les alertes
+  animationsEnabled: { type: Boolean, default: true },  // Activer les animations (countUp, etc.)
+  forecastEnabled: { type: Boolean, default: true },    // Afficher les prévisions IA
+  scoresEnabled: { type: Boolean, default: true },      // Afficher les scores de santé
+  statsCardsEnabled: { type: Boolean, default: true },  // Afficher les cartes de stats
+  trendLinesEnabled: { type: Boolean, default: true },  // Afficher les lignes de tendance
+  kpisEnabled: { type: Boolean, default: true }         // Afficher les KPI détaillés
 }, { timestamps: true });
 
 // Singleton pattern — only one settings document
