@@ -67,6 +67,12 @@ export default function CabinetManagement() {
     );
   }
 
+  // Convertir YYYYMM vers YYYY-MM (format base de données) - pour handleViewDetails
+  const toDbFormatLocal = (yyyymm) => {
+    if (!yyyymm || yyyymm.length !== 6) return yyyymm;
+    return `${yyyymm.substring(0, 4)}-${yyyymm.substring(4, 6)}`;
+  };
+
   const handleViewDetails = async (cab) => {
     setDetailLoading(true);
     setDetailModal({ cab, details: null });
@@ -74,21 +80,24 @@ export default function CabinetManagement() {
       const res = await getCabinetDetails(cab.code);
       const d = res.data;
       
-      // Trouver les données du mois sélectionné
-      const monthData = d.realisation?.find(r => r._id === selectedMonth);
+      // Convertir le mois sélectionné au format DB (YYYY-MM)
+      const moisDb = toDbFormatLocal(selectedMonth);
       const prevMonthValue = parseInt(selectedMonth.substring(4, 6)) - 1;
       const prevMonthYear = prevMonthValue === 0 
-        ? `${parseInt(selectedMonth.substring(0, 4)) - 1}12`
-        : `${selectedMonth.substring(0, 4)}${String(prevMonthValue).padStart(2, '0')}`;
+        ? `${parseInt(selectedMonth.substring(0, 4)) - 1}-12`
+        : `${selectedMonth.substring(0, 4)}-${String(prevMonthValue).padStart(2, '0')}`;
+      
+      // Trouver les données du mois sélectionné
+      const monthData = d.realisation?.find(r => r._id === moisDb);
       const prevMonth = d.realisation?.find(r => r._id === prevMonthYear);
       
-      const rdvMonth = d.rdv?.find(r => r._id === selectedMonth);
+      const rdvMonth = d.rdv?.find(r => r._id === moisDb);
       const prevRdvMonth = d.rdv?.find(r => r._id === prevMonthYear);
       
-      const heuresMonth = d.heures?.find(r => r._id === selectedMonth);
+      const heuresMonth = d.heures?.find(r => r._id === moisDb);
       const prevHeuresMonth = d.heures?.find(r => r._id === prevMonthYear);
       
-      const devisMonth = d.devis?.find(r => r._id === selectedMonth);
+      const devisMonth = d.devis?.find(r => r._id === moisDb);
 
       const heuresTrav = heuresMonth ? (heuresMonth.nbHeures / 60).toFixed(0) : 0;
       const prevHeuresTrav = prevHeuresMonth ? (prevHeuresMonth.nbHeures / 60).toFixed(0) : 0;
@@ -138,9 +147,16 @@ export default function CabinetManagement() {
   const rdvByP = data?.rdvByPractitioner || [];
   const caMensuel = data?.caMensuel || [];
 
+  // Convertir YYYYMM vers YYYY-MM (format base de données)
+  const toDbFormat = (yyyymm) => {
+    if (!yyyymm || yyyymm.length !== 6) return yyyymm;
+    return `${yyyymm.substring(0, 4)}-${yyyymm.substring(4, 6)}`;
+  };
+
   // Filtrer les données par mois sélectionné
   const getDataForMonth = (praticienCode, mois) => {
-    return caMensuel.find(c => c._id?.praticien === praticienCode && c._id?.mois === mois);
+    const moisDb = toDbFormat(mois);
+    return caMensuel.find(c => c._id?.praticien === praticienCode && c._id?.mois === moisDb);
   };
 
   const cabinets = practitioners.map((p) => {
