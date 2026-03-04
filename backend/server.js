@@ -21,6 +21,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/data', require('./routes/data'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/practitioner', require('./routes/practitioner'));
+app.use('/api/consultant', require('./routes/consultant'));
 
 // Public settings endpoint (no auth required — for maintenance mode check)
 const AppSettings = require('./models/AppSettings');

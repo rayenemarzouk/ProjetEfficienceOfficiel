@@ -8,16 +8,27 @@ import {
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const adminLinks = [
+  // Menu spécial pour Rayan (design original)
+  const rayanLinks = [
     { to: '/admin', icon: FiHome, label: 'DASHBOARD DENTAIRE', end: true },
     { to: '/admin/cabinets', icon: FiBarChart2, label: 'ANALYSE DES CABINETS' },
     { to: '/admin/comparison', icon: FiGitMerge, label: 'COMPARAISON CABINETS' },
+    { to: '/admin/gestion', icon: FiBriefcase, label: 'GESTION CABINETS' },
+    { to: '/admin/reports', icon: FiFileText, label: 'RAPPORTS CABINET' },
+    { to: '/admin/statistics', icon: FiPieChart, label: 'STATISTIQUES DES CABINETS' },
+    { to: '/admin/settings', icon: FiSettings, label: 'RÉGLAGES' },
+  ];
+
+  const adminLinks = [
+    { to: '/admin', icon: FiHome, label: 'DASHBOARD DENTAIRE', end: true },
+    { to: '/admin/cabinets', icon: FiBarChart2, label: 'ANALYSE & COMPARAISON' },
     { to: '/admin/gestion', icon: FiBriefcase, label: 'GESTION CABINETS' },
     { to: '/admin/reports', icon: FiFileText, label: 'RAPPORTS CABINET' },
     { to: '/admin/statistics', icon: FiPieChart, label: 'STATISTIQUES DES CABINETS' },
@@ -34,7 +45,7 @@ export default function Sidebar() {
     { to: '/dashboard/reports', icon: FiFileText, label: 'MES RAPPORTS' },
   ];
 
-  const links = user?.role === 'admin' ? adminLinks : practitionerLinks;
+  const links = isRayan ? rayanLinks : (user?.role === 'admin' ? adminLinks : practitionerLinks);
 
   const linkClass = ({ isActive }) =>
     `flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 ${
@@ -44,13 +55,15 @@ export default function Sidebar() {
     }`;
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-56 flex flex-col z-50" style={{ backgroundColor: '#0f172a' }}>
+    <aside className="fixed left-0 top-0 h-screen w-64 flex flex-col z-50" style={{ backgroundColor: '#0f172a' }}>
       {/* Logo */}
       <div className="px-5 py-6">
-        <h1 className="text-xl font-black text-white tracking-wider" style={{ fontFamily: 'monospace', letterSpacing: '0.15em' }}>
-          ≡FFICI≡NC≡
+        <h1 className="text-base font-black text-white whitespace-nowrap" style={{ fontFamily: 'monospace' }}>
+          EFFICIENCE ANALYTICS
         </h1>
-        <p className="text-[10px] font-semibold text-gray-500 tracking-[0.2em] mt-1 uppercase">Cabinet Source</p>
+        <p className="text-[10px] font-semibold text-gray-500 tracking-[0.1em] mt-2 uppercase">
+          {isRayan ? 'Cabinet Source' : (user?.role === 'admin' ? 'Administration' : `CABINET ${user?.practitionerCode || user?.name || ''}`)}
+        </p>
       </div>
 
       {/* Navigation */}

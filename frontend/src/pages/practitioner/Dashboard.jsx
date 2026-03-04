@@ -266,10 +266,9 @@ export default function PractitionerDashboard() {
                 },
               }} />
             </div>
-            {/* AI Insight */}
+            {/* Prévisions */}
             <div className="mt-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-3">
-              {caInsight.parts.map((p, i) => <p key={i} className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
-              <div className="flex gap-3 mt-2">
+              <div className="flex gap-3">
                 <span className="text-[10px] bg-white/60 dark:bg-white/10 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">Prévision M+1: {fmt(caForecastVals[0])}</span>
                 <span className="text-[10px] bg-white/60 dark:bg-white/10 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">Prévision M+2: {fmt(caForecastVals[1])}</span>
               </div>

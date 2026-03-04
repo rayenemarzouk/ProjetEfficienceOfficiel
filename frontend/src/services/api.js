@@ -86,4 +86,11 @@ export const getReportsList = (mois) => api.get(`/reports/list${mois ? `?mois=${
 export const getAvailableMonths = () => api.get('/reports/available-months');
 export const downloadReport = (id) => api.get(`/reports/download/${id}`, { responseType: 'blob' });
 
+// Consultant
+export const getConsultantDashboard = (params) => api.get('/consultant/dashboard', { params });
+export const getConsultantAnalyses = (params) => api.get('/consultant/analyses', { params });
+export const getConsultantClients = (params) => api.get('/consultant/clients', { params });
+export const getConsultantClientDetail = (code, params) => api.get(`/consultant/client/${code}`, { params });
+export const getConsultantReports = (params) => api.get('/consultant/reports', { params });
+
 export default api;

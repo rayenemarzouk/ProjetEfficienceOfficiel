@@ -1,8 +1,19 @@
 import { useState, useEffect } from 'react';
 import Header from '../../components/Header';
 import { getReportsList, generateReport, generateAllReports, sendReports, sendReportsNow, downloadReport, getAdminDashboard, getAvailableMonths } from '../../services/api';
-import { FiFileText, FiSend, FiDownload, FiRefreshCw, FiCheck, FiAlertCircle, FiZap } from 'react-icons/fi';
+import { FiFileText, FiSend, FiDownload, FiRefreshCw, FiCheck, FiAlertCircle, FiZap, FiFilter, FiCalendar, FiUsers } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
+
+// Options de période pour le filtre
+const periodOptions = [
+  { value: 'all', label: 'Toutes les périodes' },
+  { value: 'this_month', label: 'Ce mois' },
+  { value: 'last_month', label: 'Mois dernier' },
+  { value: '3_months', label: '3 derniers mois' },
+  { value: '6_months', label: '6 derniers mois' },
+  { value: 'this_year', label: 'Cette année' },
+  { value: 'last_year', label: 'Année dernière' },
+];
 
 export default function Reports() {
   const { user } = useAuth();
@@ -18,6 +29,10 @@ export default function Reports() {
   const [sending, setSending] = useState(false);
   const [sendingNow, setSendingNow] = useState(false);
   const [message, setMessage] = useState(null);
+  
+  // Nouveaux filtres pour la liste des rapports
+  const [filterPeriod, setFilterPeriod] = useState('all');
+  const [filterCabinet, setFilterCabinet] = useState('all');
 
   useEffect(() => {
     fetchData();
@@ -114,10 +129,53 @@ export default function Reports() {
     return `${months[parseInt(m.substring(4, 6)) - 1]} ${m.substring(0, 4)}`;
   };
 
-  // Stats — filtrées par le mois sélectionné
-  const reportsForMonth = selectedMonth ? reports.filter(r => r.mois === selectedMonth) : reports;
-  const totalGeneres = reportsForMonth.length;
-  const totalEnvoyes = reportsForMonth.filter(r => r.emailEnvoye).length;
+  // Fonction pour vérifier si un mois est dans la période sélectionnée
+  const isInPeriod = (mois) => {
+    if (filterPeriod === 'all') return true;
+    if (!mois) return false;
+    
+    const now = new Date();
+    const year = parseInt(mois.substring(0, 4));
+    const month = parseInt(mois.substring(4, 6)) - 1; // 0-indexed
+    const reportDate = new Date(year, month, 1);
+    
+    switch (filterPeriod) {
+      case 'this_month': {
+        return year === now.getFullYear() && month === now.getMonth();
+      }
+      case 'last_month': {
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        return year === lastMonth.getFullYear() && month === lastMonth.getMonth();
+      }
+      case '3_months': {
+        const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+        return reportDate >= threeMonthsAgo;
+      }
+      case '6_months': {
+        const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        return reportDate >= sixMonthsAgo;
+      }
+      case 'this_year': {
+        return year === now.getFullYear();
+      }
+      case 'last_year': {
+        return year === now.getFullYear() - 1;
+      }
+      default:
+        return true;
+    }
+  };
+
+  // Filtrer les rapports selon les critères sélectionnés
+  const filteredReports = reports.filter(r => {
+    const matchesCabinet = filterCabinet === 'all' || r.praticien === filterCabinet;
+    const matchesPeriod = isInPeriod(r.mois);
+    return matchesCabinet && matchesPeriod;
+  });
+
+  // Stats — basées sur les rapports filtrés
+  const totalGeneres = filteredReports.length;
+  const totalEnvoyes = filteredReports.filter(r => r.emailEnvoye).length;
 
   return (
     <div>
@@ -234,17 +292,69 @@ export default function Reports() {
 
         {/* Liste des rapports */}
         <div className={`${cardCls} rounded-2xl overflow-hidden transition-colors`}>
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="text-lg font-semibold dark:text-white">Historique des Rapports</h3>
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <h3 className="text-lg font-semibold dark:text-white flex items-center gap-2">
+              <FiFilter className="w-5 h-5 text-gray-400" />
+              Historique des Rapports
+            </h3>
+            
+            {/* Filtres */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <FiCalendar className="w-4 h-4 text-gray-400" />
+                <select
+                  value={filterPeriod}
+                  onChange={(e) => setFilterPeriod(e.target.value)}
+                  className="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-white"
+                >
+                  {periodOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <FiUsers className="w-4 h-4 text-gray-400" />
+                <select
+                  value={filterCabinet}
+                  onChange={(e) => setFilterCabinet(e.target.value)}
+                  className="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-white"
+                >
+                  <option value="all">Tous les cabinets</option>
+                  {practitioners.map(p => (
+                    <option key={p.code} value={p.code}>{p.name} ({p.code})</option>
+                  ))}
+                </select>
+              </div>
+              
+              {(filterPeriod !== 'all' || filterCabinet !== 'all') && (
+                <button
+                  onClick={() => { setFilterPeriod('all'); setFilterCabinet('all'); }}
+                  className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                >
+                  Réinitialiser
+                </button>
+              )}
+            </div>
           </div>
+          
+          {/* Indicateur de filtres actifs */}
+          {(filterPeriod !== 'all' || filterCabinet !== 'all') && (
+            <div className="px-6 py-2 bg-primary-50 dark:bg-primary-900/20 border-b border-primary-100 dark:border-primary-800 text-sm text-primary-700 dark:text-primary-300">
+              {filteredReports.length} rapport(s) trouvé(s)
+              {filterPeriod !== 'all' && ` • Période: ${periodOptions.find(o => o.value === filterPeriod)?.label}`}
+              {filterCabinet !== 'all' && ` • Cabinet: ${filterCabinet}`}
+            </div>
+          )}
+          
           {loading ? (
             <div className="flex justify-center py-10">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
             </div>
-          ) : reports.length === 0 ? (
+          ) : filteredReports.length === 0 ? (
             <div className="text-center py-10 text-gray-500 dark:text-gray-400">
               <FiFileText className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
-              <p>Aucun rapport généré pour le moment.</p>
+              <p>{reports.length === 0 ? 'Aucun rapport généré pour le moment.' : 'Aucun rapport ne correspond aux filtres sélectionnés.'}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -260,7 +370,7 @@ export default function Reports() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {reports.map((r) => (
+                  {filteredReports.map((r) => (
                     <tr key={r._id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                       <td className="px-6 py-3 text-sm font-medium text-gray-900 dark:text-white">{r.praticien}</td>
                       <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{formatMonth(r.mois)}</td>

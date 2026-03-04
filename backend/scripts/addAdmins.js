@@ -27,6 +27,16 @@ async function addAdmins() {
         cabinetName: 'Efficience Dentaire',
         isActive: true,
         isVerified: true
+      },
+      {
+        email: 'admin@efficience-analytics.fr',
+        password: 'Admin2024!Efficience',
+        role: 'admin',
+        name: 'Administrateur Principal',
+        practitionerCode: 'ADMIN',
+        cabinetName: 'Efficience Analytics',
+        isActive: true,
+        isVerified: true
       }
     ];
 

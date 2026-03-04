@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import { getAdminDashboard } from '../../services/api';
-import { FiTrendingUp, FiTrendingDown, FiUsers, FiFileText, FiMail, FiDollarSign, FiActivity, FiAlertTriangle, FiArrowRight, FiCpu, FiZap, FiShield, FiTarget, FiBarChart2, FiClock, FiCheck, FiStar, FiGlobe, FiLayers } from 'react-icons/fi';
+import { FiTrendingUp, FiTrendingDown, FiUsers, FiFileText, FiMail, FiDollarSign, FiActivity, FiAlertTriangle, FiArrowRight, FiCpu, FiZap, FiShield, FiTarget, FiBarChart2, FiClock, FiCheck, FiStar, FiGlobe, FiLayers, FiSettings } from 'react-icons/fi';
 import { useCountUp } from '../../utils/useCountUp';
 import { useDynamic } from '../../context/DynamicContext';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, Filler } from 'chart.js';
@@ -246,17 +246,67 @@ export default function AdminDashboard() {
 
   if (loading || !data) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div>
-      <Header title="Dashboard Général" subtitle="Vue d'ensemble de tous les cabinets" />
+    <div className={isRayan ? '' : 'space-y-6'}>
+      {/* Header Rayan */}
+      {isRayan && (
+        <div className="bg-[#0a1628] px-6 py-4 flex items-center justify-between border-b border-gray-800">
+          <div>
+            <h1 className="text-xl font-bold text-white">Dashboard Général</h1>
+            <p className="text-sm text-gray-400">Vue d'ensemble de tous les cabinets</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <input 
+                type="text" 
+                placeholder="Rechercher..." 
+                className="bg-[#1e293b] border border-gray-700 rounded-lg px-4 py-2 text-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:border-blue-500 w-48"
+              />
+              <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <button className="p-2 bg-[#1e293b] border border-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors">
+              <FiSettings className="w-5 h-5" />
+            </button>
+            <button className="p-2 bg-[#1e293b] border border-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors relative">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center">1</span>
+            </button>
+            <div className="flex items-center gap-3 pl-4 border-l border-gray-700">
+              <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                R
+              </div>
+              <div>
+                <p className="text-sm font-medium text-white">{user?.email}</p>
+                <p className="text-xs text-gray-400">Administrateur</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Header standard */}
+      {!isRayan && (
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Bonjour {user?.name?.split(' ')[0] === 'Mr' || user?.name?.split(' ')[0] === 'Mr.' ? user.name : user?.name?.split(' ')[0] || 'Admin'} 👋
+            </h1>
+            <p className="text-gray-500">Date/Période : Données mises à jour au {new Date().toLocaleDateString('fr-FR')}</p>
+          </div>
+        </div>
+      )}
       
-      <div className="p-6">
+      <div className={isRayan ? 'p-6 bg-[#0a1628]' : 'p-6'}>
         {/* ═══ AI COMMAND CENTER (Rayan) ═══ */}
         {isRayan && (
           <div className="mb-6 relative group">
@@ -328,33 +378,68 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Greeting personnalisé */}
-        <div className="mb-4">
-          <h2 className={`text-2xl font-bold ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
-            Bonjour {user?.name?.split(' ')[0] === 'Mr' || user?.name?.split(' ')[0] === 'Mr.' ? user.name : user?.name?.split(' ')[0] || 'Admin'} 👋
-          </h2>
-          <p className={`text-sm mt-1 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>
-            {isRayan ? (
-              <span className="flex items-center gap-1.5">
-                <FiCpu className="w-3.5 h-3.5 text-violet-400" />
-                Votre IA analyse vos cabinets en temps réel
-              </span>
-            ) : 'Bienvenue sur votre tableau de bord'}
-          </p>
-        </div>
+        {/* Bonjour Rayan + Bandeau EFFICIENCE */}
+        {isRayan && (
+          <>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white">Bonjour Rayan 👋</h2>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <p className="text-gray-400">Votre IA analyse vos cabinets en temps réel</p>
+              </div>
+            </div>
 
-        {/* Bannière Efficience */}
-        <div className={`relative overflow-hidden rounded-2xl mb-6 transition-colors ${isRayan ? 'bg-white border border-gray-200 shadow-sm' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700'}`} style={{ height: '120px' }}>
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <h2 className={`text-4xl font-black tracking-[0.08em] ${isRayan ? 'text-blue-600' : 'text-[#2956b2] dark:text-blue-400'}`} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-                <span style={{ letterSpacing: '0.02em' }}>≡</span>FFICI
-                <span style={{ letterSpacing: '0.02em' }}>≡</span>NC
-                <span style={{ letterSpacing: '0.02em' }}>≡</span>
-              </h2>
-              <p className={`text-[11px] mt-1 tracking-[0.05em] ${isRayan ? 'text-blue-500' : 'text-[#5a7cbf] dark:text-blue-300'}`} style={{ fontFamily: 'system-ui, sans-serif' }}>
-                L'accompagnement personnalisé de votre cabinet dentaire
-              </p>
+            <div className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 rounded-2xl p-8 text-center">
+              <h3 className="text-3xl font-black text-gray-800 tracking-wide mb-2" style={{ fontFamily: 'monospace' }}>
+                EFFICIENCE ANALYTICS
+              </h3>
+              <p className="text-gray-600">L'accompagnement personnalisé de votre cabinet dentaire</p>
+            </div>
+          </>
+        )}
+        {/* Synthèse Globale - KPI Cards */}
+        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Synthèse Globale</h3>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-blue-600 font-medium">Cabinet Suivis</p>
+                  <p className="text-3xl font-bold text-blue-600 mt-1">{practitioners.length}</p>
+                  <p className="text-xs text-blue-500 mt-1">+{nbPractitioners > 2 ? Math.floor(nbPractitioners/3) : 1} ce mois</p>
+                </div>
+                <FiUsers className="w-6 h-6 text-blue-400" />
+              </div>
+            </div>
+            <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-purple-600 font-medium">Rapports Générés</p>
+                  <p className="text-3xl font-bold text-purple-600 mt-1">{animRapports}</p>
+                  <p className="text-xs text-purple-500 mt-1">ce mois</p>
+                </div>
+                <FiFileText className="w-6 h-6 text-purple-400" />
+              </div>
+            </div>
+            <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-green-600 font-medium">Emails Envoyés</p>
+                  <p className="text-3xl font-bold text-green-600 mt-1">{animEmails}</p>
+                  <p className="text-xs text-green-500 mt-1">taux : 98%</p>
+                </div>
+                <FiMail className="w-6 h-6 text-green-400" />
+              </div>
+            </div>
+            <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-amber-600 font-medium">Performance Moyenne</p>
+                  <p className="text-3xl font-bold text-amber-600 mt-1">{animHealthScore}%</p>
+                  <p className="text-xs text-amber-500 mt-1">+5% vs mois dernier</p>
+                </div>
+                <FiActivity className="w-6 h-6 text-amber-400" />
+              </div>
             </div>
           </div>
         </div>
@@ -762,17 +847,17 @@ export default function AdminDashboard() {
           </div>
         </div>}
 
-        {/* AI Insight Panel */}
-        {showAI && aiInsightCA && (
-          <div className={`rounded-2xl p-5 mb-6 transition-colors ${isRayan ? 'bg-gradient-to-r from-violet-50 via-blue-50 to-amber-50 border border-violet-200' : 'bg-gradient-to-r from-violet-50 via-blue-50 to-amber-50 dark:from-violet-900/30 dark:via-blue-900/30 dark:to-amber-900/30 border border-violet-100 dark:border-violet-800'}`}>
+        {/* AI Insight Panel - Rayan only */}
+        {isRayan && aiInsightCA && (
+          <div className="rounded-2xl p-5 mb-6 transition-colors bg-gradient-to-r from-violet-50 via-blue-50 to-amber-50 border border-violet-200">
             <div className="flex items-center gap-2 mb-3">
-              <div className={`p-1.5 rounded-lg ${isRayan ? 'bg-violet-100' : 'bg-violet-100 dark:bg-violet-900/50'}`}><FiCpu className={`w-4 h-4 ${isRayan ? 'text-violet-600' : 'text-violet-600'}`} /></div>
-              <h4 className={`text-sm font-bold ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>Analyse IA — Chiffre d'Affaires</h4>
-              <span className={`ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full ${isRayan ? 'text-violet-600 bg-violet-100' : 'text-violet-500 bg-violet-100'}`}>Fiabilité {aiInsightCA.confidence}%</span>
+              <div className="p-1.5 rounded-lg bg-violet-100"><FiCpu className="w-4 h-4 text-violet-600" /></div>
+              <h4 className="text-sm font-bold text-gray-900">Analyse IA — Chiffre d'Affaires</h4>
+              <span className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full text-violet-600 bg-violet-100">Fiabilité {aiInsightCA.confidence}%</span>
             </div>
             <div className="space-y-1">
               {aiInsightCA.parts.map((part, i) => (
-                <p key={i} className={`text-xs leading-relaxed ${isRayan ? 'text-gray-700' : 'text-gray-700 dark:text-gray-300'}`}>{part}</p>
+                <p key={i} className="text-xs leading-relaxed text-gray-700">{part}</p>
               ))}
             </div>
           </div>

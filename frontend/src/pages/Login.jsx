@@ -29,6 +29,8 @@ export default function Login() {
       
       if (res.data.user.role === 'admin') {
         navigate('/admin', { replace: true });
+      } else if (res.data.user.role === 'consultant') {
+        navigate('/consultant', { replace: true });
       } else {
         navigate('/dashboard', { replace: true });
       }

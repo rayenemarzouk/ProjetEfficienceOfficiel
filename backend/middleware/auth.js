@@ -39,4 +39,12 @@ const practitionerOnly = (req, res, next) => {
   next();
 };
 
-module.exports = { auth, adminOnly, practitionerOnly };
+// Middleware consultant uniquement
+const consultantOnly = (req, res, next) => {
+  if (req.user.role !== 'consultant') {
+    return res.status(403).json({ message: 'Accès réservé aux consultants.' });
+  }
+  next();
+};
+
+module.exports = { auth, adminOnly, practitionerOnly, consultantOnly };

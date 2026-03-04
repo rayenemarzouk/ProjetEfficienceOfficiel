@@ -18,7 +18,7 @@ export default function Layout() {
   return (
     <div className={`flex min-h-screen transition-colors duration-300 ${isRayan ? 'bg-[#0a1628]' : 'bg-[#f8fafc] dark:bg-[#0f172a]'}`}>
       <Sidebar />
-      <main className="flex-1 ml-56">
+      <main className="flex-1 ml-64">
         <Outlet />
       </main>
     </div>

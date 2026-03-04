@@ -27,7 +27,9 @@ export default function PrivateRoute({ allowedRoles }) {
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
+    const redirectPath = user.role === 'admin' ? '/admin' : 
+                         user.role === 'consultant' ? '/consultant' : '/dashboard';
+    return <Navigate to={redirectPath} replace />;
   }
 
   // ═══ Mode Maintenance — bloque les non-admin (Rayan toujours autorisé) ═══
