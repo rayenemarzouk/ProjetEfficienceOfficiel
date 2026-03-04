@@ -57,12 +57,17 @@ export default function Sidebar() {
     <aside className="fixed left-0 top-0 h-screen w-64 flex flex-col z-50" style={{ backgroundColor: '#0f172a' }}>
       {/* Logo */}
       <div className="px-4 py-5">
-        <h1 className="text-sm font-black text-white whitespace-nowrap tracking-[0.08em]" style={{ fontFamily: 'Consolas, Monaco, monospace', letterSpacing: '0.08em' }}>
-          EFFICIENCE ANALYTICS
-        </h1>
-        <p className="text-[10px] font-semibold text-gray-500 tracking-[0.1em] mt-1 uppercase">
-          {isRayan ? 'Cabinet Source' : (user?.role === 'admin' ? 'Administration' : `CABINET ${user?.practitionerCode || user?.name || ''}`)}
-        </p>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center text-white font-black text-sm">E</div>
+          <div>
+            <h1 className="text-sm font-black text-white whitespace-nowrap tracking-wide" style={{ fontFamily: 'Arial Black, sans-serif' }}>
+              EFFICIENCE ANALYTICS
+            </h1>
+            <p className="text-[9px] font-semibold text-gray-500 tracking-wider uppercase">
+              {user?.role === 'admin' ? 'Administration' : `Cabinet ${user?.practitionerCode || user?.name || ''}`}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Navigation */}

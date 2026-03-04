@@ -111,7 +111,7 @@ export default function Login() {
           {/* Header */}
           <div className="mb-10">
             <h2 className="text-3xl font-black text-gray-900 tracking-tight">
-              CONNEXION<br />AU COMPTE<span className="text-blue-500"> .</span>
+              PRO ET EFFICACE !<br /><span className="text-blue-500">Connectez-vous</span>
             </h2>
           </div>
 

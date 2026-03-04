@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import { getCabinetDetails, getAdminDashboard } from '../../services/api';
-import { FiDollarSign, FiUsers, FiClock, FiTrendingUp, FiCpu, FiChevronDown, FiChevronUp, FiExternalLink } from 'react-icons/fi';
+import { FiDollarSign, FiUsers, FiClock, FiTrendingUp, FiCpu, FiChevronDown, FiChevronUp, FiExternalLink, FiCalendar } from 'react-icons/fi';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { linearRegression, detectAnomalies, cabinetHealthScore, generateAIInsight, analyzeTrend } from '../../utils/aiModels';
@@ -29,6 +29,39 @@ export default function CabinetAnalysis() {
   const [expandedInsight, setExpandedInsight] = useState({ patients: false, activite: false });
   const patientsChartRef = useRef(null);
   const activiteChartRef = useRef(null);
+  const [selectedPeriod, setSelectedPeriod] = useState('last_month');
+
+  // Options de période
+  const periodOptions = [
+    { value: 'last_month', label: 'Mois dernier' },
+    { value: 'last_3_months', label: '3 derniers mois' },
+    { value: 'last_6_months', label: '6 derniers mois' },
+    { value: 'last_year', label: '12 derniers mois' },
+    { value: 'all', label: 'Tout' },
+  ];
+
+  // Fonction pour obtenir les mois dans la période sélectionnée
+  const getMonthsInPeriod = (period) => {
+    const now = new Date();
+    const months = [];
+    let numMonths = 1;
+    
+    switch (period) {
+      case 'last_month': numMonths = 1; break;
+      case 'last_3_months': numMonths = 3; break;
+      case 'last_6_months': numMonths = 6; break;
+      case 'last_year': numMonths = 12; break;
+      case 'all': return null; // null = pas de filtre
+      default: numMonths = 1;
+    }
+    
+    for (let i = 0; i < numMonths; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const mois = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      months.push(mois);
+    }
+    return months;
+  };
 
   // Animation loop pour les effets streaming
   useEffect(() => {
@@ -65,15 +98,63 @@ export default function CabinetAnalysis() {
     }
   };
 
-  const caByP = data?.dashboard?.caByPractitioner || [];
+  // Données brutes
+  const caMensuel = data?.dashboard?.caMensuel || [];
+  const rdvMensuel = data?.dashboard?.rdvMensuel || [];
   const heuresByP = data?.dashboard?.heuresByPractitioner || [];
-  const rdvByP = data?.dashboard?.rdvByPractitioner || [];
+
+  // Filtrer les données par période sélectionnée
+  const filteredData = useMemo(() => {
+    const allowedMonths = getMonthsInPeriod(selectedPeriod);
+    
+    // Filtrer caMensuel
+    const filteredCA = allowedMonths 
+      ? caMensuel.filter(c => allowedMonths.includes(c._id?.mois))
+      : caMensuel;
+    
+    // Filtrer rdvMensuel
+    const filteredRdv = allowedMonths
+      ? rdvMensuel.filter(r => allowedMonths.includes(r._id?.mois))
+      : rdvMensuel;
+    
+    return { filteredCA, filteredRdv };
+  }, [caMensuel, rdvMensuel, selectedPeriod]);
+
+  // Agréger les données filtrées par praticien
+  const aggregatedByPractitioner = useMemo(() => {
+    const caByP = {};
+    const rdvByP = {};
+    
+    filteredData.filteredCA.forEach(c => {
+      const praticien = c._id?.praticien;
+      if (!praticien) return;
+      if (!caByP[praticien]) {
+        caByP[praticien] = { totalFacture: 0, totalEncaisse: 0, totalPatients: 0 };
+      }
+      caByP[praticien].totalFacture += c.totalFacture || 0;
+      caByP[praticien].totalEncaisse += c.totalEncaisse || 0;
+      caByP[praticien].totalPatients += c.totalPatients || 0;
+    });
+    
+    filteredData.filteredRdv.forEach(r => {
+      const praticien = r._id?.praticien;
+      if (!praticien) return;
+      if (!rdvByP[praticien]) {
+        rdvByP[praticien] = { totalRdv: 0, totalPatients: 0, totalNouveaux: 0 };
+      }
+      rdvByP[praticien].totalRdv += r.totalRdv || 0;
+      rdvByP[praticien].totalPatients += r.totalPatients || 0;
+      rdvByP[praticien].totalNouveaux += r.totalNouveaux || 0;
+    });
+    
+    return { caByP, rdvByP };
+  }, [filteredData]);
 
   // Calculate per-practitioner data
   const pracData = practitioners.map(p => {
-    const ca = caByP.find(c => c._id === p.code);
+    const ca = aggregatedByPractitioner.caByP[p.code];
     const heures = heuresByP.find(h => h._id === p.code);
-    const rdv = rdvByP.find(r => r._id === p.code);
+    const rdv = aggregatedByPractitioner.rdvByP[p.code];
     const totalCA = ca?.totalFacture || 0;
     const totalEncaisse = ca?.totalEncaisse || 0;
     const patientsTraites = ca?.totalPatients || 0;
@@ -275,6 +356,67 @@ export default function CabinetAnalysis() {
       <Header title="Analyse des Cabinets" subtitle="Détails et performances par cabinet" />
       
       <div className="p-6">
+        {/* Header avec sélecteur de période */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <span className={`px-3 py-1.5 rounded-lg text-sm font-semibold ${isRayan ? 'bg-blue-600 text-white' : 'bg-blue-600 text-white'}`}>
+              Analyse
+            </span>
+            <button 
+              onClick={() => navigate('/admin/comparison')}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isRayan ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+            >
+              Comparaison
+            </button>
+          </div>
+          <div className="relative">
+            <div className="flex items-center gap-2">
+              <FiCalendar className="w-4 h-4 text-gray-400" />
+              <select
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                className={`appearance-none pl-3 pr-8 py-2 rounded-lg border text-sm font-medium cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  isRayan ? 'bg-white border-gray-200 text-gray-700' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200'
+                }`}
+              >
+                {periodOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <FiChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
+        </div>
+
+        {/* KPIs Summary Row */}
+        <div className={`grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 ${isDynamic ? 'animate-fade-in' : ''}`}>
+          <div className={`${cardCls} rounded-xl p-4 text-center`}>
+            <FiUsers className="w-5 h-5 text-blue-600 mx-auto mb-2" />
+            <p className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{animTotalTraites.toLocaleString('fr-FR')}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Patients traités</p>
+          </div>
+          <div className={`${cardCls} rounded-xl p-4 text-center`}>
+            <FiCalendar className="w-5 h-5 text-green-600 mx-auto mb-2" />
+            <p className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{animTotalRdv.toLocaleString('fr-FR')}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Sur agenda</p>
+          </div>
+          <div className={`${cardCls} rounded-xl p-4 text-center`}>
+            <FiClock className="w-5 h-5 text-purple-600 mx-auto mb-2" />
+            <p className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{animTotalConsult.toLocaleString('fr-FR')}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Consultations</p>
+          </div>
+          <div className={`${cardCls} rounded-xl p-4 text-center`}>
+            <FiTrendingUp className="w-5 h-5 text-amber-600 mx-auto mb-2" />
+            <p className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{animTotalHeures.toLocaleString('fr-FR')}h</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Heures</p>
+          </div>
+          <div className={`${cardCls} rounded-xl p-4 text-center`}>
+            <FiCpu className="w-5 h-5 text-rose-600 mx-auto mb-2" />
+            <p className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{animMoyenne.toLocaleString('fr-FR')}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Moyenne/Cabinet</p>
+          </div>
+        </div>
+
         {/* Charts: Patients + Activité side by side */}
         {!showAI && (
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 p-12 text-center mb-6">
