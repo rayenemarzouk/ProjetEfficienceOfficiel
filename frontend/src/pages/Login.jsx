@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAppSettings } from '../context/AppSettingsContext';
@@ -8,12 +8,23 @@ import { FiLock, FiMail, FiArrowRight, FiShield, FiCheckCircle, FiAlertCircle, F
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user, loginUser } = useAuth();
   const appSettings = useAppSettings();
   const isMaintenance = appSettings?.maintenanceMode;
+
+  // Charger l'email mémorisé au démarrage
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('efficience_remembered_email');
+    const savedRemember = localStorage.getItem('efficience_remember_me') === 'true';
+    if (savedEmail && savedRemember) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   // Plus de redirection automatique — l'utilisateur reste sur la page login
   // La navigation vers le dashboard se fait uniquement après soumission du formulaire
@@ -26,6 +37,15 @@ export default function Login() {
     try {
       const res = await loginAPI(email, password);
       loginUser(res.data.user, res.data.token);
+      
+      // Mémoriser ou effacer l'email selon le choix
+      if (rememberMe) {
+        localStorage.setItem('efficience_remembered_email', email);
+        localStorage.setItem('efficience_remember_me', 'true');
+      } else {
+        localStorage.removeItem('efficience_remembered_email');
+        localStorage.removeItem('efficience_remember_me');
+      }
       
       if (res.data.user.role === 'admin') {
         navigate('/admin', { replace: true });
@@ -153,6 +173,23 @@ export default function Login() {
                   required
                   className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
                 />
+              </div>
+            </div>
+
+            {/* Se souvenir de moi */}
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 bg-gray-50 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                />
+                <span className="text-sm text-gray-600">Se souvenir de moi</span>
+              </label>
+              {/* Badge RM */}
+              <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-blue-600 to-blue-700 rounded-md shadow-sm">
+                <span className="text-[10px] font-bold text-white tracking-wider">RM</span>
               </div>
             </div>
 
