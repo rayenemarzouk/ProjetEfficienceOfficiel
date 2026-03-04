@@ -35,6 +35,12 @@ export default function Settings() {
   const [trendLinesEnabled, setTrendLinesEnabled] = useState(true);
   const [kpisEnabled, setKpisEnabled] = useState(true);
 
+  // ═══ UI Control Security Modal state ═══
+  const [uiSecurityModal, setUiSecurityModal] = useState(null); // { field, targetValue }
+  const [uiSecurityCode, setUiSecurityCode] = useState('');
+  const [uiSecurityError, setUiSecurityError] = useState(null);
+  const UI_SECURITY_CODE = '241213';
+
   // ═══ Impersonation state ═══
   const [impModal, setImpModal] = useState(null); // { user, step: 'confirm' | 'switching' }
   const [impError, setImpError] = useState(null);
@@ -137,6 +143,68 @@ export default function Settings() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // ═══ UI Controls Secured Toggle (code 241213 requis) ═══
+  const uiControlFields = ['chartsEnabled', 'alertsEnabled', 'animationsEnabled', 'forecastEnabled', 'scoresEnabled', 'statsCardsEnabled', 'trendLinesEnabled', 'kpisEnabled'];
+  
+  const handleSecuredToggleClick = (field) => {
+    const stateMap = { chartsEnabled, alertsEnabled, animationsEnabled, forecastEnabled, scoresEnabled, statsCardsEnabled, trendLinesEnabled, kpisEnabled };
+    setUiSecurityModal({ field, targetValue: !stateMap[field] });
+    setUiSecurityCode('');
+    setUiSecurityError(null);
+  };
+
+  const handleSecuredToggleConfirm = async () => {
+    if (uiSecurityCode !== UI_SECURITY_CODE) {
+      setUiSecurityError('Code incorrect');
+      return;
+    }
+    setUiSecurityError(null);
+    const { field, targetValue } = uiSecurityModal;
+    setUiSecurityModal(null);
+    setUiSecurityCode('');
+    
+    // Appliquer le toggle
+    const setterMap = {
+      chartsEnabled: setChartsEnabled,
+      alertsEnabled: setAlertsEnabled,
+      animationsEnabled: setAnimationsEnabled,
+      forecastEnabled: setForecastEnabled,
+      scoresEnabled: setScoresEnabled,
+      statsCardsEnabled: setStatsCardsEnabled,
+      trendLinesEnabled: setTrendLinesEnabled,
+      kpisEnabled: setKpisEnabled
+    };
+    const labelMap = {
+      chartsEnabled: (v) => `Graphiques ${v ? 'visibles' : 'masqués'}`,
+      alertsEnabled: (v) => `Alertes ${v ? 'visibles' : 'masquées'}`,
+      animationsEnabled: (v) => `Animations ${v ? 'activées' : 'désactivées'}`,
+      forecastEnabled: (v) => `Prévisions IA ${v ? 'visibles' : 'masquées'}`,
+      scoresEnabled: (v) => `Scores de santé ${v ? 'visibles' : 'masqués'}`,
+      statsCardsEnabled: (v) => `Cartes stats ${v ? 'visibles' : 'masquées'}`,
+      trendLinesEnabled: (v) => `Lignes de tendance ${v ? 'visibles' : 'masquées'}`,
+      kpisEnabled: (v) => `KPIs détaillés ${v ? 'visibles' : 'masqués'}`,
+    };
+
+    setterMap[field](targetValue);
+    setSaving(true);
+    try {
+      await updateSettings({ [field]: targetValue });
+      showToast(labelMap[field](targetValue));
+      refreshSettings();
+    } catch (err) {
+      setterMap[field](!targetValue);
+      showToast('Erreur lors de la mise à jour');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const closeUiSecurityModal = () => {
+    setUiSecurityModal(null);
+    setUiSecurityCode('');
+    setUiSecurityError(null);
   };
 
   // ═══ AI Toggle functions (2 méthodes : code admin fixe OU code email) ═══
@@ -521,7 +589,7 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* ═══ UI Controls (Rayan uniquement) — Contrôle visuel pour Younis ═══ */}
+        {/* ═══ UI Controls (Rayan uniquement) — Contrôle visuel ═══ */}
         {isRayan && (
         <div className={`${cardCls} rounded-2xl overflow-hidden mb-8 transition-colors`}>
           <div className="px-6 py-4 border-b border-gray-100 dark:border-blue-800/40 flex items-center justify-between bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
@@ -530,8 +598,8 @@ export default function Settings() {
                 <FiGrid className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Contrôles Interface (Younis)</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Activer/désactiver les éléments visuels pour le compte Younis</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Contrôles Interface</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Activer/désactiver les éléments visuels (code requis)</p>
               </div>
             </div>
           </div>
@@ -550,7 +618,7 @@ export default function Settings() {
                 </div>
               </div>
               <button
-                onClick={() => handleToggle('chartsEnabled')}
+                onClick={() => handleSecuredToggleClick('chartsEnabled')}
                 disabled={saving}
                 className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
                   chartsEnabled ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'
@@ -576,7 +644,7 @@ export default function Settings() {
                 </div>
               </div>
               <button
-                onClick={() => handleToggle('alertsEnabled')}
+                onClick={() => handleSecuredToggleClick('alertsEnabled')}
                 disabled={saving}
                 className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
                   alertsEnabled ? 'bg-orange-600' : 'bg-gray-300 dark:bg-gray-600'
@@ -602,7 +670,7 @@ export default function Settings() {
                 </div>
               </div>
               <button
-                onClick={() => handleToggle('animationsEnabled')}
+                onClick={() => handleSecuredToggleClick('animationsEnabled')}
                 disabled={saving}
                 className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
                   animationsEnabled ? 'bg-cyan-600' : 'bg-gray-300 dark:bg-gray-600'
@@ -628,7 +696,7 @@ export default function Settings() {
                 </div>
               </div>
               <button
-                onClick={() => handleToggle('forecastEnabled')}
+                onClick={() => handleSecuredToggleClick('forecastEnabled')}
                 disabled={saving}
                 className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
                   forecastEnabled ? 'bg-amber-600' : 'bg-gray-300 dark:bg-gray-600'
@@ -654,7 +722,7 @@ export default function Settings() {
                 </div>
               </div>
               <button
-                onClick={() => handleToggle('scoresEnabled')}
+                onClick={() => handleSecuredToggleClick('scoresEnabled')}
                 disabled={saving}
                 className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
                   scoresEnabled ? 'bg-emerald-600' : 'bg-gray-300 dark:bg-gray-600'
@@ -680,7 +748,7 @@ export default function Settings() {
                 </div>
               </div>
               <button
-                onClick={() => handleToggle('statsCardsEnabled')}
+                onClick={() => handleSecuredToggleClick('statsCardsEnabled')}
                 disabled={saving}
                 className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
                   statsCardsEnabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
@@ -706,7 +774,7 @@ export default function Settings() {
                 </div>
               </div>
               <button
-                onClick={() => handleToggle('trendLinesEnabled')}
+                onClick={() => handleSecuredToggleClick('trendLinesEnabled')}
                 disabled={saving}
                 className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
                   trendLinesEnabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'
@@ -732,7 +800,7 @@ export default function Settings() {
                 </div>
               </div>
               <button
-                onClick={() => handleToggle('kpisEnabled')}
+                onClick={() => handleSecuredToggleClick('kpisEnabled')}
                 disabled={saving}
                 className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
                   kpisEnabled ? 'bg-rose-600' : 'bg-gray-300 dark:bg-gray-600'
@@ -1225,6 +1293,79 @@ export default function Settings() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Modal Sécurité UI Controls ═══ */}
+      {uiSecurityModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={closeUiSecurityModal}>
+          <div className="bg-white dark:bg-[#1e293b] rounded-2xl w-full max-w-md shadow-2xl transition-all" onClick={e => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-purple-600 to-blue-600 rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                  <FiLock className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white">Vérification requise</h2>
+                  <p className="text-purple-200 text-xs">Modification des contrôles interface</p>
+                </div>
+              </div>
+              <button onClick={closeUiSecurityModal} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+                <FiX className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
+                  <FiKey className="w-7 h-7 text-purple-600" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Code de sécurité</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Entrez le code pour {uiSecurityModal.targetValue ? 'activer' : 'désactiver'} cette option
+                </p>
+              </div>
+
+              {uiSecurityError && (
+                <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 flex items-center gap-2">
+                  <FiAlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                  <p className="text-xs text-red-600 dark:text-red-400">{uiSecurityError}</p>
+                </div>
+              )}
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Code à 6 chiffres</label>
+                <input
+                  type="password"
+                  value={uiSecurityCode}
+                  onChange={(e) => setUiSecurityCode(e.target.value)}
+                  placeholder="••••••"
+                  maxLength={6}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-center text-2xl font-mono tracking-[0.5em] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleSecuredToggleConfirm()}
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={closeUiSecurityModal}
+                  className="flex-1 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleSecuredToggleConfirm}
+                  disabled={uiSecurityCode.length < 6}
+                  className="flex-1 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <FiCheck className="w-4 h-4" />
+                  Confirmer
+                </button>
+              </div>
             </div>
           </div>
         </div>
