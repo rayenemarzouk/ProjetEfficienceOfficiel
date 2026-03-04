@@ -93,7 +93,7 @@ export default function CabinetsUnified() {
     return { startDate, endDate };
   }, []);
 
-  // Filtrer les données par période (format mois: YYYYMMDD ou YYYYMM)
+  // Filtrer les données par période (format mois: YYYY-MM ou YYYYMM ou YYYYMMDD)
   const filterByPeriod = useCallback((dataArray, periodObj, dateField = 'mois') => {
     if (!dataArray || !Array.isArray(dataArray)) return [];
     const { startDate, endDate } = getPeriodDates(periodObj);
@@ -102,9 +102,18 @@ export default function CabinetsUnified() {
       let moisStr = item[dateField] || item._id?.[dateField] || item._id?.mois;
       if (!moisStr) return true; // Garder si pas de date
       
-      // Convertir le format YYYYMMDD ou YYYYMM en Date
-      const year = parseInt(moisStr.substring(0, 4));
-      const month = parseInt(moisStr.substring(4, 6)) - 1;
+      // Supporter les formats YYYY-MM, YYYYMM, YYYYMMDD
+      let year, month;
+      if (moisStr.includes('-')) {
+        // Format YYYY-MM
+        const parts = moisStr.split('-');
+        year = parseInt(parts[0]);
+        month = parseInt(parts[1]) - 1;
+      } else {
+        // Format YYYYMM ou YYYYMMDD
+        year = parseInt(moisStr.substring(0, 4));
+        month = parseInt(moisStr.substring(4, 6)) - 1;
+      }
       const itemDate = new Date(year, month, 1);
       
       return itemDate >= startDate && itemDate <= endDate;
@@ -151,23 +160,52 @@ export default function CabinetsUnified() {
   // ═══════════════════════════════════════════════════════════════════
   // DONNÉES COMMUNES - Filtrées par période
   // ═══════════════════════════════════════════════════════════════════
-  const rawCaByP = data?.dashboard?.caByPractitioner || [];
-  const rawHeuresByP = data?.dashboard?.heuresByPractitioner || [];
-  const rawRdvByP = data?.dashboard?.rdvByPractitioner || [];
+  const rawCaMensuel = data?.dashboard?.caMensuel || [];
   const rawRdvMensuel = data?.dashboard?.rdvMensuel || [];
+  const rawHeuresByP = data?.dashboard?.heuresByPractitioner || [];
   
   // Appliquer le filtre de période aux données mensuelles
+  const caMensuelFiltered = useMemo(() => {
+    return filterByPeriod(rawCaMensuel, period, '_id.mois');
+  }, [rawCaMensuel, period, filterByPeriod]);
+  
   const rdvMensuelFiltered = useMemo(() => {
-    return filterByPeriod(rawRdvMensuel, period, '_id.mois').map(item => ({
-      ...item,
-      _id: item._id || {}
-    }));
+    return filterByPeriod(rawRdvMensuel, period, '_id.mois');
   }, [rawRdvMensuel, period, filterByPeriod]);
   
-  // Pour les données agrégées (caByP, heuresByP, rdvByP), recalculer basé sur rdvMensuel filtré
-  const caByP = rawCaByP; // Ces données viennent déjà agrégées du backend
+  // Agréger les données CA filtrées par praticien
+  const caByP = useMemo(() => {
+    const byPrac = {};
+    caMensuelFiltered.forEach(item => {
+      const praticien = item._id?.praticien;
+      if (!praticien) return;
+      if (!byPrac[praticien]) {
+        byPrac[praticien] = { _id: praticien, totalFacture: 0, totalEncaisse: 0, totalPatients: 0 };
+      }
+      byPrac[praticien].totalFacture += item.totalFacture || 0;
+      byPrac[praticien].totalEncaisse += item.totalEncaisse || 0;
+      byPrac[praticien].totalPatients += item.totalPatients || 0;
+    });
+    return Object.values(byPrac);
+  }, [caMensuelFiltered]);
+  
+  // Agréger les données RDV filtrées par praticien
+  const rdvByP = useMemo(() => {
+    const byPrac = {};
+    rdvMensuelFiltered.forEach(item => {
+      const praticien = item._id?.praticien;
+      if (!praticien) return;
+      if (!byPrac[praticien]) {
+        byPrac[praticien] = { _id: praticien, totalRdv: 0, totalPatients: 0, totalNouveaux: 0 };
+      }
+      byPrac[praticien].totalRdv += item.totalRdv || 0;
+      byPrac[praticien].totalPatients += item.totalPatients || 0;
+      byPrac[praticien].totalNouveaux += item.totalNouveaux || 0;
+    });
+    return Object.values(byPrac);
+  }, [rdvMensuelFiltered]);
+  
   const heuresByP = rawHeuresByP;
-  const rdvByP = rawRdvByP;
   const rdvMensuel = rdvMensuelFiltered;
 
   // Calculate per-practitioner data
