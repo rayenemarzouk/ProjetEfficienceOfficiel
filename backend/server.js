@@ -10,8 +10,18 @@ const app = express();
 // Connexion MongoDB
 connectDB();
 
-// Middleware
-app.use(cors());
+// Middleware CORS - Allow Hostinger frontend
+app.use(cors({
+  origin: [
+    'https://efficience-analytics-eu-783177.hostingersite.com',
+    'https://efficience-analytics.onrender.com',
+    'http://localhost:5173',
+    'http://localhost:5000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
