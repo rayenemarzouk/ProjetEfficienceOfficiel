@@ -8,6 +8,11 @@ const createTransporter = () => {
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
+    },
+    // Force IPv4 to avoid ENETUNREACH errors with IPv6
+    family: 4,
+    tls: {
+      rejectUnauthorized: false
     }
   });
 };
