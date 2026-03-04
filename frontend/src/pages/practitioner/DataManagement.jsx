@@ -3,9 +3,11 @@ import Header from '../../components/Header';
 import { importData } from '../../services/api';
 import { FiUpload, FiFileText, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
+import { useDynamic } from '../../context/DynamicContext';
 
 export default function DataManagement() {
   const { user } = useAuth();
+  const { isDynamic } = useDynamic();
   const [selectedType, setSelectedType] = useState('realisation');
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -49,9 +51,9 @@ export default function DataManagement() {
       <div className="p-8">
         <div className="max-w-2xl mx-auto">
           {/* Import Card */}
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-8 transition-colors">
-            <h3 className="text-xl font-semibold dark:text-white mb-6 flex items-center gap-2">
-              <FiUpload className="text-primary-600" />
+          <div className={`bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-8 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`}>
+            <h3 className={`text-xl font-semibold dark:text-white mb-6 flex items-center gap-2 ${isDynamic ? 'animate-fade-in' : ''}`}>
+              <FiUpload className={`text-primary-600 ${isDynamic ? 'animate-float-soft' : ''}`} />
               Importer des données
             </h3>
 

@@ -275,6 +275,15 @@ export default function AdminDashboard() {
   }).length;
   const rapportsEnvoyes = data?.reportsEnvoyes || 0;
 
+  // ═══ ANIMATION HELPERS ═══
+  const getAnimationClass = (delay = 0) => {
+    if (!isDynamic) return '';
+    const delays = ['', 'animate-delay-100', 'animate-delay-200', 'animate-delay-300', 'animate-delay-400', 'animate-delay-500', 'animate-delay-600', 'animate-delay-700', 'animate-delay-800'];
+    return `animate-fade-in-up ${delays[delay] || ''}`;
+  };
+  const hoverClass = isDynamic ? 'hover-lift' : '';
+  const pulseClass = isDynamic ? 'animate-pulse-soft' : '';
+
   // ═══ ANIMATED COUNTERS ═══
   const dyn = isDynamic && !loading;
   const animCA = useCountUp(Math.round(totalCA), 2200, dyn);
@@ -379,12 +388,12 @@ export default function AdminDashboard() {
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-white">Bonjour Dr Rayan 👋</h2>
               <div className="flex items-center gap-2 mt-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse status-dot-pulse"></div>
                 <p className="text-gray-400">Votre IA analyse vos cabinets en temps réel</p>
               </div>
             </div>
 
-            <div className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 rounded-2xl p-8 text-center">
+            <div className={`mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 rounded-2xl p-8 text-center ${isDynamic ? 'animate-fade-in-down hover-lift card-shine' : ''}`}>
               <h3 className="text-3xl font-black text-gray-800 tracking-wide mb-2" style={{ fontFamily: 'monospace' }}>
                 EFFICIENCE ANALYTICS
               </h3>
@@ -395,8 +404,8 @@ export default function AdminDashboard() {
 
         {/* ═══ AI COMMAND CENTER (Rayan) - affiché après EFFICIENCE ═══ */}
         {isRayan && (
-          <div className="mb-6 relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600/20 via-blue-500/20 to-cyan-500/20 rounded-2xl blur-lg opacity-60 group-hover:opacity-100 transition-opacity duration-700"></div>
+          <div className={`mb-6 relative group ${isDynamic ? 'animate-fade-in-up' : ''}`} style={isDynamic ? { animationDelay: '0.2s' } : {}}>
+            <div className={`absolute -inset-0.5 bg-gradient-to-r from-violet-600/20 via-blue-500/20 to-cyan-500/20 rounded-2xl blur-lg opacity-60 group-hover:opacity-100 transition-opacity duration-700 ${isDynamic ? 'animate-pulse-soft' : ''}`}></div>
             <div className="relative bg-white border border-gray-200 rounded-2xl p-5 overflow-hidden shadow-sm">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 via-blue-500 to-cyan-500"></div>
               <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 rounded-full blur-3xl"></div>
@@ -464,40 +473,40 @@ export default function AdminDashboard() {
           </div>
         )}
         {/* Synthèse Globale - KPI Cards */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+        <div className={`bg-white border border-gray-100 rounded-2xl p-6 shadow-sm ${isDynamic ? 'animate-fade-in' : ''}`}>
           <h3 className="text-lg font-bold text-gray-900 mb-4">Synthèse Globale</h3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+            <div className={`bg-blue-50 border border-blue-100 rounded-xl p-4 ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.1s' } : {}}>
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-blue-600 font-medium">Cabinet Suivis</p>
                   <p className="text-3xl font-bold text-blue-600 mt-1">{practitioners.length}</p>
                   <p className="text-xs text-blue-500 mt-1">+{nbPractitioners > 2 ? Math.floor(nbPractitioners/3) : 1} ce mois</p>
                 </div>
-                <FiUsers className="w-6 h-6 text-blue-400" />
+                <FiUsers className={`w-6 h-6 text-blue-400 ${isDynamic ? 'animate-float-soft' : ''}`} />
               </div>
             </div>
-            <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
+            <div className={`bg-purple-50 border border-purple-100 rounded-xl p-4 ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.2s' } : {}}>
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-purple-600 font-medium">Rapports Générés</p>
                   <p className="text-3xl font-bold text-purple-600 mt-1">{animRapports}</p>
                   <p className="text-xs text-purple-500 mt-1">ce mois</p>
                 </div>
-                <FiFileText className="w-6 h-6 text-purple-400" />
+                <FiFileText className={`w-6 h-6 text-purple-400 ${isDynamic ? 'animate-float-soft' : ''}`} />
               </div>
             </div>
-            <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+            <div className={`bg-green-50 border border-green-100 rounded-xl p-4 ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.3s' } : {}}>
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-green-600 font-medium">Emails Envoyés</p>
                   <p className="text-3xl font-bold text-green-600 mt-1">{animEmails}</p>
                   <p className="text-xs text-green-500 mt-1">taux : 98%</p>
                 </div>
-                <FiMail className="w-6 h-6 text-green-400" />
+                <FiMail className={`w-6 h-6 text-green-400 ${isDynamic ? 'animate-float-soft' : ''}`} />
               </div>
             </div>
-            <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+            <div className={`bg-amber-50 border border-amber-100 rounded-xl p-4 ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.4s' } : {}}>
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-amber-600 font-medium">Performance Moyenne</p>
@@ -514,8 +523,8 @@ export default function AdminDashboard() {
         {isRayan && (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 mb-6">
             {/* Score Santé Global - Circular Gauge */}
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className={`relative group ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.3s' } : {}}>
+              <div className={`absolute -inset-0.5 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isDynamic ? 'animate-pulse-glow' : ''}`}></div>
               <div className="relative bg-white border border-gray-200 shadow-sm rounded-2xl p-5 h-full flex flex-col items-center justify-center">
                 <div className="relative w-28 h-28 mb-3">
                   <svg className="w-28 h-28 -rotate-90" viewBox="0 0 120 120">
@@ -540,7 +549,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Prédictions IA */}
-            <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5 hover:border-violet-400/40 transition-colors">
+            <div className={`bg-white border border-gray-200 shadow-sm rounded-2xl p-5 hover:border-violet-400/40 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.4s' } : {}}>
               <div className="flex items-center gap-2 mb-4">
                 <div className="p-1.5 bg-violet-500/10 rounded-lg"><FiTarget className="w-4 h-4 text-violet-500" /></div>
                 <h4 className="text-sm font-bold text-gray-900">Prédictions IA</h4>
@@ -564,7 +573,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Taux de Recouvrement */}
-            <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5 hover:border-emerald-400/40 transition-colors">
+            <div className={`bg-white border border-gray-200 shadow-sm rounded-2xl p-5 hover:border-emerald-400/40 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.5s' } : {}}>
               <div className="flex items-center gap-2 mb-4">
                 <div className="p-1.5 bg-emerald-500/10 rounded-lg"><FiDollarSign className="w-4 h-4 text-emerald-500" /></div>
                 <h4 className="text-sm font-bold text-gray-900">Recouvrement</h4>
@@ -582,7 +591,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Présences / Absences */}
-            <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5 hover:border-blue-400/40 transition-colors">
+            <div className={`bg-white border border-gray-200 shadow-sm rounded-2xl p-5 hover:border-blue-400/40 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.6s' } : {}}>
               <div className="flex items-center gap-2 mb-4">
                 <div className="p-1.5 bg-blue-500/10 rounded-lg"><FiUsers className="w-4 h-4 text-blue-500" /></div>
                 <h4 className="text-sm font-bold text-gray-900">Présences RDV</h4>
@@ -607,10 +616,10 @@ export default function AdminDashboard() {
         )}
 
         {/* KPI Cards — Animated */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6 ${isDynamic ? 'animate-fade-in' : ''}`} style={isDynamic ? { animationDelay: '0.2s' } : {}}>
           {/* CA Total */}
           {isRayan ? (
-            <div className="group rounded-2xl p-5 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 relative overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 shadow-lg shadow-blue-500/25">
+            <div className={`group rounded-2xl p-5 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 relative overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 shadow-lg shadow-blue-500/25 ${isDynamic ? 'animate-fade-in-up card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.1s' } : {}}>
               <svg className="absolute bottom-0 left-0 w-full opacity-20" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M0 60 C50 40, 100 70, 150 50 C200 30, 250 65, 300 45 C350 25, 380 55, 400 40 L400 80 L0 80 Z" fill="white"/><path d="M0 70 C60 50, 120 75, 180 60 C240 45, 300 70, 360 55 C380 48, 390 58, 400 52 L400 80 L0 80 Z" fill="white" opacity="0.5"/></svg>
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-3">

@@ -151,6 +151,14 @@ export default function PractitionerDashboard() {
 
   // ═══ ANIMATED COUNTERS ═══
   const dyn = isDynamic && !loading;
+  
+  // ═══ ANIMATION HELPERS ═══
+  const getAnimationClass = (delay = 0) => {
+    if (!isDynamic) return '';
+    return `animate-fade-in-up`;
+  };
+  const hoverClass = isDynamic ? 'hover-lift' : '';
+  
   const animValues = [
     useCountUp(Math.round(totalCA), 2200, dyn),
     useCountUp(totalPatients, 1800, dyn),
@@ -193,7 +201,7 @@ export default function PractitionerDashboard() {
 
       <div className="p-8">
         {/* KPI Cards — Animated */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8 ${isDynamic ? 'animate-fade-in' : ''}`}>
           {kpis.map((kpi, i) => {
             const animVal = animValues[i];
             let displayVal;
@@ -202,10 +210,10 @@ export default function PractitionerDashboard() {
             else if (kpi.format === 'eurh') displayVal = `${animVal}€/h`;
             else displayVal = animVal.toLocaleString('fr-FR');
             return (
-              <div key={i} className="group bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:shadow-gray-100/50 dark:hover:shadow-gray-900/30 transition-all duration-500 hover:-translate-y-1 relative overflow-hidden">
+              <div key={i} className={`group bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg hover:shadow-gray-100/50 dark:hover:shadow-gray-900/30 transition-all duration-500 hover:-translate-y-1 relative overflow-hidden ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: `${0.1 * (i % 4)}s` } : {}}>
                 <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 dark:from-gray-700/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <div className="relative z-10 flex items-center gap-3">
-                  <div className={`p-3 rounded-xl ${colorMap[kpi.color]} group-hover:scale-110 transition-transform`}>
+                  <div className={`p-3 rounded-xl ${colorMap[kpi.color]} group-hover:scale-110 transition-transform ${isDynamic ? 'animate-float-soft' : ''}`}>
                     <kpi.icon className="w-6 h-6" />
                   </div>
                   <div>
@@ -229,8 +237,8 @@ export default function PractitionerDashboard() {
             <p className="text-sm text-gray-400 dark:text-gray-500">Les graphiques et analyses IA sont temporairement indisponibles.<br/>Contactez l'administrateur pour réactiver les modèles.</p>
           </div>
         )}
-        {showAI && <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-2 bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
+        {showAI && <div className={`grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 ${isDynamic ? 'animate-fade-in' : ''}`} style={isDynamic ? { animationDelay: '0.3s' } : {}}>
+          <div className={`lg:col-span-2 bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.4s' } : {}}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-semibold dark:text-white">Chiffre d'Affaires</h3>
               <span className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-full ${
@@ -274,7 +282,7 @@ export default function PractitionerDashboard() {
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
+          <div className={`bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.5s' } : {}}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold dark:text-white">Taux d'Encaissement</h3>
             </div>
@@ -308,18 +316,18 @@ export default function PractitionerDashboard() {
 
         {/* Encours — Animated */}
         {encours && Object.keys(encours).length > 0 && (
-          <div className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
+          <div className={`bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors ${isDynamic ? 'animate-fade-in-up' : ''}`} style={isDynamic ? { animationDelay: '0.6s' } : {}}>
             <h3 className="text-lg font-semibold dark:text-white mb-4">En-cours</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="group p-4 bg-primary-50 dark:bg-primary-900/30 rounded-xl text-center hover:shadow-md transition-all duration-300 hover:-translate-y-0.5">
+              <div className={`group p-4 bg-primary-50 dark:bg-primary-900/30 rounded-xl text-center hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.65s' } : {}}>
                 <p className="text-sm text-primary-700 dark:text-primary-400">Durée à réaliser</p>
                 <p className="text-2xl font-bold text-primary-900 dark:text-white tabular-nums">{animEncoursDuree}h</p>
               </div>
-              <div className="group p-4 bg-blue-50 dark:bg-blue-900/30 rounded-xl text-center hover:shadow-md transition-all duration-300 hover:-translate-y-0.5">
+              <div className={`group p-4 bg-blue-50 dark:bg-blue-900/30 rounded-xl text-center hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.7s' } : {}}>
                 <p className="text-sm text-blue-700 dark:text-blue-400">Montant à facturer</p>
                 <p className="text-2xl font-bold text-blue-900 dark:text-white tabular-nums">{fmt(animEncoursMontant)}</p>
               </div>
-              <div className="group p-4 bg-amber-50 dark:bg-amber-900/30 rounded-xl text-center hover:shadow-md transition-all duration-300 hover:-translate-y-0.5">
+              <div className={`group p-4 bg-amber-50 dark:bg-amber-900/30 rounded-xl text-center hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.75s' } : {}}>
                 <p className="text-sm text-amber-700 dark:text-amber-400">Patients en cours</p>
                 <p className="text-2xl font-bold text-amber-900 dark:text-white tabular-nums">{animEncoursPatients}</p>
               </div>

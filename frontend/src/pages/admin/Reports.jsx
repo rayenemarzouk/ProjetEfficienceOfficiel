@@ -3,6 +3,7 @@ import Header from '../../components/Header';
 import { getReportsList, generateReport, generateAllReports, sendReports, sendReportsNow, downloadReport, getAdminDashboard, getAvailableMonths } from '../../services/api';
 import { FiFileText, FiSend, FiDownload, FiRefreshCw, FiCheck, FiAlertCircle, FiZap, FiFilter, FiCalendar, FiUsers } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
+import { useDynamic } from '../../context/DynamicContext';
 
 // Options de période pour le filtre
 const periodOptions = [
@@ -17,7 +18,9 @@ const periodOptions = [
 
 export default function Reports() {
   const { user } = useAuth();
+  const { isDynamic: _isDynamic } = useDynamic();
   const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const isDynamic = isRayan || _isDynamic;
   const cardCls = isRayan ? 'bg-white border border-gray-200 shadow-sm' : 'bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700';
   const [reports, setReports] = useState([]);
   const [practitioners, setPractitioners] = useState([]);
@@ -183,19 +186,19 @@ export default function Reports() {
 
       <div className="p-8">
         {/* Stats rapports */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
+        <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 ${isDynamic ? 'animate-fade-in' : ''}`}>
+          <div className={`${cardCls} rounded-2xl p-6 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.1s' } : {}}>
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-primary-50 dark:bg-primary-900/30 rounded-xl"><FiFileText className="w-6 h-6 text-primary-600" /></div>
+              <div className={`p-3 bg-primary-50 dark:bg-primary-900/30 rounded-xl ${isDynamic ? 'animate-float-soft' : ''}`}><FiFileText className="w-6 h-6 text-primary-600" /></div>
               <div>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalGeneres}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Rapports Générés</p>
               </div>
             </div>
           </div>
-          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
+          <div className={`${cardCls} rounded-2xl p-6 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.2s' } : {}}>
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-green-50 dark:bg-green-900/30 rounded-xl"><FiSend className="w-6 h-6 text-green-600" /></div>
+              <div className={`p-3 bg-green-50 dark:bg-green-900/30 rounded-xl ${isDynamic ? 'animate-float-soft' : ''}`}><FiSend className="w-6 h-6 text-green-600" /></div>
               <div>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalEnvoyes}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Emails Envoyés</p>

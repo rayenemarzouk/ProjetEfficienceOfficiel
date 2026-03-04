@@ -328,6 +328,9 @@ export default function Statistics() {
   const animEncaisse = useCountUp(totalEncaisse, 2000, dyn);
   const animPatients = useCountUp(totalPatients, 1800, dyn);
   const animScore = useCountUp(scoreMoyen, 1500, dyn);
+  
+  // Animation helpers
+  const hoverClass = isDynamic ? 'hover-lift' : '';
 
   if (loading || !data) {
     return (
@@ -379,14 +382,14 @@ export default function Statistics() {
         </div>
 
         {/* KPI Cards — Animated */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 ${isDynamic ? 'animate-fade-in' : ''}`}>
           {[
             { icon: FiDollarSign, label: 'CA Factur\u00e9', value: animFacture, suffix: ' \u20ac', gradient: 'from-blue-500 to-blue-600', bgLight: 'bg-blue-50', textColor: 'text-blue-600', raw: totalFacture },
             { icon: FiCheckCircle, label: 'CA Encaiss\u00e9', value: animEncaisse, suffix: ' \u20ac', gradient: 'from-green-500 to-emerald-600', bgLight: 'bg-green-50', textColor: 'text-green-600', raw: totalEncaisse },
             { icon: FiUsers, label: 'Patients trait\u00e9s', value: animPatients, suffix: '', gradient: 'from-purple-500 to-violet-600', bgLight: 'bg-purple-50', textColor: 'text-purple-600', raw: totalPatients },
             { icon: FiPercent, label: 'Taux encaissement', value: animScore, suffix: '%', gradient: scoreMoyen >= 85 ? 'from-green-500 to-emerald-600' : scoreMoyen >= 70 ? 'from-amber-500 to-orange-500' : 'from-red-500 to-rose-600', bgLight: scoreMoyen >= 85 ? 'bg-green-50' : scoreMoyen >= 70 ? 'bg-amber-50' : 'bg-red-50', textColor: scoreMoyen >= 85 ? 'text-green-600' : scoreMoyen >= 70 ? 'text-amber-600' : 'text-red-600', raw: scoreMoyen },
           ].map((kpi, i) => (
-            <div key={i} className={`${cardCls} rounded-xl p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group cursor-default relative overflow-hidden`}>
+            <div key={i} className={`${cardCls} rounded-xl p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group cursor-default relative overflow-hidden ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: `${0.1 * i}s` } : {}}>
               {/* Background glow on hover */}
               <div className={`absolute -top-6 -right-6 w-20 h-20 rounded-full bg-gradient-to-br ${kpi.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500 blur-xl`} />
               <div className="flex items-center gap-3 relative">
@@ -412,7 +415,7 @@ export default function Statistics() {
         </div>
 
         {/* CA par cabinet - animated bars with metric toggle */}
-        <div className={`${cardCls} rounded-xl p-6 mb-6 transition-colors`}>
+        <div className={`${cardCls} rounded-xl p-6 mb-6 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.3s' } : {}}>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-base font-bold text-gray-900 dark:text-white mb-0.5">Performance par cabinet</h3>

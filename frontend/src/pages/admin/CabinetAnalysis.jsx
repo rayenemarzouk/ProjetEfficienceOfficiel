@@ -284,8 +284,8 @@ export default function CabinetAnalysis() {
           </div>
         )}
         {showAI && <>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
-          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
+        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6 ${isDynamic ? 'animate-fade-in' : ''}`}>
+          <div className={`${cardCls} rounded-2xl p-6 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.1s' } : {}}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <FiUsers className="w-5 h-5 text-blue-600" />
@@ -331,22 +331,22 @@ export default function CabinetAnalysis() {
               )}
             </div>
             <div className="grid grid-cols-3 gap-3 mt-4">
-              <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 border-l-4 border-blue-500 group hover:shadow-md transition-all">
+              <div className={`bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 border-l-4 border-blue-500 group hover:shadow-md transition-all ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.2s' } : {}}>
                 <p className="text-xl font-black text-blue-700 dark:text-blue-400 tabular-nums">{animTotalTraites}</p>
                 <p className="text-[10px] text-gray-500 dark:text-gray-400">Total traités</p>
               </div>
-              <div className="bg-green-50 dark:bg-green-900/30 rounded-lg p-3 border-l-4 border-green-500 group hover:shadow-md transition-all">
+              <div className={`bg-green-50 dark:bg-green-900/30 rounded-lg p-3 border-l-4 border-green-500 group hover:shadow-md transition-all ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.25s' } : {}}>
                 <p className="text-xl font-black text-green-700 dark:text-green-400 tabular-nums">{animTotalRdv}</p>
                 <p className="text-[10px] text-gray-500 dark:text-gray-400">Total sur agenda</p>
               </div>
-              <div className="bg-red-50 dark:bg-red-900/30 rounded-lg p-3 border-l-4 border-red-400 group hover:shadow-md transition-all">
+              <div className={`bg-red-50 dark:bg-red-900/30 rounded-lg p-3 border-l-4 border-red-400 group hover:shadow-md transition-all ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.3s' } : {}}>
                 <p className="text-xl font-black text-red-600 dark:text-red-400 tabular-nums">{animTotalConsult}</p>
                 <p className="text-[10px] text-gray-500 dark:text-gray-400">Total RDV</p>
               </div>
             </div>
           </div>
 
-          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
+          <div className={`${cardCls} rounded-2xl p-6 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.2s' } : {}}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <FiClock className="w-5 h-5 text-purple-600" />

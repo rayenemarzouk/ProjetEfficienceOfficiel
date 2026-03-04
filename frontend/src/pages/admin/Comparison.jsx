@@ -303,37 +303,37 @@ export default function Comparison() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className={`${cardCls} rounded-2xl p-5 transition-colors`}>
+        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 ${isDynamic ? 'animate-fade-in' : ''}`}>
+          <div className={`${cardCls} rounded-2xl p-5 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.1s' } : {}}>
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/30"><FiUsers className="w-5 h-5 text-red-500" /></div>
+              <div className={`p-3 rounded-xl bg-red-50 dark:bg-red-900/30 ${isDynamic ? 'animate-float-soft' : ''}`}><FiUsers className="w-5 h-5 text-red-500" /></div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Total Absences</p>
                 <p className="text-3xl font-black text-gray-900 dark:text-white">{totalAbsences}</p>
               </div>
             </div>
           </div>
-          <div className={`${cardCls} rounded-2xl p-5 transition-colors`}>
+          <div className={`${cardCls} rounded-2xl p-5 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.2s' } : {}}>
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/30"><FiUsers className="w-5 h-5 text-green-500" /></div>
+              <div className={`p-3 rounded-xl bg-green-50 dark:bg-green-900/30 ${isDynamic ? 'animate-float-soft' : ''}`}><FiUsers className="w-5 h-5 text-green-500" /></div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Total Présences</p>
                 <p className="text-3xl font-black text-gray-900 dark:text-white">{totalPresences}</p>
               </div>
             </div>
           </div>
-          <div className={`${cardCls} rounded-2xl p-5 transition-colors`}>
+          <div className={`${cardCls} rounded-2xl p-5 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.3s' } : {}}>
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/30"><FiTrendingDown className="w-5 h-5 text-amber-500" /></div>
+              <div className={`p-3 rounded-xl bg-amber-50 dark:bg-amber-900/30 ${isDynamic ? 'animate-float-soft' : ''}`}><FiTrendingDown className="w-5 h-5 text-amber-500" /></div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Taux d'absence global</p>
                 <p className="text-3xl font-black text-gray-900 dark:text-white">{tauxAbsence}%</p>
               </div>
             </div>
           </div>
-          <div className={`${cardCls} rounded-2xl p-5 transition-colors`}>
+          <div className={`${cardCls} rounded-2xl p-5 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.4s' } : {}}>
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/30"><FiCalendar className="w-5 h-5 text-blue-500" /></div>
+              <div className={`p-3 rounded-xl bg-blue-50 dark:bg-blue-900/30 ${isDynamic ? 'animate-float-soft' : ''}`}><FiCalendar className="w-5 h-5 text-blue-500" /></div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Total RDV</p>
                 <p className="text-3xl font-black text-gray-900 dark:text-white">{totalRdv}</p>
@@ -343,7 +343,7 @@ export default function Comparison() {
         </div>
 
         {/* Detail Table */}
-        <div className={`${cardCls} rounded-2xl overflow-hidden mb-6 transition-colors`}>
+        <div className={`${cardCls} rounded-2xl overflow-hidden mb-6 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.5s' } : {}}>
           <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <h3 className="text-base font-bold text-gray-900 dark:text-white">Détail par Cabinet</h3>
           </div>

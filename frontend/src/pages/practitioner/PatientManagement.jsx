@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Header from '../../components/Header';
 import { getPatients, addPatient, updatePatient, deletePatient } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useDynamic } from '../../context/DynamicContext';
 import {
   FiUsers, FiUserPlus, FiEdit3, FiTrash2, FiSearch, FiCheck, FiAlertCircle,
   FiLoader, FiPhone, FiMail, FiCalendar, FiX, FiFileText, FiFilter,
@@ -28,6 +29,7 @@ const emptyForm = {
 
 export default function PatientManagement() {
   const { user } = useAuth();
+  const { isDynamic } = useDynamic();
   const [patients, setPatients] = useState([]);
   const [stats, setStats] = useState({ total: 0, actifs: 0, nouveaux: 0, inactifs: 0 });
   const [loading, setLoading] = useState(true);
@@ -165,13 +167,13 @@ export default function PatientManagement() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 max-w-5xl mx-auto">
+        <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 max-w-5xl mx-auto ${isDynamic ? 'animate-fade-in' : ''}`}>
           {statCards.map((s, i) => {
             const Icon = s.icon;
             return (
-              <div key={i} className="bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-5 transition-colors">
+              <div key={i} className={`bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-5 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: `${0.1 * i}s` } : {}}>
                 <div className="flex items-center justify-between mb-3">
-                  <div className={`p-2.5 rounded-xl ${colorMap[s.color]}`}>
+                  <div className={`p-2.5 rounded-xl ${colorMap[s.color]} ${isDynamic ? 'animate-float-soft' : ''}`}>
                     <Icon className="w-5 h-5" />
                   </div>
                 </div>
