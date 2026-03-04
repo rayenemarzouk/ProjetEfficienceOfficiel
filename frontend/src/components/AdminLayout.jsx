@@ -169,10 +169,12 @@ export default function AdminLayout({ children }) {
               <span className="text-[#1a2b4f] font-bold text-xl">E</span>
             </div>
             <div>
-              <h1 className="font-bold text-lg leading-tight tracking-wide">
-                <span className="text-xl">E</span>FFICI<span className="text-xl">E</span>NC<span className="text-xl">E</span>
+              <h1 className="text-sm font-black text-white whitespace-nowrap tracking-[0.08em]" style={{ fontFamily: 'Consolas, Monaco, monospace' }}>
+                EFFICIENCE ANALYTICS
               </h1>
-              <p className="text-xs text-blue-200 italic">Analytics</p>
+              <p className="text-[10px] font-semibold text-gray-400 tracking-[0.1em] uppercase">
+                Administration
+              </p>
             </div>
           </div>
         </div>
