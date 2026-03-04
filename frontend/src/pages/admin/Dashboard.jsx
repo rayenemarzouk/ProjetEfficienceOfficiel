@@ -373,7 +373,27 @@ export default function AdminDashboard() {
       )}
       
       <div className={isRayan ? 'p-6 bg-[#0a1628]' : 'p-6'}>
-        {/* ═══ AI COMMAND CENTER (Rayan) ═══ */}
+        {/* Bonjour Rayan + Bandeau EFFICIENCE (affiché en premier) */}
+        {isRayan && (
+          <>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white">Bonjour Rayan 👋</h2>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <p className="text-gray-400">Votre IA analyse vos cabinets en temps réel</p>
+              </div>
+            </div>
+
+            <div className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 rounded-2xl p-8 text-center">
+              <h3 className="text-3xl font-black text-gray-800 tracking-wide mb-2" style={{ fontFamily: 'monospace' }}>
+                EFFICIENCE ANALYTICS
+              </h3>
+              <p className="text-gray-600">L'accompagnement personnalisé de votre cabinet dentaire</p>
+            </div>
+          </>
+        )}
+
+        {/* ═══ AI COMMAND CENTER (Rayan) - affiché après EFFICIENCE ═══ */}
         {isRayan && (
           <div className="mb-6 relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600/20 via-blue-500/20 to-cyan-500/20 rounded-2xl blur-lg opacity-60 group-hover:opacity-100 transition-opacity duration-700"></div>
@@ -442,26 +462,6 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-        )}
-
-        {/* Bonjour Rayan + Bandeau EFFICIENCE */}
-        {isRayan && (
-          <>
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white">Bonjour Rayan 👋</h2>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <p className="text-gray-400">Votre IA analyse vos cabinets en temps réel</p>
-              </div>
-            </div>
-
-            <div className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 rounded-2xl p-8 text-center">
-              <h3 className="text-3xl font-black text-gray-800 tracking-wide mb-2" style={{ fontFamily: 'monospace' }}>
-                EFFICIENCE ANALYTICS
-              </h3>
-              <p className="text-gray-600">L'accompagnement personnalisé de votre cabinet dentaire</p>
-            </div>
-          </>
         )}
         {/* Synthèse Globale - KPI Cards */}
         <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">

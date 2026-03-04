@@ -168,7 +168,7 @@ export default function Header({ title, subtitle }) {
   const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
 
   return (
-    <header className={`px-8 py-4 transition-colors duration-300 ${isRayan ? 'bg-[#0f1d2f] border-b border-[#1e3a5f]/50' : 'bg-white dark:bg-[#1e293b] border-b border-gray-200 dark:border-gray-700'}`}>
+    <header className={`sticky top-0 z-40 px-8 py-4 transition-colors duration-300 ${isRayan ? 'bg-[#0f1d2f] border-b border-[#1e3a5f]/50' : 'bg-white dark:bg-[#1e293b] border-b border-gray-200 dark:border-gray-700'}`}>
       <div className="flex items-center justify-between">
         <div>
           <h1 className={`text-2xl font-bold ${isRayan ? 'text-white' : 'text-gray-900 dark:text-gray-100'}`}>{title}</h1>
