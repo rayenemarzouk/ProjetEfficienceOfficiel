@@ -364,7 +364,7 @@ export default function AdminDashboard() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Bonjour {user?.name?.split(' ')[0] === 'Mr' || user?.name?.split(' ')[0] === 'Mr.' ? user.name : user?.name?.split(' ')[0] || 'Admin'} 👋
+              Bonjour Dr {user?.name?.split(' ')[0] === 'Mr' || user?.name?.split(' ')[0] === 'Mr.' ? user.name : user?.name?.split(' ')[0] || 'Admin'} 👋
             </h1>
             <p className="text-gray-500">Date/Période : Données mises à jour au {new Date().toLocaleDateString('fr-FR')}</p>
           </div>
@@ -377,7 +377,7 @@ export default function AdminDashboard() {
         {isRayan && (
           <>
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white">Bonjour Rayan 👋</h2>
+              <h2 className="text-2xl font-bold text-white">Bonjour Dr Rayan 👋</h2>
               <div className="flex items-center gap-2 mt-1">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <p className="text-gray-400">Votre IA analyse vos cabinets en temps réel</p>

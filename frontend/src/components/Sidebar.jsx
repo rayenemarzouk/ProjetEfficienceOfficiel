@@ -18,8 +18,7 @@ export default function Sidebar() {
   // Menu spécial pour Rayan (design original)
   const rayanLinks = [
     { to: '/admin', icon: FiHome, label: 'DASHBOARD DENTAIRE', end: true },
-    { to: '/admin/cabinets', icon: FiBarChart2, label: 'ANALYSE DES CABINETS' },
-    { to: '/admin/comparison', icon: FiGitMerge, label: 'COMPARAISON CABINETS' },
+    { to: '/admin/cabinets', icon: FiBarChart2, label: 'ANALYSE & COMPARAISON' },
     { to: '/admin/gestion', icon: FiBriefcase, label: 'GESTION CABINETS' },
     { to: '/admin/reports', icon: FiFileText, label: 'RAPPORTS CABINET' },
     { to: '/admin/statistics', icon: FiPieChart, label: 'STATISTIQUES DES CABINETS' },

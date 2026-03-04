@@ -177,7 +177,7 @@ export default function ConsultantDashboard() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Bonjour {user?.prenom || 'Consultant'} 👋
+            Bonjour Dr {user?.prenom || 'Consultant'} 👋
           </h1>
           <p className="text-gray-500">Vue d'ensemble de vos cabinets</p>
         </div>

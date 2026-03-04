@@ -187,7 +187,7 @@ export default function PractitionerDashboard() {
   return (
     <div>
       <Header
-        title={`Bonjour, ${user?.name || user?.cabinetName || ''}`}
+        title={`Bonjour Dr ${user?.name || user?.cabinetName || ''}`}
         subtitle={`Cabinet ${user?.cabinetName || user?.name || ''} — Tableau de bord`}
       />
 
