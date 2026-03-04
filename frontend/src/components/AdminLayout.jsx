@@ -266,7 +266,7 @@ export default function AdminLayout({ children }) {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-h-screen lg:ml-64">
         {/* Top header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between lg:justify-end">
+        <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex items-center justify-between">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
@@ -274,15 +274,40 @@ export default function AdminLayout({ children }) {
             <Bars3Icon className="w-6 h-6" />
           </button>
           
+          <div className="hidden lg:block"></div>
+          
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-500">
-              {new Date().toLocaleDateString('fr-FR', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </span>
+            {/* Status card */}
+            <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs font-semibold text-green-600">Système actif</span>
+              </div>
+              <div className="w-px h-4 bg-blue-200"></div>
+              <div className="text-center">
+                <p className="text-xs font-bold text-blue-700">
+                  {new Date().toLocaleDateString('fr-FR', { weekday: 'long' }).charAt(0).toUpperCase() + new Date().toLocaleDateString('fr-FR', { weekday: 'long' }).slice(1)}
+                </p>
+                <p className="text-[10px] text-blue-500">
+                  {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+              </div>
+            </div>
+
+            {/* Notifications */}
+            <button className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+
+            {/* User avatar */}
+            <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                {user?.name?.charAt(0) || 'A'}
+              </div>
+            </div>
           </div>
         </header>
 
