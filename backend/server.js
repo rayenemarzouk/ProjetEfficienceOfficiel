@@ -15,6 +15,7 @@ app.use((req, res, next) => {
   const allowedOrigins = [
     'https://efficience-analytics-eu-783177.hostingersite.com',
     'https://efficience-analytics.onrender.com',
+    'https://projetefficienceofficiel.onrender.com',
     'http://localhost:5173',
     'http://localhost:5000'
   ];
@@ -37,6 +38,7 @@ app.use(cors({
   origin: [
     'https://efficience-analytics-eu-783177.hostingersite.com',
     'https://efficience-analytics.onrender.com',
+    'https://projetefficienceofficiel.onrender.com',
     'http://localhost:5173',
     'http://localhost:5000'
   ],
