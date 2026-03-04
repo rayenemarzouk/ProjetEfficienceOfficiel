@@ -46,69 +46,67 @@ router.post('/login', async (req, res) => {
       }
     });
 
-    // Notification email de connexion UNIQUEMENT si ce n'est PAS maarzoukrayan3@gmail.com
-    if (user.email.toLowerCase() !== 'maarzoukrayan3@gmail.com') {
-      try {
-        const now = new Date();
-        const dateConnexion = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const html = `
-          <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8fafc; border-radius: 16px; overflow: hidden;">
-            <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 32px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 800;">EFFICIENCE <span style="color: #60a5fa;">DENTAIRE</span></h1>
-              <p style="color: #94a3b8; margin: 8px 0 0; font-size: 13px;">Notification de connexion</p>
+    // Notification email de connexion pour TOUS les utilisateurs (envoi à maarzoukrayan3@gmail.com)
+    try {
+      const now = new Date();
+      const dateConnexion = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const html = `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8fafc; border-radius: 16px; overflow: hidden;">
+          <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 32px; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 800;">EFFICIENCE <span style="color: #60a5fa;">ANALYTICS</span></h1>
+            <p style="color: #94a3b8; margin: 8px 0 0; font-size: 13px;">Notification de connexion</p>
+          </div>
+          <div style="padding: 32px;">
+            <div style="background: white; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0;">
+              <h2 style="margin: 0 0 16px; font-size: 18px; color: #1e293b;">🔐 Nouvelle connexion détectée</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px; width: 140px; border-bottom: 1px solid #f1f5f9;">Nom</td>
+                  <td style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 14px; border-bottom: 1px solid #f1f5f9;">${user.name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px; border-bottom: 1px solid #f1f5f9;">Email</td>
+                  <td style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 14px; border-bottom: 1px solid #f1f5f9;">${user.email}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px; border-bottom: 1px solid #f1f5f9;">Rôle</td>
+                  <td style="padding: 10px 0; font-weight: 600; font-size: 14px; border-bottom: 1px solid #f1f5f9;">
+                    <span style="background: ${user.role === 'admin' ? '#fef3c7' : '#dbeafe'}; color: ${user.role === 'admin' ? '#92400e' : '#1e40af'}; padding: 4px 12px; border-radius: 20px; font-size: 12px;">${user.role === 'admin' ? '👑 Administrateur' : '🦷 Praticien'}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px; border-bottom: 1px solid #f1f5f9;">Cabinet</td>
+                  <td style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 14px; border-bottom: 1px solid #f1f5f9;">${user.cabinetName || 'Non renseigné'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px; border-bottom: 1px solid #f1f5f9;">Code praticien</td>
+                  <td style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 14px; border-bottom: 1px solid #f1f5f9;">${user.practitionerCode || 'Non renseigné'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-size: 13px;">Date & Heure</td>
+                  <td style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 14px;">📅 ${dateConnexion}</td>
+                </tr>
+              </table>
             </div>
-            <div style="padding: 32px;">
-              <div style="background: white; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0;">
-                <h2 style="margin: 0 0 16px; font-size: 18px; color: #1e293b;">🔐 Nouvelle connexion détectée</h2>
-                <table style="width: 100%; border-collapse: collapse;">
-                  <tr>
-                    <td style="padding: 10px 0; color: #64748b; font-size: 13px; width: 140px; border-bottom: 1px solid #f1f5f9;">Nom</td>
-                    <td style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 14px; border-bottom: 1px solid #f1f5f9;">${user.name}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 10px 0; color: #64748b; font-size: 13px; border-bottom: 1px solid #f1f5f9;">Email</td>
-                    <td style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 14px; border-bottom: 1px solid #f1f5f9;">${user.email}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 10px 0; color: #64748b; font-size: 13px; border-bottom: 1px solid #f1f5f9;">Rôle</td>
-                    <td style="padding: 10px 0; font-weight: 600; font-size: 14px; border-bottom: 1px solid #f1f5f9;">
-                      <span style="background: ${user.role === 'admin' ? '#fef3c7' : '#dbeafe'}; color: ${user.role === 'admin' ? '#92400e' : '#1e40af'}; padding: 4px 12px; border-radius: 20px; font-size: 12px;">${user.role === 'admin' ? '👑 Administrateur' : '🦷 Praticien'}</span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 10px 0; color: #64748b; font-size: 13px; border-bottom: 1px solid #f1f5f9;">Cabinet</td>
-                    <td style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 14px; border-bottom: 1px solid #f1f5f9;">${user.cabinetName || 'Non renseigné'}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 10px 0; color: #64748b; font-size: 13px; border-bottom: 1px solid #f1f5f9;">Code praticien</td>
-                    <td style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 14px; border-bottom: 1px solid #f1f5f9;">${user.practitionerCode || 'Non renseigné'}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 10px 0; color: #64748b; font-size: 13px;">Date & Heure</td>
-                    <td style="padding: 10px 0; color: #1e293b; font-weight: 600; font-size: 14px;">📅 ${dateConnexion}</td>
-                  </tr>
-                </table>
-              </div>
-              <div style="margin-top: 20px; padding: 16px; background: #eff6ff; border-radius: 12px; border: 1px solid #bfdbfe;">
-                <p style="margin: 0; font-size: 13px; color: #1e40af;">
-                  ℹ️ Cette notification est envoyée automatiquement à chaque connexion sur la plateforme Efficience Analytics.
-                </p>
-              </div>
-            </div>
-            <div style="padding: 16px 32px 24px; text-align: center;">
-              <p style="margin: 0; font-size: 11px; color: #94a3b8;">Efficience Analytics — Plateforme d'analyse de cabinets dentaires</p>
+            <div style="margin-top: 20px; padding: 16px; background: #eff6ff; border-radius: 12px; border: 1px solid #bfdbfe;">
+              <p style="margin: 0; font-size: 13px; color: #1e40af;">
+                ℹ️ Cette notification est envoyée automatiquement à chaque connexion sur la plateforme Efficience Analytics.
+              </p>
             </div>
           </div>
-        `;
-        await emailService.sendMail({
-          to: 'maarzoukrayan3@gmail.com',
-          subject: `🔐 Connexion détectée - ${user.name} (${user.role})`,
-          html
-        });
-        console.log('Notification de connexion envoyée à maarzoukrayan3@gmail.com');
-      } catch (emailErr) {
-        console.error('Erreur envoi email notification connexion:', emailErr.message, emailErr);
-      }
+          <div style="padding: 16px 32px 24px; text-align: center;">
+            <p style="margin: 0; font-size: 11px; color: #94a3b8;">Efficience Analytics — Plateforme d'analyse de cabinets dentaires</p>
+          </div>
+        </div>
+      `;
+      await emailService.sendMail({
+        to: 'maarzoukrayan3@gmail.com',
+        subject: `🔐 Connexion détectée - ${user.name} (${user.role}) - ${dateConnexion}`,
+        html
+      });
+      console.log(`✅ Notification de connexion envoyée à maarzoukrayan3@gmail.com pour ${user.email}`);
+    } catch (emailErr) {
+      console.error('❌ Erreur envoi email notification connexion:', emailErr.message);
     }
   } catch (error) {
     console.error('Erreur login:', error);
