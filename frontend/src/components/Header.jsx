@@ -170,16 +170,16 @@ export default function Header({ title, subtitle }) {
   const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
 
   return (
-    <header className={`sticky top-0 z-40 px-8 py-4 transition-colors duration-300 ${isRayan ? 'bg-[#0f1d2f] border-b border-[#1e3a5f]/50' : 'bg-white dark:bg-[#1e293b] border-b border-gray-200 dark:border-gray-700'}`}>
+    <header className={`sticky top-0 z-40 px-8 py-4 transition-colors duration-300 ${isRayan ? 'bg-[#0f1d2f] border-b border-[#1e3a5f]/50' : 'bg-[#0f172a] border-b border-[#1e3a5f]/50'}`}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className={`text-2xl font-bold ${isRayan ? 'text-white' : 'text-gray-900 dark:text-gray-100'}`}>{title}</h1>
-          {subtitle && <p className={`text-sm mt-0.5 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>{subtitle}</p>}
+          <h1 className="text-2xl font-bold text-white">{title}</h1>
+          {subtitle && <p className="text-sm mt-0.5 text-gray-400">{subtitle}</p>}
         </div>
         <div className="flex items-center gap-4">
           {/* ═══ SEARCH BAR ═══ */}
           <div className="relative hidden md:block" ref={searchRef}>
-            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <input
               type="text"
               value={searchQuery}
@@ -187,41 +187,41 @@ export default function Header({ title, subtitle }) {
               onFocus={() => setSearchFocused(true)}
               onKeyDown={handleSearchKeyDown}
               placeholder="Rechercher..."
-              className={`pl-10 pr-8 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64 transition-colors ${isRayan ? 'bg-[#0a1628] border border-[#1e3a5f] text-gray-200 placeholder-gray-500' : 'bg-gray-50 dark:bg-[#0f172a] border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500'}`}
+              className="pl-10 pr-8 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64 transition-colors bg-[#0a1628] border border-[#1e3a5f] text-gray-200 placeholder-gray-500"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className={`absolute right-3 top-1/2 -translate-y-1/2 ${isRayan ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}>
+              <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300">
                 <FiX className="w-3.5 h-3.5" />
               </button>
             )}
             {/* Search dropdown */}
             {searchFocused && searchQuery.trim().length > 0 && (
-              <div className={`absolute top-full left-0 right-0 mt-2 rounded-xl shadow-xl z-[60] overflow-hidden ${isRayan ? 'bg-[#1e293b] border border-[#1e3a5f]' : 'bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700'}`}>
+              <div className="absolute top-full left-0 right-0 mt-2 rounded-xl shadow-xl z-[60] overflow-hidden bg-[#1e293b] border border-[#1e3a5f]">
                 {searchResults.length > 0 ? (
                   <div className="py-1">
-                    <p className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>Pages</p>
+                    <p className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Pages</p>
                     {searchResults.map((page) => (
                       <button
                         key={page.path}
                         onClick={() => handleSearchSelect(page.path)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left group ${isRayan ? 'hover:bg-blue-900/20' : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'}`}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left group hover:bg-blue-900/20"
                       >
-                        <div className={`p-1.5 rounded-lg transition-colors ${isRayan ? 'bg-blue-900/30 group-hover:bg-blue-900/50' : 'bg-blue-50 dark:bg-blue-900/30 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50'}`}>
+                        <div className="p-1.5 rounded-lg transition-colors bg-blue-900/30 group-hover:bg-blue-900/50">
                           <page.Icon className="w-4 h-4 text-blue-600" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium truncate ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{page.label}</p>
-                          <p className={`text-[11px] ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>{page.desc}</p>
+                          <p className="text-sm font-medium truncate text-white">{page.label}</p>
+                          <p className="text-[11px] text-gray-500">{page.desc}</p>
                         </div>
-                        <FiArrowRight className={`w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity ${isRayan ? 'text-gray-600' : 'text-gray-300 dark:text-gray-600'}`} />
+                        <FiArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-gray-600" />
                       </button>
                     ))}
                   </div>
                 ) : (
                   <div className="px-4 py-6 text-center">
-                    <FiSearch className={`w-8 h-8 mx-auto mb-2 ${isRayan ? 'text-gray-600' : 'text-gray-300 dark:text-gray-600'}`} />
-                    <p className={`text-sm ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>Aucun résultat pour « {searchQuery} »</p>
-                    <p className={`text-[11px] mt-1 ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>Essayez : dashboard, rapports, statistiques…</p>
+                    <FiSearch className="w-8 h-8 mx-auto mb-2 text-gray-600" />
+                    <p className="text-sm text-gray-400">Aucun résultat pour « {searchQuery} »</p>
+                    <p className="text-[11px] mt-1 text-gray-500">Essayez : dashboard, rapports, statistiques…</p>
                   </div>
                 )}
               </div>
@@ -262,7 +262,7 @@ export default function Header({ title, subtitle }) {
           <div className="relative" ref={notifRef}>
             <button
               onClick={handleBellClick}
-              className={`relative p-2 rounded-xl transition-colors ${isRayan ? 'text-gray-400 hover:bg-white/10' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+              className="relative p-2 rounded-xl transition-colors text-gray-400 hover:bg-white/10"
             >
               <FiBell className="w-5 h-5" />
               {!notifSeen && (
@@ -275,14 +275,14 @@ export default function Header({ title, subtitle }) {
 
             {/* Notification dropdown */}
             {notifOpen && (
-              <div className={`absolute right-0 top-full mt-2 w-96 rounded-xl shadow-2xl z-[60] overflow-hidden ${isRayan ? 'bg-[#1e293b] border border-[#1e3a5f]' : 'bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700'}`}>
-                <div className={`px-4 py-3 flex items-center justify-between ${isRayan ? 'border-b border-[#1e3a5f] bg-gradient-to-r from-blue-900/20 to-violet-900/20' : 'border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-violet-50 dark:from-blue-900/20 dark:to-violet-900/20'}`}>
+              <div className="absolute right-0 top-full mt-2 w-96 rounded-xl shadow-2xl z-[60] overflow-hidden bg-[#1e293b] border border-[#1e3a5f]">
+                <div className="px-4 py-3 flex items-center justify-between border-b border-[#1e3a5f] bg-gradient-to-r from-blue-900/20 to-violet-900/20">
                   <div className="flex items-center gap-2">
                     <FiBell className="w-4 h-4 text-blue-600" />
-                    <h3 className={`text-sm font-bold ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>Notifications</h3>
+                    <h3 className="text-sm font-bold text-white">Notifications</h3>
                   </div>
                   {notifications.length > 0 && (
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isRayan ? 'text-blue-400 bg-blue-900/50' : 'text-blue-600 bg-blue-100 dark:bg-blue-900/50'}`}>{notifications.length}</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-blue-400 bg-blue-900/50">{notifications.length}</span>
                   )}
                 </div>
                 <div className="max-h-[400px] overflow-y-auto">
@@ -293,7 +293,7 @@ export default function Header({ title, subtitle }) {
                     </div>
                   ) : notifications.length === 0 ? (
                     <div className="px-4 py-10 text-center">
-                      <FiBell className={`w-10 h-10 mx-auto mb-3 ${isRayan ? 'text-gray-700' : 'text-gray-200 dark:text-gray-700'}`} />
+                      <FiBell className="w-10 h-10 mx-auto mb-3 text-gray-700" />
                       <p className="text-sm text-gray-400">Aucune notification</p>
                     </div>
                   ) : (
@@ -303,7 +303,7 @@ export default function Header({ title, subtitle }) {
                       return (
                         <div
                           key={n.id}
-                          className={`px-4 py-3 transition-colors ${n.action ? 'cursor-pointer' : ''} ${isRayan ? 'border-b border-gray-800 hover:bg-gray-800/50' : 'border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'}`}
+                          className={`px-4 py-3 transition-colors ${n.action ? 'cursor-pointer' : ''} border-b border-gray-800 hover:bg-gray-800/50`}
                           onClick={() => { if (n.action) { navigate(n.action); setNotifOpen(false); } }}
                         >
                           <div className="flex items-start gap-3">
@@ -311,10 +311,10 @@ export default function Header({ title, subtitle }) {
                               <NIcon className={`w-4 h-4 ${colors.icon}`} />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className={`text-[13px] font-semibold leading-tight ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{n.title}</p>
-                              <p className={`text-[11px] mt-0.5 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>{n.message}</p>
+                              <p className="text-[13px] font-semibold leading-tight text-white">{n.title}</p>
+                              <p className="text-[11px] mt-0.5 text-gray-400">{n.message}</p>
                             </div>
-                            <span className={`text-[10px] whitespace-nowrap flex-shrink-0 mt-0.5 ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>{timeAgo(n.time)}</span>
+                            <span className="text-[10px] whitespace-nowrap flex-shrink-0 mt-0.5 text-gray-500">{timeAgo(n.time)}</span>
                           </div>
                         </div>
                       );
@@ -322,9 +322,9 @@ export default function Header({ title, subtitle }) {
                   )}
                 </div>
                 {notifications.length > 0 && !notifLoading && (
-                  <div className={`px-4 py-2.5 border-t text-center ${isRayan ? 'border-[#1e3a5f]' : 'border-gray-100 dark:border-gray-700'}`}>
+                  <div className="px-4 py-2.5 border-t text-center border-[#1e3a5f]">
                     <button onClick={() => { navigate(user?.role === 'admin' ? '/admin/reports' : '/dashboard/reports'); setNotifOpen(false); }}
-                      className={`text-xs font-semibold transition-colors ${isRayan ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300'}`}>
+                      className="text-xs font-semibold transition-colors text-blue-400 hover:text-blue-300">
                       Voir tous les rapports →
                     </button>
                   </div>
@@ -333,13 +333,13 @@ export default function Header({ title, subtitle }) {
             )}
           </div>
 
-          <div className={`flex items-center gap-3 pl-4 border-l ${isRayan ? 'border-[#1e3a5f]' : 'border-gray-200 dark:border-gray-600'}`}>
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold ${isRayan ? 'bg-blue-600' : 'bg-primary-600'}`}>
+          <div className="flex items-center gap-3 pl-4 border-l border-[#1e3a5f]">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold bg-blue-600">
               {user?.name?.charAt(0) || 'U'}
             </div>
             <div className="hidden md:block">
-              <p className={`text-sm font-medium ${isRayan ? 'text-gray-300' : 'text-gray-700 dark:text-gray-300'}`}>{user?.email}</p>
-              <p className={`text-xs capitalize ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>{user?.role === 'admin' ? 'Administrateur' : 'Cabinet'}</p>
+              <p className="text-sm font-medium text-gray-300">{user?.email}</p>
+              <p className="text-xs capitalize text-gray-500">{user?.role === 'admin' ? 'Administrateur' : 'Cabinet'}</p>
             </div>
           </div>
         </div>
