@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAdminDashboard, getCabinetDetails } from '../../services/api';
 import { FiBriefcase, FiCheckCircle, FiAlertTriangle, FiAlertCircle, FiSearch, FiEye, FiFileText, FiTrendingUp, FiX, FiUsers, FiClock, FiDollarSign, FiCalendar } from 'react-icons/fi';
@@ -6,6 +6,8 @@ import { useAuth } from '../../context/AuthContext';
 import ComportementCabinet, { calcVariation } from '../../components/ComportementCabinet';
 import DevisAnalytics from '../../components/DevisAnalytics';
 import HeuresAnalytics from '../../components/HeuresAnalytics';
+import AnalyseChiffreAffaires from '../../components/AnalyseChiffreAffaires';
+import AnalyseAgenda from '../../components/AnalyseAgenda';
 
 const fmt = (v) => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0));
 
@@ -67,6 +69,55 @@ export default function CabinetManagement() {
     fetch();
   }, []);
 
+  useEffect(() => {
+    if (!loading && detailModal?.details && detailModal.selectedMonth !== selectedMonth && detailModal.cab) {
+      handleViewDetails(detailModal.cab);
+    }
+  }, [selectedMonth]);
+
+  // Normaliser tout format de date (YYYYMMDD, YYYY-MM, YYYYMM) vers YYYYMM pour comparaison
+  const toYYYYMM = (str) => {
+    if (!str) return '';
+    if (str.includes('-')) {
+      return str.replace('-', '');
+    }
+    return str.substring(0, 6);
+  };
+
+  // Données extraites de data (peuvent être vides si loading)
+  const caMensuel = data?.caMensuel || [];
+
+  // Calculer les évolutions globales pour les graphiques (agrégation de tous les cabinets)
+  const caEvolution = useMemo(() => {
+    const monthMap = {};
+    caMensuel.forEach(item => {
+      const mois = toYYYYMM(item._id?.mois);
+      if (!mois) return;
+      if (!monthMap[mois]) {
+        monthMap[mois] = { _id: mois, totalFacture: 0, totalEncaisse: 0, totalPatients: 0 };
+      }
+      monthMap[mois].totalFacture += item.totalFacture || 0;
+      monthMap[mois].totalEncaisse += item.totalEncaisse || 0;
+      monthMap[mois].totalPatients += item.totalPatients || 0;
+    });
+    return Object.values(monthMap).sort((a, b) => a._id.localeCompare(b._id));
+  }, [caMensuel]);
+
+  const heuresEvolution = useMemo(() => {
+    return caEvolution.map(m => ({
+      _id: m._id,
+      nbHeures: (m.totalPatients || 0) * 30
+    }));
+  }, [caEvolution]);
+
+  const rdvEvolution = useMemo(() => {
+    return caEvolution.map(m => ({
+      _id: m._id,
+      nbRdv: Math.round((m.totalPatients || 0) * 1.2),
+      nbNouveauxPatients: Math.round((m.totalPatients || 0) * 0.15)
+    }));
+  }, [caEvolution]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
@@ -126,6 +177,7 @@ export default function CabinetManagement() {
           evolution: d.realisation || [],
           devisEvolution: d.devis || [],
           heuresEvolution: d.heures || [],
+          rdvEvolution: d.rdv || [],
           moisSelectionne: {
             ca: caMonth,
             caVariation: calcVariation(caMonth, prevMonth?.totalFacture),
@@ -157,13 +209,6 @@ export default function CabinetManagement() {
     }
   };
 
-  // Recharger les détails quand le mois change si modal ouverte
-  useEffect(() => {
-    if (detailModal?.details && detailModal.selectedMonth !== selectedMonth) {
-      handleViewDetails(detailModal.cab);
-    }
-  }, [selectedMonth]);
-
   const handleViewReport = (cabCode) => {
     navigate('/admin/reports');
   };
@@ -171,18 +216,6 @@ export default function CabinetManagement() {
   const practitioners = data?.practitioners || [];
   const caByP = data?.caByPractitioner || [];
   const rdvByP = data?.rdvByPractitioner || [];
-  const caMensuel = data?.caMensuel || [];
-
-  // Normaliser tout format de date (YYYYMMDD, YYYY-MM, YYYYMM) vers YYYYMM pour comparaison
-  const toYYYYMM = (str) => {
-    if (!str) return '';
-    if (str.includes('-')) {
-      // Format YYYY-MM -> YYYYMM
-      return str.replace('-', '');
-    }
-    // Format YYYYMMDD ou YYYYMM -> prend les 6 premiers caractères
-    return str.substring(0, 6);
-  };
 
   // Filtrer les données par mois sélectionné
   const getDataForMonth = (praticienCode, mois) => {
@@ -435,6 +468,30 @@ export default function CabinetManagement() {
         </div>
       </div>
 
+      {/* Section Analyse Chiffre d'Affaires - Graphiques globaux */}
+      {caEvolution.length > 0 && (
+        <div className={`${cardCls} rounded-xl p-6`}>
+          <AnalyseChiffreAffaires
+            evolution={caEvolution}
+            heuresEvolution={heuresEvolution}
+            isDynamic={isDynamicEnabled && isRayan}
+            subtitle={`Données agrégées - ${formatSelectedMonth()}`}
+          />
+        </div>
+      )}
+
+      {/* Section Analyse Agenda - Graphiques globaux */}
+      {caEvolution.length > 0 && (
+        <div className={`${cardCls} rounded-xl p-6`}>
+          <AnalyseAgenda
+            evolution={caEvolution}
+            rdvEvolution={rdvEvolution}
+            isDynamic={isDynamicEnabled && isRayan}
+            subtitle={`Données agrégées - ${formatSelectedMonth()}`}
+          />
+        </div>
+      )}
+
       {/* Detail Modal */}
       {detailModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDetailModal(null)}>
@@ -512,6 +569,26 @@ export default function CabinetManagement() {
                       heuresVariation={detailModal.details.moisSelectionne.heuresVariation || 0}
                       caMonth={detailModal.details.moisSelectionne.ca || 0}
                       patientsMonth={detailModal.details.moisSelectionne.patients || 0}
+                      isDynamic={isDynamicEnabled && isRayan}
+                      subtitle={formatSelectedMonth()}
+                    />
+                  </div>
+
+                  {/* Analyse Chiffre d'Affaires */}
+                  <div className="mt-8 pt-6 border-t border-gray-100">
+                    <AnalyseChiffreAffaires
+                      evolution={detailModal.details.evolution || []}
+                      heuresEvolution={detailModal.details.heuresEvolution || []}
+                      isDynamic={isDynamicEnabled && isRayan}
+                      subtitle={formatSelectedMonth()}
+                    />
+                  </div>
+
+                  {/* Analyse Agenda */}
+                  <div className="mt-8 pt-6 border-t border-gray-100">
+                    <AnalyseAgenda
+                      evolution={detailModal.details.evolution || []}
+                      rdvEvolution={detailModal.details.rdvEvolution || []}
                       isDynamic={isDynamicEnabled && isRayan}
                       subtitle={formatSelectedMonth()}
                     />
