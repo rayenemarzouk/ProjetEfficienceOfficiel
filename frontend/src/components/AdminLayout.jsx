@@ -163,18 +163,13 @@ export default function AdminLayout({ children }) {
       `}>
         {/* Logo */}
         <div className="p-4 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-[#1a2b4f] font-bold text-xl">E</span>
-            </div>
-            <div>
-              <h1 className="text-sm font-black text-white whitespace-nowrap tracking-[0.08em]" style={{ fontFamily: 'Consolas, Monaco, monospace' }}>
-                EFFICIENCE ANALYTICS
-              </h1>
-              <p className="text-[10px] font-semibold text-gray-400 tracking-[0.1em] uppercase">
-                Administration
-              </p>
-            </div>
+          <div>
+            <h1 className="text-sm font-black text-white whitespace-nowrap tracking-[0.08em]" style={{ fontFamily: 'Consolas, Monaco, monospace' }}>
+              EFFICIENCE ANALYTICS
+            </h1>
+            <p className="text-[10px] font-semibold text-gray-400 tracking-[0.1em] uppercase">
+              Administration
+            </p>
           </div>
         </div>
 
