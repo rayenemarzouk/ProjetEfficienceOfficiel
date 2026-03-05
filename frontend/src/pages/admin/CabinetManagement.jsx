@@ -4,6 +4,8 @@ import { getAdminDashboard, getCabinetDetails } from '../../services/api';
 import { FiBriefcase, FiCheckCircle, FiAlertTriangle, FiAlertCircle, FiSearch, FiEye, FiFileText, FiTrendingUp, FiX, FiUsers, FiClock, FiDollarSign, FiCalendar } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import ComportementCabinet, { calcVariation } from '../../components/ComportementCabinet';
+import DevisAnalytics from '../../components/DevisAnalytics';
+import HeuresAnalytics from '../../components/HeuresAnalytics';
 
 const fmt = (v) => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0));
 
@@ -40,10 +42,16 @@ export default function CabinetManagement() {
   const [search, setSearch] = useState('');
   const [detailModal, setDetailModal] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  
+
   // Filtres par période
   const [selectedMonth, setSelectedMonth] = useState(getMonthOptions()[0]?.value || '');
   const [selectedYear, setSelectedYear] = useState('all');
+
+  // Contrôle du dynamisme des graphes (admin uniquement)
+  const isRayan = user?.email === 'maarzoukrayN3@gmail.com';
+  const [showDynamicSettings, setShowDynamicSettings] = useState(false);
+  const [dynamicCode, setDynamicCode] = useState('');
+  const [isDynamicEnabled, setIsDynamicEnabled] = useState(true);
 
   useEffect(() => {
     const fetch = async () => {
@@ -82,27 +90,27 @@ export default function CabinetManagement() {
 
   const handleViewDetails = async (cab) => {
     setDetailLoading(true);
-    setDetailModal({ cab, details: null });
+    setDetailModal({ cab, details: null, selectedMonth });
     try {
       const res = await getCabinetDetails(cab.code);
       const d = res.data;
-      
+
       // Calculer le mois précédent
       const prevMonthValue = parseInt(selectedMonth.substring(4, 6)) - 1;
-      const prevMonthStr = prevMonthValue === 0 
+      const prevMonthStr = prevMonthValue === 0
         ? `${parseInt(selectedMonth.substring(0, 4)) - 1}12`
         : `${selectedMonth.substring(0, 4)}${String(prevMonthValue).padStart(2, '0')}`;
-      
+
       // Trouver les données du mois sélectionné (supporte tous les formats dans la DB)
       const monthData = findByMonth(d.realisation, selectedMonth);
       const prevMonth = findByMonth(d.realisation, prevMonthStr);
-      
+
       const rdvMonth = findByMonth(d.rdv, selectedMonth);
       const prevRdvMonth = findByMonth(d.rdv, prevMonthStr);
-      
+
       const heuresMonth = findByMonth(d.heures, selectedMonth);
       const prevHeuresMonth = findByMonth(d.heures, prevMonthStr);
-      
+
       const devisMonth = findByMonth(d.devis, selectedMonth);
 
       const heuresTrav = heuresMonth ? (heuresMonth.nbHeures / 60).toFixed(0) : 0;
@@ -116,6 +124,8 @@ export default function CabinetManagement() {
         cab,
         details: {
           evolution: d.realisation || [],
+          devisEvolution: d.devis || [],
+          heuresEvolution: d.heures || [],
           moisSelectionne: {
             ca: caMonth,
             caVariation: calcVariation(caMonth, prevMonth?.totalFacture),
@@ -131,10 +141,13 @@ export default function CabinetManagement() {
             panierMoyen: patientsMonth > 0 ? (caMonth / patientsMonth).toFixed(0) : 0,
             nbDevis: devisMonth?.nbDevis || 0,
             nbDevisAcceptes: devisMonth?.nbDevisAcceptes || 0,
-            tauxAcceptation: devisMonth && devisMonth.nbDevis > 0 ? ((devisMonth.nbDevisAcceptes / devisMonth.nbDevis) * 100).toFixed(1) : 0
+            tauxAcceptation: devisMonth && devisMonth.nbDevis > 0 ? ((devisMonth.nbDevisAcceptes / devisMonth.nbDevis) * 100).toFixed(1) : 0,
+            montantMoyenDevis: devisMonth && devisMonth.nbDevis > 0 ? (devisMonth.montantTotal / devisMonth.nbDevis).toFixed(0) : 0,
+            montantMoyenAcceptes: devisMonth && devisMonth.nbDevisAcceptes > 0 ? (devisMonth.montantAcceptes / devisMonth.nbDevisAcceptes).toFixed(0) : 0
           },
           totalMois: d.realisation?.length || 0
-        }
+        },
+        selectedMonth
       });
     } catch (err) {
       console.error(err);
@@ -143,6 +156,13 @@ export default function CabinetManagement() {
       setDetailLoading(false);
     }
   };
+
+  // Recharger les détails quand le mois change si modal ouverte
+  useEffect(() => {
+    if (detailModal?.details && detailModal.selectedMonth !== selectedMonth) {
+      handleViewDetails(detailModal.cab);
+    }
+  }, [selectedMonth]);
 
   const handleViewReport = (cabCode) => {
     navigate('/admin/reports');
@@ -471,6 +491,32 @@ export default function CabinetManagement() {
                     heuresVariation={detailModal.details.moisSelectionne.heuresVariation}
                   />
 
+                  {/* Graphes Devis Analytics */}
+                  <div className="mt-8 pt-6 border-t border-gray-100">
+                    <DevisAnalytics
+                      nbDevis={detailModal.details.moisSelectionne.nbDevis || 0}
+                      nbDevisAcceptes={detailModal.details.moisSelectionne.nbDevisAcceptes || 0}
+                      tauxAcceptation={detailModal.details.moisSelectionne.tauxAcceptation || 0}
+                      montantMoyenDevis={detailModal.details.moisSelectionne.montantMoyenDevis || 0}
+                      montantMoyenAcceptes={detailModal.details.moisSelectionne.montantMoyenAcceptes || 0}
+                      isDynamic={isDynamicEnabled && isRayan}
+                      subtitle={formatSelectedMonth()}
+                    />
+                  </div>
+
+                  {/* Graphes Heures Analytics */}
+                  <div className="mt-8 pt-6 border-t border-gray-100">
+                    <HeuresAnalytics
+                      nbHeures={detailModal.details.moisSelectionne.heures || 0}
+                      productionHoraire={detailModal.details.moisSelectionne.productionHoraire || 0}
+                      heuresVariation={detailModal.details.moisSelectionne.heuresVariation || 0}
+                      caMonth={detailModal.details.moisSelectionne.ca || 0}
+                      patientsMonth={detailModal.details.moisSelectionne.patients || 0}
+                      isDynamic={isDynamicEnabled && isRayan}
+                      subtitle={formatSelectedMonth()}
+                    />
+                  </div>
+
                   {/* Detail Table */}
                   <div className="bg-gray-50 rounded-xl overflow-hidden mt-6 mb-6">
                     <table className="w-full">
@@ -540,6 +586,70 @@ export default function CabinetManagement() {
                             </div>
                           );
                         })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Admin Controls - Dynamic Toggle */}
+                  {isRayan && (
+                    <div className="mt-6 pt-4 border-t border-gray-100">
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-semibold text-blue-900">🔐 Contrôles Admin</p>
+                            <p className="text-xs text-blue-700 mt-1">Dynamisme des graphes</p>
+                          </div>
+                          <button
+                            onClick={() => setShowDynamicSettings(!showDynamicSettings)}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
+                          >
+                            {showDynamicSettings ? '✕ Fermer' : '⚙️ Configurer'}
+                          </button>
+                        </div>
+
+                        {showDynamicSettings && (
+                          <div className="mt-4 space-y-3 pt-4 border-t border-blue-200">
+                            <div>
+                              <label className="text-xs font-semibold text-blue-900 block mb-2">Code de sécurité (241213):</label>
+                              <input
+                                type="password"
+                                placeholder="Entrez le code..."
+                                value={dynamicCode}
+                                onChange={(e) => setDynamicCode(e.target.value)}
+                                className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  if (dynamicCode === '241213') {
+                                    setIsDynamicEnabled(!isDynamicEnabled);
+                                    setDynamicCode('');
+                                    alert(`✅ Dynamisme ${!isDynamicEnabled ? 'activé' : 'désactivé'}`);
+                                  } else {
+                                    alert('❌ Code incorrect');
+                                    setDynamicCode('');
+                                  }
+                                }}
+                                className="flex-1 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors"
+                              >
+                                {isDynamicEnabled ? '✓ Désactiver' : '✓ Activer'}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShowDynamicSettings(false);
+                                  setDynamicCode('');
+                                }}
+                                className="flex-1 py-2 bg-gray-400 text-white rounded-lg text-sm font-semibold hover:bg-gray-500 transition-colors"
+                              >
+                                Annuler
+                              </button>
+                            </div>
+                            <p className="text-xs text-blue-700 bg-blue-100 p-2 rounded">
+                              📊 Statut: {isDynamicEnabled ? '✅ Dynamisme ACTIVÉ' : '❌ Dynamisme DÉSACTIVÉ'}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
