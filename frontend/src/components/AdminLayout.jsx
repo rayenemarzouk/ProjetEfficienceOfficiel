@@ -163,14 +163,11 @@ export default function AdminLayout({ children }) {
       `}>
         {/* Logo */}
         <div className="p-4 border-b border-white/10">
-          <div className="bg-[#1e3a5f] rounded-xl p-4">
-            <h1 className="text-xl font-black text-white whitespace-nowrap tracking-wide" style={{ fontFamily: 'Arial Black, sans-serif' }}>
-              EFFICIENCE
+          <div>
+            <h1 className="text-base font-black text-white whitespace-nowrap tracking-wide" style={{ fontFamily: 'Arial Black, sans-serif' }}>
+              EFFICIENCE ANALYTICS
             </h1>
-            <p className="text-lg font-semibold text-cyan-400 tracking-wide">
-              Analytics
-            </p>
-            <p className="text-[9px] font-semibold text-gray-400 tracking-wider uppercase mt-2">
+            <p className="text-[9px] font-semibold text-gray-500 tracking-wider uppercase mt-1">
               Administration
             </p>
           </div>
