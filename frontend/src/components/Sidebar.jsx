@@ -56,15 +56,29 @@ export default function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 flex flex-col z-50" style={{ backgroundColor: '#0f172a' }}>
       {/* Logo */}
-      <div className="px-4 py-5">
-        <div>
-          <h1 className="text-sm font-black text-white whitespace-nowrap tracking-wide" style={{ fontFamily: 'Arial Black, sans-serif' }}>
-            EFFICIENCE ANALYTICS
-          </h1>
-          <p className="text-[9px] font-semibold text-gray-500 tracking-wider uppercase">
-            {user?.role === 'admin' ? 'Administration' : `Cabinet ${user?.practitionerCode || user?.name || ''}`}
-          </p>
-        </div>
+      <div className="px-4 py-6">
+        {isRayan ? (
+          <div>
+            <h1 className="text-sm font-black text-white whitespace-nowrap tracking-wide" style={{ fontFamily: 'Arial Black, sans-serif' }}>
+              EFFICIENCE ANALYTICS
+            </h1>
+            <p className="text-[9px] font-semibold text-gray-500 tracking-wider uppercase">
+              Administration
+            </p>
+          </div>
+        ) : (
+          <div className="bg-[#1e3a5f] rounded-xl p-4">
+            <h1 className="text-xl font-black text-white whitespace-nowrap tracking-wide" style={{ fontFamily: 'Arial Black, sans-serif' }}>
+              EFFICIENCE
+            </h1>
+            <p className="text-lg font-semibold text-cyan-400 tracking-wide">
+              Analytics
+            </p>
+            <p className="text-[9px] font-semibold text-gray-400 tracking-wider uppercase mt-2">
+              {user?.role === 'admin' ? 'Administration' : `Cabinet ${user?.practitionerCode || user?.name || ''}`}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Navigation */}

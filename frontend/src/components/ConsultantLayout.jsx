@@ -87,11 +87,14 @@ export default function ConsultantLayout({ children }) {
       `}>
         {/* Logo */}
         <div className="p-4 border-b border-white/10">
-          <div>
-            <h1 className="text-sm font-black text-white whitespace-nowrap tracking-[0.08em]" style={{ fontFamily: 'Consolas, Monaco, monospace' }}>
-              EFFICIENCE ANALYTICS
+          <div className="bg-[#1e3a5f] rounded-xl p-4">
+            <h1 className="text-xl font-black text-white whitespace-nowrap tracking-wide" style={{ fontFamily: 'Arial Black, sans-serif' }}>
+              EFFICIENCE
             </h1>
-            <p className="text-[10px] font-semibold text-gray-400 tracking-[0.1em] uppercase">
+            <p className="text-lg font-semibold text-cyan-400 tracking-wide">
+              Analytics
+            </p>
+            <p className="text-[9px] font-semibold text-gray-400 tracking-wider uppercase mt-2">
               Espace Consultant
             </p>
           </div>
