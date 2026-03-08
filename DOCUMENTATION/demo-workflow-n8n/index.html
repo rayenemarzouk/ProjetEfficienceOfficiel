@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Démo Workflow n8n - Hostinger → MySQL → Horizon App | Efficience Analytics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff6d00;
+            --primary-light: #ff9800;
+            --success: #00d97e;
+            --success-light: #00f5a0;
+            --info: #00d4ff;
+            --purple: #a855f7;
+            --pink: #ec4899;
+            --dark-bg: #0f0f1a;
+            --card-bg: #1a1a2e;
+            --border: rgba(255,255,255,0.1);
+            --text: #ffffff;
+            --text-muted: #8892b0;
+            --glow-primary: rgba(255, 109, 0, 0.4);
+            --glow-success: rgba(0, 217, 126, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Animated Background */
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(236, 72, 153, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(0, 212, 255, 0.05) 0%, transparent 50%),
+                var(--dark-bg);
+            z-index: -1;
+        }
+
+        /* Floating Particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: 0;
+            animation: floatParticle 15s infinite;
+        }
+
+        @keyframes floatParticle {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+        }
+
+        /* N8N Interface Simulation */
+        .n8n-interface {
+            background: #262626;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Header */
+        .n8n-header {
+            background: #1e1e1e;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+        }
+
+        .n8n-header .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ccc;
+            font-size: 14px;
+        }
+
+        .n8n-header .breadcrumb .workspace {
+            color: #888;
+        }
+
+        .n8n-header .breadcrumb .workflow-name {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .n8n-header .tabs {
+            display: flex;
+            gap: 20px;
+        }
+
+        .n8n-header .tab {
+            padding: 8px 16px;
+            color: #888;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .n8n-header .tab.active {
+            background: #333;
+            color: #fff;
+        }
+
+        .n8n-header .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .n8n-header .status .dot {
+            width: 8px;
+            height: 8px;
+            background: #4caf50;
+            border-radius: 50%;
+        }
+
+        .n8n-header .status span {
+            color: #4caf50;
+            font-size: 14px;
+        }
+
+        /* Canvas */
+        .n8n-canvas {
+            position: relative;
+            height: calc(100vh - 120px);
+            overflow: hidden;
+            background: 
+                radial-gradient(circle at 1px 1px, #333 1px, transparent 0);
+            background-size: 20px 20px;
+        }
+
+        /* Nodes */
+        .node {
+            position: absolute;
+            background: #333;
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 12px 16px;
+            min-width: 120px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: scale(0.8);
+        }
+
+        .node.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .node.active {
+            border-color: #ff6d00;
+            box-shadow: 0 0 20px rgba(255, 109, 0, 0.4);
+        }
+
+        .node.completed {
+            border-color: #4caf50;
+        }
+
+        .node .icon {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 8px;
+            background: #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .node .name {
+            font-size: 12px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .node .subtitle {
+            font-size: 10px;
+            color: #888;
+        }
+
+        .node .badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ff6d00;
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
+        /* Connections */
+        .connection {
+            position: absolute;
+            height: 3px;
+            background: linear-gradient(90deg, #4caf50, #81c784);
+            transform-origin: left center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .connection.visible {
+            opacity: 1;
+        }
+
+        .connection.animated {
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                #4caf50 20%, 
+                #81c784 50%, 
+                #4caf50 80%, 
+                transparent 100%
+            );
+            background-size: 200% 100%;
+            animation: flowData 1s linear infinite;
+        }
+
+        @keyframes flowData {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Sidebar */
+        .n8n-sidebar {
+            position: fixed;
+            right: 0;
+            top: 60px;
+            width: 50px;
+            height: calc(100% - 60px);
+            background: #1e1e1e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            gap: 15px;
+        }
+
+        .n8n-sidebar .icon-btn {
+            width: 36px;
+            height: 36px;
+            background: #333;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            cursor: pointer;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1e1e1e;
+            padding: 15px 20px;
+            border-top: 1px solid #333;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6d00, #ff9800);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .step-indicator {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .step-indicator .current {
+            color: #ff6d00;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            background: #ff6d00;
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #ff8c00;
+        }
+
+        .btn.secondary {
+            background: #333;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Explanation Panel */
+        .explanation-panel {
+            position: fixed;
+            left: 20px;
+            bottom: 100px;
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid #444;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 400px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .explanation-panel.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .explanation-panel h3 {
+            color: #ff6d00;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .explanation-panel h3 .step-num {
+            background: #ff6d00;
+            color: #fff;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .explanation-panel p {
+            color: #ccc;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .explanation-panel .details {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #444;
+        }
+
+        .explanation-panel .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .explanation-panel .detail-item .label {
+            color: #888;
+        }
+
+        .explanation-panel .detail-item .value {
+            color: #4caf50;
+            font-family: monospace;
+        }
+
+        /* Data Flow Animation */
+        .data-packet {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #4caf50;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.6);
+            opacity: 0;
+        }
+
+        /* Intro Screen */
+        .intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+
+        .intro-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .intro-screen h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #ff6d00, #ff9800);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .intro-screen h2 {
+            font-size: 24px;
+            color: #ccc;
+            margin-bottom: 30px;
+            font-weight: normal;
+        }
+
+        .intro-screen .workflow-preview {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .intro-screen .preview-node {
+            background: #333;
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 15px 20px;
+            text-align: center;
+        }
+
+        .intro-screen .preview-node .icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .intro-screen .preview-node .name {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .intro-screen .arrow {
+            color: #4caf50;
+            font-size: 24px;
+        }
+
+        .intro-screen .start-btn {
+            background: linear-gradient(90deg, #ff6d00, #ff9800);
+            color: #fff;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .intro-screen .start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Summary Screen */
+        .summary-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .summary-screen.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .summary-screen h1 {
+            font-size: 32px;
+            color: #4caf50;
+            margin-bottom: 30px;
+        }
+
+        .summary-screen .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .summary-screen .stat-card {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .summary-screen .stat-card .number {
+            font-size: 36px;
+            color: #4caf50;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .summary-screen .stat-card .label {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .summary-screen .flow-summary {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #333;
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .summary-screen .flow-item {
+            text-align: center;
+        }
+
+        .summary-screen .flow-item .icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .summary-screen .flow-item .name {
+            font-size: 12px;
+            color: #ccc;
+        }
+
+        .summary-screen .flow-arrow {
+            color: #4caf50;
+            font-size: 20px;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: #1e1e1e;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-size: 12px;
+            color: #ccc;
+            max-width: 200px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+
+        /* Node Icons */
+        .icon-schedule { color: #9c27b0; }
+        .icon-sql { color: #2196f3; }
+        .icon-http { color: #4caf50; }
+        .icon-code { color: #ff9800; }
+        .icon-switch { color: #00bcd4; }
+        .icon-mysql { color: #4479a1; }
+
+        /* Blinking cursor effect */
+        .cursor-blink {
+            display: inline-block;
+            width: 2px;
+            height: 16px;
+            background: #fff;
+            animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Typing animation */
+        .typing-text {
+            overflow: hidden;
+            white-space: nowrap;
+            animation: typing 2s steps(40) forwards;
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Intro Screen -->
+    <div class="intro-screen" id="introScreen">
+        <h1>🚀 Workflow n8n - Démonstration</h1>
+        <h2>Hostinger → MySQL → Horizon App (Efficience)</h2>
+        
+        <div class="workflow-preview">
+            <div class="preview-node">
+                <div class="icon">⏰</div>
+                <div class="name">Schedule</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="preview-node">
+                <div class="icon">🔍</div>
+                <div class="name">SQL Query</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="preview-node">
+                <div class="icon">🌐</div>
+                <div class="name">HTTP Request</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="preview-node">
+                <div class="icon">⚡</div>
+                <div class="name">Code JS</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="preview-node">
+                <div class="icon">🔀</div>
+                <div class="name">Switch</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="preview-node">
+                <div class="icon">🗄️</div>
+                <div class="name">MySQL Insert</div>
+            </div>
+        </div>
+        
+        <button class="start-btn" onclick="startDemo()">▶️ Démarrer la Démonstration</button>
+    </div>
+
+    <!-- N8N Interface -->
+    <div class="n8n-interface">
+        <!-- Header -->
+        <div class="n8n-header">
+            <div class="breadcrumb">
+                <span class="workspace">👤 Personal</span>
+                <span>/</span>
+                <span class="workflow-name">Rayene - WorkFlow n8n - Hostinger → mysql → Horizon App</span>
+            </div>
+            <div class="tabs">
+                <div class="tab active">Editor</div>
+                <div class="tab">Executions</div>
+                <div class="tab">Evaluations</div>
+            </div>
+            <div class="status">
+                <div class="dot"></div>
+                <span>Published</span>
+            </div>
+        </div>
+
+        <!-- Canvas -->
+        <div class="n8n-canvas" id="canvas">
+            <!-- Nodes will be added dynamically -->
+        </div>
+
+        <!-- Sidebar -->
+        <div class="n8n-sidebar">
+            <div class="icon-btn">➕</div>
+            <div class="icon-btn">🔍</div>
+            <div class="icon-btn">📋</div>
+            <div class="icon-btn">📖</div>
+            <div class="icon-btn">✨</div>
+        </div>
+    </div>
+
+    <!-- Explanation Panel -->
+    <div class="explanation-panel" id="explanationPanel">
+        <h3>
+            <span class="step-num" id="stepNum">1</span>
+            <span id="stepTitle">Titre de l'étape</span>
+        </h3>
+        <p id="stepDescription">Description de l'étape...</p>
+        <div class="details" id="stepDetails">
+            <!-- Dynamic details -->
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-info">
+            <div class="step-indicator">
+                Étape <span class="current" id="currentStep">0</span> / <span id="totalSteps">8</span>
+            </div>
+            <div class="controls">
+                <button class="btn secondary" id="prevBtn" onclick="prevStep()" disabled>◀ Précédent</button>
+                <button class="btn" id="nextBtn" onclick="nextStep()">Suivant ▶</button>
+                <button class="btn secondary" onclick="toggleAutoPlay()" id="autoPlayBtn">▶ Auto</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Screen -->
+    <div class="summary-screen" id="summaryScreen">
+        <h1>✅ Workflow Complété avec Succès!</h1>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="number">9,195</div>
+                <div class="label">Items traités</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">4</div>
+                <div class="label">Tables synchronisées</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">8</div>
+                <div class="label">Nœuds exécutés</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">100%</div>
+                <div class="label">Taux de succès</div>
+            </div>
+        </div>
+
+        <div class="flow-summary">
+            <div class="flow-item">
+                <div class="icon">📂</div>
+                <div class="name">Hostinger</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-item">
+                <div class="icon">📊</div>
+                <div class="name">Data Files</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-item">
+                <div class="icon">⚙️</div>
+                <div class="name">n8n Process</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-item">
+                <div class="icon">🗄️</div>
+                <div class="name">MySQL</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-item">
+                <div class="icon">🏥</div>
+                <div class="name">Horizon App</div>
+            </div>
+        </div>
+
+        <button class="btn" onclick="restartDemo()">🔄 Revoir la Démonstration</button>
+    </div>
+
+    <script>
+        // Workflow steps data
+        const steps = [
+            {
+                id: 'intro',
+                title: 'Introduction',
+                description: 'Bienvenue dans la démonstration du workflow n8n qui synchronise les données entre Hostinger et l\'application Horizon via MySQL.',
+                details: [
+                    { label: 'Source', value: 'Hostinger (Fichiers)' },
+                    { label: 'Destination', value: 'MySQL Database' },
+                    { label: 'Application', value: 'Horizon / Efficience' }
+                ]
+            },
+            {
+                id: 'schedule',
+                title: 'Schedule Trigger',
+                description: 'Le déclencheur programmé lance automatiquement le workflow selon un intervalle défini. Il initie la synchronisation des données.',
+                details: [
+                    { label: 'Type', value: 'Trigger' },
+                    { label: 'Intervalle', value: 'Programmé' },
+                    { label: 'Output', value: '1 item' }
+                ],
+                nodeId: 'schedule-trigger'
+            },
+            {
+                id: 'sql',
+                title: 'Execute SQL Query',
+                description: 'Exécution d\'une requête SQL pour récupérer les métadonnées ou vérifier l\'état de la base de données avant la synchronisation.',
+                details: [
+                    { label: 'Action', value: 'executeQuery' },
+                    { label: 'Database', value: 'MySQL Hostinger' },
+                    { label: 'Output', value: '1 item' }
+                ],
+                nodeId: 'sql-query'
+            },
+            {
+                id: 'http',
+                title: 'HTTP Request',
+                description: 'Récupération des données depuis l\'API Efficience Analytics hébergée sur Hostinger. Les fichiers de données sont stockés dans le gestionnaire de fichiers.',
+                details: [
+                    { label: 'Méthode', value: 'GET' },
+                    { label: 'URL', value: 'http://efficience-analyti...' },
+                    { label: 'Output', value: '5 items' }
+                ],
+                nodeId: 'http-request'
+            },
+            {
+                id: 'code',
+                title: 'Code in JavaScript',
+                description: 'Traitement et transformation des données brutes en format structuré. Le code JavaScript parse les fichiers et prépare les données pour le routage.',
+                details: [
+                    { label: 'Langage', value: 'JavaScript' },
+                    { label: 'Input', value: '5 items' },
+                    { label: 'Output', value: '9,195 items' }
+                ],
+                nodeId: 'code-js'
+            },
+            {
+                id: 'switch',
+                title: 'Switch (Routage)',
+                description: 'Le nœud Switch route les données vers les bonnes tables MySQL selon leur type: devis, heures_ouverts, realisation, rendezvous, encours.',
+                details: [
+                    { label: 'Mode', value: 'Rules' },
+                    { label: 'Routes', value: '5 outputs' },
+                    { label: 'Critère', value: 'Type de données' }
+                ],
+                nodeId: 'switch-node'
+            },
+            {
+                id: 'mysql-inserts',
+                title: 'MySQL Inserts',
+                description: 'Insertion parallèle des données dans les différentes tables MySQL: encours (5→2 items), rendezvous (1 item), realisation (9,140→1 item), joursouvert (48→1 item).',
+                details: [
+                    { label: 'encours', value: '2 items insérés' },
+                    { label: 'rendezvous', value: '1 item inséré' },
+                    { label: 'realisation', value: '9,140 items traités' },
+                    { label: 'joursouvert', value: '48 items traités' }
+                ],
+                nodeId: 'mysql-inserts'
+            },
+            {
+                id: 'complete',
+                title: 'Workflow Terminé',
+                description: 'Toutes les données ont été synchronisées avec succès depuis Hostinger vers la base de données MySQL de l\'application Horizon.',
+                details: [
+                    { label: 'Status', value: '✅ Success' },
+                    { label: 'Total items', value: '9,195' },
+                    { label: 'Tables MAJ', value: '4' }
+                ]
+            }
+        ];
+
+        // Node positions for the canvas
+        const nodes = [
+            { id: 'schedule-trigger', x: 60, y: 280, icon: '⏰', name: 'Schedule Trigger', subtitle: '', badge: '1 item', color: '#9c27b0' },
+            { id: 'sql-query', x: 180, y: 280, icon: '🔍', name: 'Execute a SQL query', subtitle: 'executeQuery', badge: '1 item', color: '#2196f3' },
+            { id: 'http-request', x: 300, y: 280, icon: '🌐', name: 'HTTP Request', subtitle: 'GET: http://efficience-analyti...', badge: '5 items', color: '#4caf50' },
+            { id: 'code-js', x: 420, y: 280, icon: '{ }', name: 'Code in JavaScript', subtitle: '', badge: '9195 items', color: '#ff9800' },
+            { id: 'switch-node', x: 540, y: 280, icon: '🔀', name: 'Switch', subtitle: 'mode: Rules', badge: '', color: '#00bcd4' },
+            { id: 'mysql-encours', x: 700, y: 350, icon: '🗄️', name: 'mysql → encours', subtitle: 'insert', badge: '2 items', color: '#4479a1' },
+            { id: 'mysql-rendezvous', x: 820, y: 300, icon: '🗄️', name: 'mysql → rendezvous', subtitle: 'insert', badge: '1 item', color: '#4479a1' },
+            { id: 'mysql-realisation', x: 940, y: 250, icon: '🗄️', name: 'mysql → realisation', subtitle: 'insert', badge: '1 item', color: '#4479a1' },
+            { id: 'mysql-joursouvert', x: 1060, y: 200, icon: '🗄️', name: 'mysql → joursouvert', subtitle: 'insert', badge: '1 item', color: '#4479a1' }
+        ];
+
+        // Connections between nodes
+        const connections = [
+            { from: 'schedule-trigger', to: 'sql-query' },
+            { from: 'sql-query', to: 'http-request' },
+            { from: 'http-request', to: 'code-js' },
+            { from: 'code-js', to: 'switch-node' },
+            { from: 'switch-node', to: 'mysql-encours' },
+            { from: 'switch-node', to: 'mysql-rendezvous' },
+            { from: 'mysql-rendezvous', to: 'mysql-realisation' },
+            { from: 'mysql-realisation', to: 'mysql-joursouvert' }
+        ];
+
+        let currentStep = 0;
+        let autoPlayInterval = null;
+
+        // Initialize the canvas
+        function initCanvas() {
+            const canvas = document.getElementById('canvas');
+            
+            // Create nodes
+            nodes.forEach(node => {
+                const nodeEl = document.createElement('div');
+                nodeEl.className = 'node';
+                nodeEl.id = node.id;
+                nodeEl.style.left = node.x + 'px';
+                nodeEl.style.top = node.y + 'px';
+                nodeEl.innerHTML = `
+                    <div class="icon" style="color: ${node.color}">${node.icon}</div>
+                    <div class="name">${node.name}</div>
+                    <div class="subtitle">${node.subtitle}</div>
+                    ${node.badge ? `<div class="badge">${node.badge}</div>` : ''}
+                `;
+                canvas.appendChild(nodeEl);
+            });
+
+            // Create connections (simplified - straight lines)
+            connections.forEach((conn, index) => {
+                const connEl = document.createElement('div');
+                connEl.className = 'connection';
+                connEl.id = `conn-${index}`;
+                canvas.appendChild(connEl);
+            });
+        }
+
+        // Update connection positions
+        function updateConnections() {
+            connections.forEach((conn, index) => {
+                const fromNode = document.getElementById(conn.from);
+                const toNode = document.getElementById(conn.to);
+                const connEl = document.getElementById(`conn-${index}`);
+                
+                if (fromNode && toNode && connEl) {
+                    const fromRect = fromNode.getBoundingClientRect();
+                    const toRect = toNode.getBoundingClientRect();
+                    const canvasRect = document.getElementById('canvas').getBoundingClientRect();
+                    
+                    const x1 = fromRect.right - canvasRect.left;
+                    const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
+                    const x2 = toRect.left - canvasRect.left;
+                    const y2 = toRect.top + toRect.height / 2 - canvasRect.top;
+                    
+                    const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                    const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+                    
+                    connEl.style.left = x1 + 'px';
+                    connEl.style.top = y1 + 'px';
+                    connEl.style.width = length + 'px';
+                    connEl.style.transform = `rotate(${angle}deg)`;
+                }
+            });
+        }
+
+        // Start the demo
+        function startDemo() {
+            document.getElementById('introScreen').classList.add('hidden');
+            initCanvas();
+            setTimeout(() => {
+                updateConnections();
+                goToStep(0);
+            }, 100);
+        }
+
+        // Go to a specific step
+        function goToStep(stepIndex) {
+            currentStep = stepIndex;
+            const step = steps[stepIndex];
+            
+            // Update progress
+            document.getElementById('progressFill').style.width = ((stepIndex + 1) / steps.length * 100) + '%';
+            document.getElementById('currentStep').textContent = stepIndex + 1;
+
+            // Update explanation panel
+            document.getElementById('stepNum').textContent = stepIndex + 1;
+            document.getElementById('stepTitle').textContent = step.title;
+            document.getElementById('stepDescription').textContent = step.description;
+            
+            const detailsEl = document.getElementById('stepDetails');
+            detailsEl.innerHTML = step.details.map(d => `
+                <div class="detail-item">
+                    <span class="label">${d.label}:</span>
+                    <span class="value">${d.value}</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('explanationPanel').classList.add('visible');
+
+            // Update node states
+            nodes.forEach((node, index) => {
+                const nodeEl = document.getElementById(node.id);
+                if (nodeEl) {
+                    // Show nodes progressively
+                    if (index <= stepIndex) {
+                        nodeEl.classList.add('visible');
+                    }
+                    
+                    // Highlight current node
+                    nodeEl.classList.remove('active', 'completed');
+                    if (step.nodeId === node.id) {
+                        nodeEl.classList.add('active');
+                    } else if (index < stepIndex) {
+                        nodeEl.classList.add('completed');
+                    }
+                }
+            });
+
+            // Show connections progressively
+            connections.forEach((conn, index) => {
+                const connEl = document.getElementById(`conn-${index}`);
+                if (connEl) {
+                    if (index < stepIndex) {
+                        connEl.classList.add('visible');
+                    } else if (index === stepIndex - 1) {
+                        connEl.classList.add('visible', 'animated');
+                    } else {
+                        connEl.classList.remove('visible', 'animated');
+                    }
+                }
+            });
+
+            // Special handling for MySQL inserts step
+            if (step.id === 'mysql-inserts') {
+                ['mysql-encours', 'mysql-rendezvous', 'mysql-realisation', 'mysql-joursouvert'].forEach(id => {
+                    const nodeEl = document.getElementById(id);
+                    if (nodeEl) {
+                        nodeEl.classList.add('visible', 'active');
+                    }
+                });
+                
+                connections.forEach((conn, index) => {
+                    const connEl = document.getElementById(`conn-${index}`);
+                    if (connEl) {
+                        connEl.classList.add('visible', 'animated');
+                    }
+                });
+            }
+
+            // Show summary screen at the end
+            if (step.id === 'complete') {
+                setTimeout(() => {
+                    document.getElementById('summaryScreen').classList.add('visible');
+                }, 1000);
+            } else {
+                document.getElementById('summaryScreen').classList.remove('visible');
+            }
+
+            // Update buttons
+            document.getElementById('prevBtn').disabled = stepIndex === 0;
+            document.getElementById('nextBtn').disabled = stepIndex === steps.length - 1;
+            document.getElementById('nextBtn').textContent = stepIndex === steps.length - 2 ? 'Terminer ✓' : 'Suivant ▶';
+        }
+
+        // Navigation functions
+        function nextStep() {
+            if (currentStep < steps.length - 1) {
+                goToStep(currentStep + 1);
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 0) {
+                goToStep(currentStep - 1);
+            }
+        }
+
+        // Auto-play
+        function toggleAutoPlay() {
+            const btn = document.getElementById('autoPlayBtn');
+            if (autoPlayInterval) {
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = null;
+                btn.textContent = '▶ Auto';
+            } else {
+                btn.textContent = '⏸ Pause';
+                autoPlayInterval = setInterval(() => {
+                    if (currentStep < steps.length - 1) {
+                        nextStep();
+                    } else {
+                        clearInterval(autoPlayInterval);
+                        autoPlayInterval = null;
+                        btn.textContent = '▶ Auto';
+                    }
+                }, 3000);
+            }
+        }
+
+        // Restart demo
+        function restartDemo() {
+            document.getElementById('summaryScreen').classList.remove('visible');
+            goToStep(0);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextStep();
+            } else if (e.key === 'ArrowLeft') {
+                prevStep();
+            }
+        });
+    </script>
+</body>
+</html>

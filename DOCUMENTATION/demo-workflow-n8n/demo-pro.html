@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Workflow n8n Pro Demo | Hostinger → MySQL → Horizon App | Efficience Analytics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff6d00;
+            --primary-light: #ff9100;
+            --primary-gradient: linear-gradient(135deg, #ff6d00 0%, #ff9100 50%, #ffab40 100%);
+            --success: #00d97e;
+            --success-light: #00f5a0;
+            --success-gradient: linear-gradient(135deg, #00d97e 0%, #00f5a0 100%);
+            --info: #00d4ff;
+            --info-gradient: linear-gradient(135deg, #00d4ff 0%, #6366f1 100%);
+            --purple: #a855f7;
+            --purple-gradient: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+            --pink: #ec4899;
+            --dark-bg: #0a0a0f;
+            --card-bg: #12121a;
+            --card-bg-light: #1a1a28;
+            --border: rgba(255,255,255,0.08);
+            --text: #ffffff;
+            --text-muted: #6b7280;
+            --glow-primary: rgba(255, 109, 0, 0.5);
+            --glow-success: rgba(0, 217, 126, 0.5);
+            --n8n-bg: #1a1a1a;
+            --n8n-node: #262626;
+            --n8n-border: #363636;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* ==================== ANIMATED BACKGROUND ==================== */
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 20%, rgba(236, 72, 153, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse 100% 80% at 50% 0%, rgba(0, 212, 255, 0.06) 0%, transparent 40%),
+                var(--dark-bg);
+            z-index: -2;
+        }
+
+        /* Grid overlay */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: -1;
+            opacity: 0.5;
+        }
+
+        /* Floating Particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0;
+            animation: floatParticle var(--duration) infinite;
+            animation-delay: var(--delay);
+        }
+
+        @keyframes floatParticle {
+            0% { transform: translateY(100vh) translateX(0) scale(0); opacity: 0; }
+            5% { opacity: var(--opacity); }
+            95% { opacity: var(--opacity); }
+            100% { transform: translateY(-20vh) translateX(var(--drift)) scale(1); opacity: 0; }
+        }
+
+        /* ==================== INTRO SCREEN ==================== */
+        .intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--dark-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .intro-screen.hidden {
+            opacity: 0;
+            transform: scale(1.1);
+            pointer-events: none;
+        }
+
+        .intro-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 109, 0, 0.1);
+            border: 1px solid rgba(255, 109, 0, 0.3);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 13px;
+            color: var(--primary);
+            margin-bottom: 30px;
+            animation: fadeInUp 0.8s ease forwards;
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        .intro-badge .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .intro-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: clamp(32px, 6vw, 64px);
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 16px;
+            animation: fadeInUp 0.8s ease forwards;
+            animation-delay: 0.4s;
+            opacity: 0;
+        }
+
+        .intro-title .gradient-text {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .intro-subtitle {
+            font-size: clamp(16px, 2vw, 22px);
+            color: var(--text-muted);
+            text-align: center;
+            max-width: 600px;
+            margin-bottom: 50px;
+            animation: fadeInUp 0.8s ease forwards;
+            animation-delay: 0.6s;
+            opacity: 0;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Workflow Preview Animation */
+        .workflow-preview {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 50px;
+            animation: fadeInUp 0.8s ease forwards;
+            animation-delay: 0.8s;
+            opacity: 0;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 0 20px;
+        }
+
+        .preview-node {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px 24px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-node::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--gradient);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .preview-node:hover {
+            transform: translateY(-8px) scale(1.05);
+            border-color: var(--color);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px var(--glow);
+        }
+
+        .preview-node:hover::before {
+            opacity: 0.1;
+        }
+
+        .preview-node .icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+            display: block;
+            position: relative;
+            z-index: 1;
+        }
+
+        .preview-node .name {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+        }
+
+        .flow-arrow {
+            color: var(--success);
+            font-size: 24px;
+            animation: arrowPulse 1.5s infinite;
+        }
+
+        @keyframes arrowPulse {
+            0%, 100% { opacity: 0.4; transform: translateX(0); }
+            50% { opacity: 1; transform: translateX(5px); }
+        }
+
+        /* Start Button */
+        .start-btn {
+            background: var(--primary-gradient);
+            color: #fff;
+            border: none;
+            padding: 18px 48px;
+            border-radius: 60px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.8s ease forwards;
+            animation-delay: 1s;
+            opacity: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .start-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 10px 40px rgba(255, 109, 0, 0.4);
+        }
+
+        .start-btn:hover::before {
+            left: 100%;
+        }
+
+        .start-btn .play-icon {
+            width: 24px;
+            height: 24px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ==================== N8N INTERFACE ==================== */
+        .n8n-interface {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--n8n-bg);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.6s ease;
+        }
+
+        .n8n-interface.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* N8N Header */
+        .n8n-header {
+            background: #141414;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--n8n-border);
+            position: relative;
+            z-index: 10;
+        }
+
+        .n8n-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            opacity: 0.3;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .breadcrumb .workspace {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .breadcrumb .separator {
+            color: #444;
+        }
+
+        .breadcrumb .workflow-name {
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-tabs {
+            display: flex;
+            gap: 4px;
+            background: #0f0f0f;
+            padding: 4px;
+            border-radius: 10px;
+        }
+
+        .header-tab {
+            padding: 10px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .header-tab.active {
+            background: var(--n8n-node);
+            color: var(--text);
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 217, 126, 0.1);
+            border: 1px solid rgba(0, 217, 126, 0.3);
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 13px;
+            color: var(--success);
+            font-weight: 500;
+        }
+
+        .status-badge .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .github-star {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #21262d;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            border: 1px solid #30363d;
+        }
+
+        /* N8N Canvas */
+        .n8n-canvas {
+            position: relative;
+            height: calc(100vh - 140px);
+            overflow: hidden;
+            background: 
+                radial-gradient(circle at 1px 1px, #2a2a2a 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+
+        /* Nodes */
+        .node {
+            position: absolute;
+            background: var(--n8n-node);
+            border: 2px solid var(--n8n-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            min-width: 140px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: scale(0.5) translateY(20px);
+            z-index: 5;
+        }
+
+        .node.visible {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+
+        .node.active {
+            border-color: var(--primary);
+            box-shadow: 
+                0 0 0 4px rgba(255, 109, 0, 0.15),
+                0 0 40px rgba(255, 109, 0, 0.3),
+                0 20px 40px rgba(0,0,0,0.3);
+            transform: scale(1.08) translateY(-5px);
+            z-index: 10;
+        }
+
+        .node.completed {
+            border-color: var(--success);
+        }
+
+        .node.completed::after {
+            content: '✓';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 24px;
+            height: 24px;
+            background: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #fff;
+            animation: checkPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes checkPop {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        .node .node-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 10px;
+            background: var(--color, #3a3a3a);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .node.active .node-icon {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px var(--glow, rgba(255,255,255,0.2));
+        }
+
+        .node .node-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .node .node-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .node .node-badge {
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-gradient);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(255, 109, 0, 0.3);
+        }
+
+        /* Connection Lines */
+        .connections-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .connection-path {
+            fill: none;
+            stroke: #444;
+            stroke-width: 3;
+            stroke-linecap: round;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .connection-path.visible {
+            opacity: 1;
+        }
+
+        .connection-path.active {
+            stroke: url(#connectionGradient);
+            filter: drop-shadow(0 0 8px rgba(0, 217, 126, 0.5));
+        }
+
+        /* Data Flow Animation */
+        .data-dot {
+            fill: var(--success);
+            filter: drop-shadow(0 0 6px var(--success));
+        }
+
+        /* Sidebar */
+        .n8n-sidebar {
+            position: fixed;
+            right: 0;
+            top: 60px;
+            width: 56px;
+            height: calc(100% - 60px);
+            background: #141414;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            gap: 12px;
+            border-left: 1px solid var(--n8n-border);
+        }
+
+        .sidebar-btn {
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-btn:hover {
+            background: var(--n8n-node);
+            border-color: var(--n8n-border);
+            color: var(--text);
+        }
+
+        /* ==================== EXPLANATION PANEL ==================== */
+        .explanation-panel {
+            position: fixed;
+            left: 24px;
+            bottom: 120px;
+            background: rgba(18, 18, 26, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            max-width: 420px;
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .explanation-panel.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .explanation-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            box-shadow: 0 4px 20px rgba(255, 109, 0, 0.3);
+        }
+
+        .step-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .panel-description {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .panel-details {
+            display: grid;
+            gap: 10px;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.03);
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .detail-label {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .detail-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--success);
+            font-weight: 500;
+        }
+
+        /* ==================== PROGRESS BAR ==================== */
+        .progress-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 20px 28px;
+            border-top: 1px solid var(--n8n-border);
+            z-index: 100;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #2a2a2a;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-gradient);
+            width: 0%;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 30px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4));
+            animation: progressShine 2s infinite;
+        }
+
+        @keyframes progressShine {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .progress-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .step-counter {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .step-counter .current {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .step-dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            background: #2a2a2a;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .step-dot.completed {
+            background: var(--success);
+            box-shadow: 0 0 10px var(--glow-success);
+        }
+
+        .step-dot.active {
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--glow-primary);
+            transform: scale(1.3);
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .ctrl-btn {
+            background: #2a2a2a;
+            color: var(--text);
+            border: 1px solid var(--n8n-border);
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ctrl-btn:hover:not(:disabled) {
+            background: #3a3a3a;
+            border-color: #4a4a4a;
+            transform: translateY(-2px);
+        }
+
+        .ctrl-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .ctrl-btn.primary {
+            background: var(--primary-gradient);
+            border: none;
+        }
+
+        .ctrl-btn.primary:hover:not(:disabled) {
+            box-shadow: 0 8px 30px rgba(255, 109, 0, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .ctrl-btn.auto {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .ctrl-btn.auto.playing {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        /* ==================== SUMMARY SCREEN ==================== */
+        .summary-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--dark-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.6s ease;
+        }
+
+        .summary-screen.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: var(--success-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            margin-bottom: 30px;
+            animation: successPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 0 60px var(--glow-success);
+        }
+
+        @keyframes successPop {
+            0% { transform: scale(0) rotate(-180deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+
+        .summary-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            animation: fadeInUp 0.6s ease forwards;
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        .summary-subtitle {
+            color: var(--text-muted);
+            font-size: 18px;
+            margin-bottom: 50px;
+            animation: fadeInUp 0.6s ease forwards;
+            animation-delay: 0.3s;
+            opacity: 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 50px;
+            animation: fadeInUp 0.6s ease forwards;
+            animation-delay: 0.4s;
+            opacity: 0;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.4s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--color);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .stat-number {
+            font-size: 42px;
+            font-weight: 800;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .flow-summary {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: var(--card-bg);
+            padding: 24px 40px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            margin-bottom: 40px;
+            animation: fadeInUp 0.6s ease forwards;
+            animation-delay: 0.5s;
+            opacity: 0;
+        }
+
+        .flow-item {
+            text-align: center;
+        }
+
+        .flow-item .icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .flow-item .name {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .flow-arrow {
+            color: var(--success);
+            font-size: 24px;
+        }
+
+        .restart-btn {
+            background: var(--primary-gradient);
+            color: #fff;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            animation: fadeInUp 0.6s ease forwards;
+            animation-delay: 0.6s;
+            opacity: 0;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 10px 40px rgba(255, 109, 0, 0.4);
+        }
+
+        /* ==================== CONFETTI ==================== */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            pointer-events: none;
+            z-index: 1001;
+            animation: confettiFall var(--duration) ease-out forwards;
+        }
+
+        @keyframes confettiFall {
+            0% { 
+                transform: translateY(-100vh) rotate(0deg); 
+                opacity: 1;
+            }
+            100% { 
+                transform: translateY(100vh) rotate(720deg); 
+                opacity: 0;
+            }
+        }
+
+        /* ==================== CURSOR ANIMATION ==================== */
+        .virtual-cursor {
+            position: fixed;
+            width: 24px;
+            height: 24px;
+            pointer-events: none;
+            z-index: 1000;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+        }
+
+        .virtual-cursor.visible {
+            opacity: 1;
+        }
+
+        .virtual-cursor svg {
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .virtual-cursor.clicking {
+            transform: scale(0.9);
+        }
+
+        .click-ripple {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 999;
+            animation: ripple 0.6s ease-out forwards;
+        }
+
+        @keyframes ripple {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+        }
+
+        /* ==================== TYPING EFFECT ==================== */
+        .typing-container {
+            display: inline-block;
+            overflow: hidden;
+            border-right: 2px solid var(--primary);
+            animation: blink 0.7s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { border-color: var(--primary); }
+            50% { border-color: transparent; }
+        }
+
+        /* ==================== RESPONSIVE ==================== */
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .explanation-panel {
+                max-width: 340px;
+                padding: 20px;
+                left: 16px;
+                bottom: 100px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .intro-title {
+                padding: 0 20px;
+            }
+            
+            .flow-summary {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .header-tabs {
+                display: none;
+            }
+            
+            .github-star {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="animated-bg"></div>
+    <div class="grid-overlay"></div>
+    <div class="particles" id="particles"></div>
+
+    <!-- Virtual Cursor -->
+    <div class="virtual-cursor" id="virtualCursor">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M5.5 3.21V20.8c0 .45.54.67.85.35l4.86-5.04h7.59c.45 0 .67-.54.35-.85L6.35 2.85a.5.5 0 00-.85.36z" fill="#fff" stroke="#000" stroke-width="1"/>
+        </svg>
+    </div>
+
+    <!-- Intro Screen -->
+    <div class="intro-screen" id="introScreen">
+        <div class="intro-badge">
+            <span class="dot"></span>
+            Live Interactive Demo
+        </div>
+        
+        <h1 class="intro-title">
+            <span class="gradient-text">Workflow n8n</span><br>
+            Automatisation Pro
+        </h1>
+        
+        <p class="intro-subtitle">
+            Synchronisation des données entre Hostinger et l'application Horizon
+            via MySQL — Automatisation complète du flux de données
+        </p>
+
+        <div class="workflow-preview">
+            <div class="preview-node" style="--color: #9c27b0; --gradient: linear-gradient(135deg, #9c27b0, #673ab7); --glow: rgba(156, 39, 176, 0.4);">
+                <span class="icon">⏰</span>
+                <span class="name">Schedule</span>
+            </div>
+            <span class="flow-arrow">→</span>
+            <div class="preview-node" style="--color: #2196f3; --gradient: linear-gradient(135deg, #2196f3, #1976d2); --glow: rgba(33, 150, 243, 0.4);">
+                <span class="icon">🔍</span>
+                <span class="name">SQL Query</span>
+            </div>
+            <span class="flow-arrow">→</span>
+            <div class="preview-node" style="--color: #4caf50; --gradient: linear-gradient(135deg, #4caf50, #388e3c); --glow: rgba(76, 175, 80, 0.4);">
+                <span class="icon">🌐</span>
+                <span class="name">HTTP</span>
+            </div>
+            <span class="flow-arrow">→</span>
+            <div class="preview-node" style="--color: #ff9800; --gradient: linear-gradient(135deg, #ff9800, #f57c00); --glow: rgba(255, 152, 0, 0.4);">
+                <span class="icon">{ }</span>
+                <span class="name">Code JS</span>
+            </div>
+            <span class="flow-arrow">→</span>
+            <div class="preview-node" style="--color: #00bcd4; --gradient: linear-gradient(135deg, #00bcd4, #0097a7); --glow: rgba(0, 188, 212, 0.4);">
+                <span class="icon">🔀</span>
+                <span class="name">Switch</span>
+            </div>
+            <span class="flow-arrow">→</span>
+            <div class="preview-node" style="--color: #4479a1; --gradient: linear-gradient(135deg, #4479a1, #336791); --glow: rgba(68, 121, 161, 0.4);">
+                <span class="icon">🗄️</span>
+                <span class="name">MySQL</span>
+            </div>
+        </div>
+
+        <button class="start-btn" onclick="startDemo()">
+            <span class="play-icon">▶</span>
+            Démarrer la Démonstration
+        </button>
+    </div>
+
+    <!-- N8N Interface -->
+    <div class="n8n-interface" id="n8nInterface">
+        <!-- Header -->
+        <div class="n8n-header">
+            <div class="breadcrumb">
+                <span class="workspace">
+                    👤 Personal
+                </span>
+                <span class="separator">/</span>
+                <span class="workflow-name">
+                    Rayene - WorkFlow n8n - Hostinger → mysql → Horizon App
+                    <span style="color: var(--text-muted); font-weight: 400;">+ Add tag</span>
+                </span>
+            </div>
+            <div class="header-tabs">
+                <span class="header-tab active">Editor</span>
+                <span class="header-tab">Executions</span>
+                <span class="header-tab">Evaluations</span>
+            </div>
+            <div class="header-status">
+                <div class="status-badge">
+                    <span class="dot"></span>
+                    Published
+                </div>
+                <div class="github-star">
+                    ⭐ Star <strong style="margin-left: 4px;">178,113</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas -->
+        <div class="n8n-canvas" id="canvas">
+            <!-- SVG for connections -->
+            <svg class="connections-svg" id="connectionsSvg">
+                <defs>
+                    <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#00d97e;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#00f5a0;stop-opacity:1" />
+                    </linearGradient>
+                    <filter id="glow">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+            </svg>
+
+            <!-- Nodes will be added dynamically -->
+        </div>
+
+        <!-- Sidebar -->
+        <div class="n8n-sidebar">
+            <button class="sidebar-btn">➕</button>
+            <button class="sidebar-btn">🔍</button>
+            <button class="sidebar-btn">📋</button>
+            <button class="sidebar-btn">📖</button>
+            <button class="sidebar-btn" style="color: var(--purple);">✨</button>
+        </div>
+    </div>
+
+    <!-- Explanation Panel -->
+    <div class="explanation-panel" id="explanationPanel">
+        <div class="panel-header">
+            <div class="step-number" id="stepNumber">1</div>
+            <h3 class="step-title" id="stepTitle">Introduction</h3>
+        </div>
+        <p class="panel-description" id="stepDescription">
+            Description de l'étape en cours...
+        </p>
+        <div class="panel-details" id="stepDetails">
+            <!-- Dynamic details -->
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-container" id="progressContainer" style="display: none;">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-info">
+            <div class="step-indicator">
+                <span class="step-counter">
+                    Étape <span class="current" id="currentStep">1</span> / <span id="totalSteps">8</span>
+                </span>
+                <div class="step-dots" id="stepDots"></div>
+            </div>
+            <div class="controls">
+                <button class="ctrl-btn" id="prevBtn" onclick="prevStep()" disabled>
+                    ◀ Précédent
+                </button>
+                <button class="ctrl-btn primary" id="nextBtn" onclick="nextStep()">
+                    Suivant ▶
+                </button>
+                <button class="ctrl-btn auto" id="autoBtn" onclick="toggleAutoPlay()">
+                    ▶ Auto
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Screen -->
+    <div class="summary-screen" id="summaryScreen">
+        <div class="success-icon">✓</div>
+        <h2 class="summary-title">Workflow Complété!</h2>
+        <p class="summary-subtitle">Toutes les données ont été synchronisées avec succès</p>
+        
+        <div class="stats-grid">
+            <div class="stat-card" style="--color: var(--primary); --gradient: var(--primary-gradient);">
+                <div class="stat-number" id="statItems">0</div>
+                <div class="stat-label">Items traités</div>
+            </div>
+            <div class="stat-card" style="--color: var(--success); --gradient: var(--success-gradient);">
+                <div class="stat-number" id="statTables">0</div>
+                <div class="stat-label">Tables synchronisées</div>
+            </div>
+            <div class="stat-card" style="--color: var(--info); --gradient: var(--info-gradient);">
+                <div class="stat-number" id="statNodes">0</div>
+                <div class="stat-label">Nœuds exécutés</div>
+            </div>
+            <div class="stat-card" style="--color: var(--purple); --gradient: var(--purple-gradient);">
+                <div class="stat-number" id="statSuccess">0%</div>
+                <div class="stat-label">Taux de succès</div>
+            </div>
+        </div>
+
+        <div class="flow-summary">
+            <div class="flow-item">
+                <span class="icon">📂</span>
+                <span class="name">Hostinger</span>
+            </div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-item">
+                <span class="icon">📊</span>
+                <span class="name">Data Files</span>
+            </div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-item">
+                <span class="icon">⚙️</span>
+                <span class="name">n8n Process</span>
+            </div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-item">
+                <span class="icon">🗄️</span>
+                <span class="name">MySQL</span>
+            </div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-item">
+                <span class="icon">🏥</span>
+                <span class="name">Horizon App</span>
+            </div>
+        </div>
+
+        <button class="restart-btn" onclick="restartDemo()">
+            🔄 Revoir la Démonstration
+        </button>
+    </div>
+
+    <script>
+        // ==================== DATA ====================
+        const steps = [
+            {
+                id: 'intro',
+                title: 'Introduction au Workflow',
+                description: 'Ce workflow automatise la synchronisation des données entre le serveur Hostinger et l\'application Horizon via MySQL. Les fichiers de données sont stockés dans le gestionnaire de fichiers Hostinger.',
+                details: [
+                    { label: 'Source', value: 'Hostinger Files' },
+                    { label: 'Destination', value: 'MySQL Database' },
+                    { label: 'Application', value: 'Horizon / Efficience' }
+                ],
+                duration: 4000
+            },
+            {
+                id: 'schedule',
+                title: 'Schedule Trigger',
+                description: 'Le déclencheur programmé lance automatiquement le workflow à intervalles réguliers. C\'est le point d\'entrée de l\'automatisation.',
+                details: [
+                    { label: 'Type', value: 'Automatic Trigger' },
+                    { label: 'Mode', value: 'Scheduled' },
+                    { label: 'Output', value: '1 item' }
+                ],
+                nodeIndex: 0,
+                duration: 3500
+            },
+            {
+                id: 'sql',
+                title: 'Execute SQL Query',
+                description: 'Exécution d\'une requête SQL pour récupérer les métadonnées et vérifier l\'état de la base de données avant la synchronisation.',
+                details: [
+                    { label: 'Action', value: 'executeQuery' },
+                    { label: 'Database', value: 'MySQL Hostinger' },
+                    { label: 'Output', value: '1 item' }
+                ],
+                nodeIndex: 1,
+                duration: 3500
+            },
+            {
+                id: 'http',
+                title: 'HTTP Request',
+                description: 'Récupération des fichiers de données depuis l\'API Efficience Analytics. Les données sont stockées dans le gestionnaire de fichiers Hostinger et accessibles via HTTP.',
+                details: [
+                    { label: 'Method', value: 'GET' },
+                    { label: 'URL', value: 'efficience-analytics...' },
+                    { label: 'Output', value: '5 items' }
+                ],
+                nodeIndex: 2,
+                duration: 3500
+            },
+            {
+                id: 'code',
+                title: 'Code JavaScript',
+                description: 'Traitement et transformation des données brutes. Le code JavaScript parse les différents fichiers (devis, heures_ouverts, realisation, rendezvous, encours) et les prépare pour le routage.',
+                details: [
+                    { label: 'Language', value: 'JavaScript' },
+                    { label: 'Processing', value: '5 → 9,195 items' },
+                    { label: 'Output', value: '9,195 items' }
+                ],
+                nodeIndex: 3,
+                duration: 4000
+            },
+            {
+                id: 'switch',
+                title: 'Switch (Routage)',
+                description: 'Le nœud Switch route intelligemment les données vers les tables MySQL appropriées selon leur type: devis, heures_ouverts, realisation, rendezvous, encours.',
+                details: [
+                    { label: 'Mode', value: 'Rules' },
+                    { label: 'Routes', value: '5 outputs' },
+                    { label: 'Criteria', value: 'Data Type' }
+                ],
+                nodeIndex: 4,
+                duration: 4000
+            },
+            {
+                id: 'mysql',
+                title: 'MySQL Inserts',
+                description: 'Insertion parallèle des données dans les différentes tables MySQL. Chaque type de données est inséré dans sa table correspondante.',
+                details: [
+                    { label: 'encours', value: '5 → 2 items' },
+                    { label: 'rendezvous', value: '1 item' },
+                    { label: 'realisation', value: '9,140 → 1 item' },
+                    { label: 'joursouvert', value: '48 → 1 item' }
+                ],
+                nodeIndex: 5,
+                duration: 5000
+            },
+            {
+                id: 'complete',
+                title: 'Synchronisation Terminée',
+                description: 'Toutes les données ont été synchronisées avec succès depuis Hostinger vers la base de données MySQL. L\'application Horizon dispose maintenant des données à jour.',
+                details: [
+                    { label: 'Status', value: '✓ Success' },
+                    { label: 'Total Items', value: '9,195' },
+                    { label: 'Tables Updated', value: '4' }
+                ],
+                duration: 3000
+            }
+        ];
+
+        const nodes = [
+            { id: 'schedule', x: 80, y: 320, icon: '⏰', name: 'Schedule Trigger', subtitle: '', badge: '1 item', color: '#9c27b0' },
+            { id: 'sql', x: 220, y: 320, icon: '🔍', name: 'Execute SQL query', subtitle: 'executeQuery', badge: '1 item', color: '#2196f3' },
+            { id: 'http', x: 360, y: 320, icon: '🌐', name: 'HTTP Request', subtitle: 'GET: efficience-analyti...', badge: '5 items', color: '#4caf50' },
+            { id: 'code', x: 500, y: 320, icon: '{ }', name: 'Code in JavaScript', subtitle: '', badge: '9195 items', color: '#ff9800' },
+            { id: 'switch', x: 640, y: 320, icon: '🔀', name: 'Switch', subtitle: 'mode: Rules', badge: '', color: '#00bcd4' },
+            { id: 'mysql-encours', x: 800, y: 420, icon: '🗄️', name: 'mysql → encours', subtitle: 'insert', badge: '2 items', color: '#4479a1' },
+            { id: 'mysql-rdv', x: 920, y: 360, icon: '🗄️', name: 'mysql → rendezvous', subtitle: 'insert', badge: '1 item', color: '#4479a1' },
+            { id: 'mysql-real', x: 1040, y: 300, icon: '🗄️', name: 'mysql → realisation', subtitle: 'insert', badge: '1 item', color: '#4479a1' },
+            { id: 'mysql-jours', x: 1180, y: 240, icon: '🗄️', name: 'mysql → joursouvert', subtitle: 'insert', badge: '1 item', color: '#4479a1' }
+        ];
+
+        const connections = [
+            { from: 0, to: 1 },
+            { from: 1, to: 2 },
+            { from: 2, to: 3 },
+            { from: 3, to: 4 },
+            { from: 4, to: 5 },
+            { from: 4, to: 6 },
+            { from: 6, to: 7 },
+            { from: 7, to: 8 }
+        ];
+
+        // ==================== STATE ====================
+        let currentStep = 0;
+        let autoPlayInterval = null;
+        let isPlaying = false;
+
+        // ==================== INITIALIZATION ====================
+        function init() {
+            createParticles();
+            createStepDots();
+        }
+
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const colors = ['#ff6d00', '#00d97e', '#00d4ff', '#a855f7', '#ec4899'];
+            
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.cssText = `
+                    left: ${Math.random() * 100}%;
+                    width: ${Math.random() * 4 + 2}px;
+                    height: ${Math.random() * 4 + 2}px;
+                    background: ${colors[Math.floor(Math.random() * colors.length)]};
+                    --duration: ${Math.random() * 15 + 10}s;
+                    --delay: ${Math.random() * 10}s;
+                    --opacity: ${Math.random() * 0.4 + 0.2};
+                    --drift: ${(Math.random() - 0.5) * 100}px;
+                `;
+                container.appendChild(particle);
+            }
+        }
+
+        function createStepDots() {
+            const container = document.getElementById('stepDots');
+            steps.forEach((_, i) => {
+                const dot = document.createElement('div');
+                dot.className = 'step-dot';
+                dot.dataset.index = i;
+                container.appendChild(dot);
+            });
+        }
+
+        function createNodes() {
+            const canvas = document.getElementById('canvas');
+            
+            nodes.forEach((node, index) => {
+                const el = document.createElement('div');
+                el.className = 'node';
+                el.id = `node-${index}`;
+                el.style.cssText = `left: ${node.x}px; top: ${node.y}px; --color: ${node.color}; --glow: ${node.color}40;`;
+                el.innerHTML = `
+                    ${node.badge ? `<div class="node-badge">${node.badge}</div>` : ''}
+                    <div class="node-icon" style="background: ${node.color}20; color: ${node.color};">${node.icon}</div>
+                    <div class="node-name">${node.name}</div>
+                    <div class="node-subtitle">${node.subtitle}</div>
+                `;
+                canvas.appendChild(el);
+            });
+        }
+
+        function createConnections() {
+            const svg = document.getElementById('connectionsSvg');
+            
+            connections.forEach((conn, index) => {
+                const fromNode = nodes[conn.from];
+                const toNode = nodes[conn.to];
+                
+                const x1 = fromNode.x + 70;
+                const y1 = fromNode.y + 50;
+                const x2 = toNode.x;
+                const y2 = toNode.y + 50;
+                
+                const midX = (x1 + x2) / 2;
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('class', 'connection-path');
+                path.setAttribute('id', `conn-${index}`);
+                path.setAttribute('d', `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`);
+                svg.appendChild(path);
+            });
+        }
+
+        // ==================== DEMO CONTROL ====================
+        function startDemo() {
+            document.getElementById('introScreen').classList.add('hidden');
+            document.getElementById('n8nInterface').classList.add('visible');
+            document.getElementById('progressContainer').style.display = 'block';
+            
+            createNodes();
+            createConnections();
+            
+            setTimeout(() => {
+                goToStep(0);
+            }, 500);
+        }
+
+        function goToStep(index) {
+            currentStep = index;
+            const step = steps[index];
+            
+            // Update progress
+            const progress = ((index + 1) / steps.length) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            document.getElementById('currentStep').textContent = index + 1;
+            
+            // Update step dots
+            document.querySelectorAll('.step-dot').forEach((dot, i) => {
+                dot.classList.remove('completed', 'active');
+                if (i < index) dot.classList.add('completed');
+                if (i === index) dot.classList.add('active');
+            });
+            
+            // Update explanation panel
+            document.getElementById('stepNumber').textContent = index + 1;
+            document.getElementById('stepTitle').textContent = step.title;
+            document.getElementById('stepDescription').textContent = step.description;
+            
+            const detailsHtml = step.details.map(d => `
+                <div class="detail-item">
+                    <span class="detail-label">${d.label}</span>
+                    <span class="detail-value">${d.value}</span>
+                </div>
+            `).join('');
+            document.getElementById('stepDetails').innerHTML = detailsHtml;
+            document.getElementById('explanationPanel').classList.add('visible');
+            
+            // Update nodes
+            updateNodesState(index);
+            
+            // Update connections
+            updateConnectionsState(index);
+            
+            // Move virtual cursor
+            if (step.nodeIndex !== undefined) {
+                moveCursorToNode(step.nodeIndex);
+            }
+            
+            // Update buttons
+            document.getElementById('prevBtn').disabled = index === 0;
+            document.getElementById('nextBtn').disabled = index === steps.length - 1;
+            document.getElementById('nextBtn').innerHTML = index === steps.length - 2 
+                ? 'Terminer ✓' 
+                : 'Suivant ▶';
+            
+            // Show summary at the end
+            if (step.id === 'complete') {
+                setTimeout(() => {
+                    showSummary();
+                }, 1500);
+            }
+        }
+
+        function updateNodesState(stepIndex) {
+            const step = steps[stepIndex];
+            
+            nodes.forEach((node, index) => {
+                const el = document.getElementById(`node-${index}`);
+                
+                // Progressive reveal
+                if (stepIndex >= 1) {
+                    const revealIndex = stepIndex - 1;
+                    if (index <= revealIndex + 4) {
+                        setTimeout(() => {
+                            el.classList.add('visible');
+                        }, index * 150);
+                    }
+                }
+                
+                // Active/completed states
+                el.classList.remove('active', 'completed');
+                
+                if (step.nodeIndex !== undefined) {
+                    if (index === step.nodeIndex) {
+                        el.classList.add('active');
+                    } else if (index < step.nodeIndex) {
+                        el.classList.add('completed');
+                    }
+                }
+                
+                // MySQL step - show all MySQL nodes
+                if (step.id === 'mysql') {
+                    if (index >= 5) {
+                        el.classList.add('visible', 'active');
+                    } else if (index < 5) {
+                        el.classList.add('completed');
+                    }
+                }
+                
+                // Complete step
+                if (step.id === 'complete') {
+                    el.classList.add('visible', 'completed');
+                }
+            });
+        }
+
+        function updateConnectionsState(stepIndex) {
+            const step = steps[stepIndex];
+            
+            connections.forEach((conn, index) => {
+                const el = document.getElementById(`conn-${index}`);
+                el.classList.remove('visible', 'active');
+                
+                if (step.nodeIndex !== undefined) {
+                    const revealThreshold = Math.min(step.nodeIndex, 4);
+                    if (index < revealThreshold) {
+                        el.classList.add('visible');
+                    }
+                    if (index === revealThreshold - 1) {
+                        el.classList.add('active');
+                    }
+                }
+                
+                if (step.id === 'mysql' || step.id === 'complete') {
+                    el.classList.add('visible');
+                    if (step.id === 'mysql') {
+                        el.classList.add('active');
+                    }
+                }
+            });
+        }
+
+        function moveCursorToNode(nodeIndex) {
+            const cursor = document.getElementById('virtualCursor');
+            const node = document.getElementById(`node-${nodeIndex}`);
+            
+            if (node) {
+                const rect = node.getBoundingClientRect();
+                cursor.style.left = `${rect.left + rect.width / 2}px`;
+                cursor.style.top = `${rect.top + rect.height / 2}px`;
+                cursor.classList.add('visible');
+                
+                // Simulate click
+                setTimeout(() => {
+                    cursor.classList.add('clicking');
+                    createClickRipple(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                    setTimeout(() => cursor.classList.remove('clicking'), 150);
+                }, 300);
+            }
+        }
+
+        function createClickRipple(x, y) {
+            const ripple = document.createElement('div');
+            ripple.className = 'click-ripple';
+            ripple.style.left = `${x}px`;
+            ripple.style.top = `${y}px`;
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 600);
+        }
+
+        function nextStep() {
+            if (currentStep < steps.length - 1) {
+                goToStep(currentStep + 1);
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 0) {
+                goToStep(currentStep - 1);
+            }
+        }
+
+        function toggleAutoPlay() {
+            const btn = document.getElementById('autoBtn');
+            
+            if (isPlaying) {
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = null;
+                isPlaying = false;
+                btn.textContent = '▶ Auto';
+                btn.classList.remove('playing');
+            } else {
+                isPlaying = true;
+                btn.textContent = '⏸ Pause';
+                btn.classList.add('playing');
+                
+                autoPlayInterval = setInterval(() => {
+                    if (currentStep < steps.length - 1) {
+                        nextStep();
+                    } else {
+                        clearInterval(autoPlayInterval);
+                        isPlaying = false;
+                        btn.textContent = '▶ Auto';
+                        btn.classList.remove('playing');
+                    }
+                }, steps[currentStep].duration || 3000);
+            }
+        }
+
+        // ==================== SUMMARY ====================
+        function showSummary() {
+            document.getElementById('summaryScreen').classList.add('visible');
+            createConfetti();
+            animateStats();
+        }
+
+        function animateStats() {
+            animateNumber('statItems', 9195, 2000);
+            animateNumber('statTables', 4, 1500);
+            animateNumber('statNodes', 8, 1500);
+            animatePercentage('statSuccess', 100, 2000);
+        }
+
+        function animateNumber(id, target, duration) {
+            const el = document.getElementById(id);
+            const start = 0;
+            const startTime = performance.now();
+            
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const current = Math.round(start + (target - start) * eased);
+                el.textContent = current.toLocaleString();
+                
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+            
+            requestAnimationFrame(update);
+        }
+
+        function animatePercentage(id, target, duration) {
+            const el = document.getElementById(id);
+            const start = 0;
+            const startTime = performance.now();
+            
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const current = Math.round(start + (target - start) * eased);
+                el.textContent = current + '%';
+                
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+            
+            requestAnimationFrame(update);
+        }
+
+        function createConfetti() {
+            const colors = ['#ff6d00', '#00d97e', '#00d4ff', '#a855f7', '#ec4899', '#ffeb3b'];
+            
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.cssText = `
+                        left: ${Math.random() * 100}%;
+                        top: -20px;
+                        background: ${colors[Math.floor(Math.random() * colors.length)]};
+                        --duration: ${Math.random() * 2 + 2}s;
+                        width: ${Math.random() * 10 + 5}px;
+                        height: ${Math.random() * 10 + 5}px;
+                        border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+                    `;
+                    document.body.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 4000);
+                }, i * 30);
+            }
+        }
+
+        function restartDemo() {
+            document.getElementById('summaryScreen').classList.remove('visible');
+            document.getElementById('virtualCursor').classList.remove('visible');
+            
+            // Reset all nodes
+            nodes.forEach((_, index) => {
+                const el = document.getElementById(`node-${index}`);
+                if (el) {
+                    el.classList.remove('visible', 'active', 'completed');
+                }
+            });
+            
+            // Reset connections
+            connections.forEach((_, index) => {
+                const el = document.getElementById(`conn-${index}`);
+                if (el) {
+                    el.classList.remove('visible', 'active');
+                }
+            });
+            
+            currentStep = 0;
+            goToStep(0);
+        }
+
+        // ==================== KEYBOARD NAVIGATION ====================
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextStep();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevStep();
+            } else if (e.key === 'Enter') {
+                if (document.getElementById('introScreen').classList.contains('hidden') === false) {
+                    startDemo();
+                }
+            }
+        });
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>
