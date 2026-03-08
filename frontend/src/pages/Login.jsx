@@ -8,7 +8,6 @@ import { FiLock, FiMail, FiArrowRight, FiShield, FiCheckCircle, FiAlertCircle, F
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -30,14 +29,9 @@ export default function Login() {
       const res = await loginAPI(email, password);
       loginUser(res.data.user, res.data.token);
       
-      // Mémoriser ou effacer l'email selon le choix
-      if (rememberMe) {
-        localStorage.setItem('efficience_remembered_email', email);
-        localStorage.setItem('efficience_remember_me', 'true');
-      } else {
-        localStorage.removeItem('efficience_remembered_email');
-        localStorage.removeItem('efficience_remember_me');
-      }
+      // Ne jamais mémoriser les identifiants pour la sécurité
+      localStorage.removeItem('efficience_remembered_email');
+      localStorage.removeItem('efficience_remember_me');
       
       if (res.data.user.role === 'admin') {
         navigate('/admin', { replace: true });
@@ -132,8 +126,8 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Form - autocomplete désactivé pour sécurité */}
+          <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
             <div>
               <label className="block text-[10px] font-bold tracking-[0.15em] text-gray-400 uppercase mb-2">
                 Email professionnel
@@ -146,6 +140,8 @@ export default function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="votre@adresse-email.fr"
                   required
+                  autoComplete="off"
+                  name="login-email-field"
                   className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
                 />
               </div>
@@ -163,25 +159,10 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
+                  autoComplete="new-password"
+                  name="login-password-field"
                   className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
                 />
-              </div>
-            </div>
-
-            {/* Se souvenir de moi */}
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 bg-gray-50 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
-                />
-                <span className="text-sm text-gray-600">Se souvenir de moi</span>
-              </label>
-              {/* Badge RM */}
-              <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-blue-600 to-blue-700 rounded-md shadow-sm">
-                <span className="text-[10px] font-bold text-white tracking-wider">RM</span>
               </div>
             </div>
 
