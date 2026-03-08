@@ -63,6 +63,11 @@ export default function Login() {
         <div className="absolute bottom-1/4 right-0 w-56 h-56 bg-blue-500 rounded-full opacity-5 blur-3xl"></div>
 
         <div className="relative z-10">
+          {/* Logo Efficience */}
+          <div className="flex items-center gap-3 mb-12">
+            <img src="/efficience-logo.svg" alt="Efficience" className="h-12 w-auto drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
+          </div>
+
           {/* Main title */}
           <h1 className="text-5xl xl:text-6xl font-black text-white leading-tight mb-6" style={{ fontStyle: 'italic' }}>
             EFFICIENCE<br />
