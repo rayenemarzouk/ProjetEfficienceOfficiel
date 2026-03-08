@@ -16,15 +16,7 @@ export default function Login() {
   const appSettings = useAppSettings();
   const isMaintenance = appSettings?.maintenanceMode;
 
-  // Charger l'email mémorisé au démarrage
-  useEffect(() => {
-    const savedEmail = localStorage.getItem('efficience_remembered_email');
-    const savedRemember = localStorage.getItem('efficience_remember_me') === 'true';
-    if (savedEmail && savedRemember) {
-      setEmail(savedEmail);
-      setRememberMe(true);
-    }
-  }, []);
+  // Les champs sont toujours vides à l'ouverture - l'utilisateur doit taper ses identifiants manuellement
 
   // Plus de redirection automatique — l'utilisateur reste sur la page login
   // La navigation vers le dashboard se fait uniquement après soumission du formulaire
