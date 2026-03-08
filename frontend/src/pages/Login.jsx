@@ -3,11 +3,13 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAppSettings } from '../context/AppSettingsContext';
 import { login as loginAPI } from '../services/api';
-import { FiLock, FiMail, FiArrowRight, FiShield, FiCheckCircle, FiAlertCircle, FiAlertTriangle } from 'react-icons/fi';
+import { FiLock, FiMail, FiArrowRight, FiShield, FiCheckCircle, FiAlertCircle, FiAlertTriangle, FiEye, FiEyeOff } from 'react-icons/fi';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -29,9 +31,14 @@ export default function Login() {
       const res = await loginAPI(email, password);
       loginUser(res.data.user, res.data.token);
       
-      // Ne jamais mémoriser les identifiants pour la sécurité
-      localStorage.removeItem('efficience_remembered_email');
-      localStorage.removeItem('efficience_remember_me');
+      // Mémoriser l'email si "Se souvenir de moi" est coché
+      if (rememberMe) {
+        localStorage.setItem('efficience_remembered_email', email);
+        localStorage.setItem('efficience_remember_me', 'true');
+      } else {
+        localStorage.removeItem('efficience_remembered_email');
+        localStorage.removeItem('efficience_remember_me');
+      }
       
       if (res.data.user.role === 'admin') {
         navigate('/admin', { replace: true });
@@ -154,16 +161,36 @@ export default function Login() {
               <div className="relative">
                 <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
                   autoComplete="new-password"
                   name="login-password-field"
-                  className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
+                  className="w-full pl-12 pr-12 py-4 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
+                </button>
               </div>
+            </div>
+
+            {/* Se souvenir de moi */}
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 bg-gray-50 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                />
+                <span className="text-sm text-gray-600">Se souvenir de moi</span>
+              </label>
             </div>
 
             <button

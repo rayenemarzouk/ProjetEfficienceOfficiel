@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { register as registerAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { FiUser, FiMail, FiLock, FiArrowRight, FiShield, FiCheckCircle, FiAlertCircle, FiHome, FiArrowLeft } from 'react-icons/fi';
+import { FiUser, FiMail, FiLock, FiArrowRight, FiShield, FiCheckCircle, FiAlertCircle, FiHome, FiArrowLeft, FiEye, FiEyeOff } from 'react-icons/fi';
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -13,6 +13,8 @@ export default function Register() {
     cabinetName: '',
     practitionerCode: ''
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -78,11 +80,6 @@ export default function Register() {
         <div className="absolute bottom-1/4 right-0 w-56 h-56 bg-emerald-500 rounded-full opacity-5 blur-3xl"></div>
 
         <div className="relative z-10">
-          {/* Logo Efficience */}
-          <div className="flex items-center gap-3 mb-12">
-            <img src="/efficience-logo.svg" alt="Efficience" className="h-12 w-auto drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
-          </div>
-
           {/* Main title */}
           <h1 className="text-5xl xl:text-6xl font-black text-white leading-tight mb-6" style={{ fontStyle: 'italic' }}>
             EFFICIENCE<br />
@@ -145,9 +142,9 @@ export default function Register() {
             </div>
           )}
 
-          {/* Form */}
+          {/* Form - autocomplete désactivé pour sécurité */}
           {!success && (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
               {/* Nom complet */}
               <div>
                 <label className="block text-[10px] font-bold tracking-[0.15em] text-gray-400 uppercase mb-2">
@@ -157,11 +154,12 @@ export default function Register() {
                   <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     type="text"
-                    name="name"
+                    name="register-fullname"
                     value={form.name}
-                    onChange={handleChange}
-                    placeholder="Dr. Jean Dupont"
+                    onChange={(e) => setForm({...form, name: e.target.value})}
+                    placeholder="Entrez votre nom complet"
                     required
+                    autoComplete="off"
                     className="w-full pl-12 pr-4 py-3.5 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
                   />
                 </div>
@@ -176,11 +174,12 @@ export default function Register() {
                   <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     type="email"
-                    name="email"
+                    name="register-email-field"
                     value={form.email}
-                    onChange={handleChange}
-                    placeholder="praticien@cabinet.fr"
+                    onChange={(e) => setForm({...form, email: e.target.value})}
+                    placeholder="Entrez votre adresse email"
                     required
+                    autoComplete="off"
                     className="w-full pl-12 pr-4 py-3.5 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
                   />
                 </div>
@@ -195,10 +194,11 @@ export default function Register() {
                   <FiHome className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     type="text"
-                    name="cabinetName"
+                    name="register-cabinet-field"
                     value={form.cabinetName}
-                    onChange={handleChange}
-                    placeholder="Cabinet Dentaire Sourire"
+                    onChange={(e) => setForm({...form, cabinetName: e.target.value})}
+                    placeholder="Entrez le nom de votre cabinet"
+                    autoComplete="off"
                     className="w-full pl-12 pr-4 py-3.5 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
                   />
                 </div>
@@ -213,11 +213,12 @@ export default function Register() {
                   <FiShield className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     type="text"
-                    name="practitionerCode"
+                    name="register-code-field"
                     value={form.practitionerCode}
-                    onChange={handleChange}
-                    placeholder="JC"
+                    onChange={(e) => setForm({...form, practitionerCode: e.target.value})}
+                    placeholder="Entrez votre code praticien"
                     maxLength={10}
+                    autoComplete="off"
                     className="w-full pl-12 pr-4 py-3.5 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200 uppercase"
                   />
                 </div>
@@ -232,14 +233,22 @@ export default function Register() {
                   <div className="relative">
                     <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
-                      type="password"
-                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      name="register-password-field"
                       value={form.password}
-                      onChange={handleChange}
-                      placeholder="••••••••"
+                      onChange={(e) => setForm({...form, password: e.target.value})}
+                      placeholder="Créez un mot de passe"
                       required
-                      className="w-full pl-12 pr-4 py-3.5 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
+                      autoComplete="new-password"
+                      className="w-full pl-12 pr-10 py-3.5 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showPassword ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
                 <div>
@@ -249,14 +258,22 @@ export default function Register() {
                   <div className="relative">
                     <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
-                      type="password"
-                      name="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      name="register-confirm-field"
                       value={form.confirmPassword}
-                      onChange={handleChange}
-                      placeholder="••••••••"
+                      onChange={(e) => setForm({...form, confirmPassword: e.target.value})}
+                      placeholder="Confirmez le mot de passe"
                       required
-                      className="w-full pl-12 pr-4 py-3.5 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
+                      autoComplete="new-password"
+                      className="w-full pl-12 pr-10 py-3.5 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showConfirmPassword ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
               </div>
