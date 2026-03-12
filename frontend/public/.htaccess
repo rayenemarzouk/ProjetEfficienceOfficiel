@@ -1,6 +1,32 @@
-RewriteEngine On
-RewriteBase /
-RewriteRule ^index\.html$ - [L]
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /index.html [L]
+# MIME Types pour JavaScript modules - OBLIGATOIRE
+AddType application/javascript .js .mjs
+AddType text/javascript .js
+AddType text/css .css
+AddType image/svg+xml .svg
+
+# Headers pour les fichiers JS et CSS
+<IfModule mod_headers.c>
+    <FilesMatch "\.(js|mjs)$">
+        Header set Content-Type "application/javascript"
+    </FilesMatch>
+    <FilesMatch "\.css$">
+        Header set Content-Type "text/css"
+    </FilesMatch>
+</IfModule>
+
+# Réécriture pour SPA React
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    
+    # Ne pas réécrire les fichiers/dossiers existants
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+    
+    # Tout le reste va vers index.html
+    RewriteRule ^ index.html [L]
+</IfModule>
+
+# Empêcher l'affichage des erreurs PHP
+php_flag display_errors off
