@@ -58,6 +58,7 @@ app.use('/api/data', require('./routes/data'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/practitioner', require('./routes/practitioner'));
 app.use('/api/consultant', require('./routes/consultant'));
+app.use('/api/webhook', require('./routes/webhook')); // Webhook pour n8n
 
 // Public settings endpoint (no auth required — for maintenance mode check)
 const AppSettings = require('./models/AppSettings');

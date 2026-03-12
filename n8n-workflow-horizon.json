@@ -1,0 +1,183 @@
+{
+  "name": "Hostinger MySQL → Horizon MongoDB Sync",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT 'encours' as data_type, e.* FROM encours e\nUNION ALL\nSELECT 'rendezvous' as data_type, r.praticien, r.mois, r.nb_rdv, r.duree_totale_rdv, r.nb_patients, r.nb_nouveaux_patients FROM rendezvous r\nUNION ALL\nSELECT 'realisation' as data_type, re.praticien, re.mois, re.nb_patients, re.montant_facture, re.montant_encaisse FROM realisation re\nUNION ALL\nSELECT 'joursouvert' as data_type, j.praticien, j.mois, j.nb_heures FROM joursouvert j"
+      },
+      "id": "mysql-query",
+      "name": "Execute SQL Query",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.3,
+      "position": [220, 300],
+      "credentials": {
+        "mySql": {
+          "id": "YOUR_MYSQL_CREDENTIAL_ID",
+          "name": "MySQL Hostinger"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Transformer les données pour Horizon API\nconst items = $input.all();\nconst grouped = {\n  encours: [],\n  rendezvous: [],\n  realisation: [],\n  joursouvert: []\n};\n\nfor (const item of items) {\n  const data = item.json;\n  const type = data.data_type;\n  delete data.data_type;\n  \n  if (grouped[type]) {\n    grouped[type].push(data);\n  }\n}\n\n// Retourner un item par type\nconst output = [];\n\nif (grouped.encours.length > 0) {\n  output.push({\n    json: {\n      type: 'encours',\n      data: grouped.encours.map(e => ({\n        praticien: e.praticien || 'Global',\n        dureeTotaleARealiser: parseFloat(e.duree_totale_a_realiser) || 0,\n        montantTotalAFacturer: parseFloat(e.montant_total_a_facturer) || 0,\n        rentabiliteHoraire: parseFloat(e.rentabilite_horaire) || 0,\n        rentabiliteJoursTravailles: parseFloat(e.rentabilite_jours_travailles) || 0,\n        patientsEnCours: parseFloat(e.patients_en_cours) || 0\n      }))\n    }\n  });\n}\n\nif (grouped.rendezvous.length > 0) {\n  output.push({\n    json: {\n      type: 'rendezvous',\n      data: grouped.rendezvous.map(r => ({\n        praticien: r.praticien,\n        mois: r.mois,\n        nbRdv: parseFloat(r.nb_rdv) || 0,\n        dureeTotaleRdv: parseFloat(r.duree_totale_rdv) || 0,\n        nbPatients: parseFloat(r.nb_patients) || 0,\n        nbNouveauxPatients: parseFloat(r.nb_nouveaux_patients) || 0\n      }))\n    }\n  });\n}\n\nif (grouped.realisation.length > 0) {\n  output.push({\n    json: {\n      type: 'realisation',\n      data: grouped.realisation.map(r => ({\n        praticien: r.praticien,\n        mois: r.mois,\n        nbPatients: parseFloat(r.nb_patients) || 0,\n        montantFacture: parseFloat(r.montant_facture) || 0,\n        montantEncaisse: parseFloat(r.montant_encaisse) || 0\n      }))\n    }\n  });\n}\n\nif (grouped.joursouvert.length > 0) {\n  output.push({\n    json: {\n      type: 'joursouvert',\n      data: grouped.joursouvert.map(j => ({\n        praticien: j.praticien,\n        mois: j.mois,\n        nbHeures: parseFloat(j.nb_heures) || 0\n      }))\n    }\n  });\n}\n\nreturn output;"
+      },
+      "id": "code-transform",
+      "name": "Transform Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://projetefficienceofficiel.onrender.com/api/webhook/sync",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "http-horizon",
+      "name": "Send to Horizon API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [660, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_HEADER_AUTH_ID",
+          "name": "Horizon Webhook Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "success",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-success",
+      "name": "Check Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "content": "## ✅ Sync Réussie\n\n**Type:** {{ $json.type }}\n**Importés:** {{ $json.imported }}\n**Erreurs:** {{ $json.errors }}",
+        "height": 160,
+        "width": 260
+      },
+      "id": "note-success",
+      "name": "Success Log",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1100, 200]
+    },
+    {
+      "parameters": {
+        "content": "## ❌ Erreur Sync\n\nVérifier les logs Render",
+        "height": 120,
+        "width": 200
+      },
+      "id": "note-error",
+      "name": "Error Log",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1100, 400]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Execute SQL Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute SQL Query": {
+      "main": [
+        [
+          {
+            "node": "Transform Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Data": {
+      "main": [
+        [
+          {
+            "node": "Send to Horizon API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to Horizon API": {
+      "main": [
+        [
+          {
+            "node": "Check Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Efficience Analytics"
+    }
+  ],
+  "triggerCount": 1,
+  "pinData": {}
+}
