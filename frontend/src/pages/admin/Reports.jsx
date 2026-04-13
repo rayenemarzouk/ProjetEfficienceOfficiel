@@ -73,7 +73,7 @@ export default function Reports() {
         const res = await generateAllReports(selectedMonth);
         setMessage({ type: 'success', text: res.data.message });
       }
-      fetchData();
+      await fetchData();
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.message || 'Erreur' });
     } finally {
@@ -87,7 +87,7 @@ export default function Reports() {
     try {
       const res = await sendReports(selectedMonth);
       setMessage({ type: 'success', text: res.data.message });
-      fetchData();
+      await fetchData();
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.message || 'Erreur' });
     } finally {
@@ -101,7 +101,7 @@ export default function Reports() {
     try {
       const res = await sendReportsNow(selectedMonth);
       setMessage({ type: 'success', text: res.data.message });
-      fetchData();
+      await fetchData();
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.message || 'Erreur lors de l\'envoi' });
     } finally {

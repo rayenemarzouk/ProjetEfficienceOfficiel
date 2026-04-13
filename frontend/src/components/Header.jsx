@@ -169,12 +169,35 @@ export default function Header({ title, subtitle }) {
 
   const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
 
+  // Styles conditionnels selon l'utilisateur (Rayan garde son thème sombre)
+  const headerBg = isRayan ? 'bg-[#0f1d2f] border-b border-[#1e3a5f]/50' : 'bg-white border-b border-gray-200 shadow-sm';
+  const titleCls = isRayan ? 'text-white' : 'text-gray-900';
+  const subtitleCls = isRayan ? 'text-gray-400' : 'text-gray-500';
+  const inputCls = isRayan
+    ? 'bg-[#0a1628] border border-[#1e3a5f] text-gray-200 placeholder-gray-500'
+    : 'bg-gray-50 border border-gray-200 text-gray-700 placeholder-gray-400';
+  const searchDropBg = isRayan ? 'bg-[#1e293b] border border-[#1e3a5f]' : 'bg-white border border-gray-200 shadow-xl';
+  const searchItemLabel = isRayan ? 'text-white' : 'text-gray-900';
+  const bellCls = isRayan ? 'text-gray-400 hover:bg-white/10' : 'text-gray-500 hover:bg-gray-100';
+  const notifDropBg = isRayan ? 'bg-[#1e293b] border border-[#1e3a5f]' : 'bg-white border border-gray-200 shadow-2xl';
+  const notifHeaderBg = isRayan ? 'bg-gradient-to-r from-blue-900/20 to-violet-900/20' : 'bg-gray-50';
+  const notifHeaderBorder = isRayan ? 'border-[#1e3a5f]' : 'border-gray-200';
+  const notifTitleCls = isRayan ? 'text-white' : 'text-gray-800';
+  const notifBadgeCls = isRayan ? 'text-blue-400 bg-blue-900/50' : 'text-blue-600 bg-blue-100';
+  const notifItemBorder = isRayan ? 'border-gray-800' : 'border-gray-100';
+  const notifItemHover = isRayan ? 'hover:bg-gray-800/50' : 'hover:bg-gray-50';
+  const notifItemTitle = isRayan ? 'text-white' : 'text-gray-900';
+  const notifFooterBorder = isRayan ? 'border-[#1e3a5f]' : 'border-gray-100';
+  const notifFooterLink = isRayan ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700';
+  const userBorderCls = isRayan ? 'border-[#1e3a5f]' : 'border-gray-200';
+  const userEmailCls = isRayan ? 'text-gray-300' : 'text-gray-700';
+
   return (
-    <header className={`sticky top-0 z-40 px-8 py-4 transition-colors duration-300 ${isRayan ? 'bg-[#0f1d2f] border-b border-[#1e3a5f]/50' : 'bg-[#0f172a] border-b border-[#1e3a5f]/50'}`}>
+    <header className={`sticky top-0 z-40 px-8 py-4 transition-colors duration-300 ${headerBg}`}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">{title}</h1>
-          {subtitle && <p className="text-sm mt-0.5 text-gray-400">{subtitle}</p>}
+          <h1 className={`text-2xl font-bold ${titleCls}`}>{title}</h1>
+          {subtitle && <p className={`text-sm mt-0.5 ${subtitleCls}`}>{subtitle}</p>}
         </div>
         <div className="flex items-center gap-4">
           {/* ═══ SEARCH BAR ═══ */}
@@ -187,16 +210,16 @@ export default function Header({ title, subtitle }) {
               onFocus={() => setSearchFocused(true)}
               onKeyDown={handleSearchKeyDown}
               placeholder="Rechercher..."
-              className="pl-10 pr-8 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64 transition-colors bg-[#0a1628] border border-[#1e3a5f] text-gray-200 placeholder-gray-500"
+              className={`pl-10 pr-8 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64 transition-colors ${inputCls}`}
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300">
+              <button onClick={() => setSearchQuery('')} className={`absolute right-3 top-1/2 -translate-y-1/2 ${isRayan ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}>
                 <FiX className="w-3.5 h-3.5" />
               </button>
             )}
             {/* Search dropdown */}
             {searchFocused && searchQuery.trim().length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 rounded-xl shadow-xl z-[60] overflow-hidden bg-[#1e293b] border border-[#1e3a5f]">
+              <div className={`absolute top-full left-0 right-0 mt-2 rounded-xl z-[60] overflow-hidden ${searchDropBg}`}>
                 {searchResults.length > 0 ? (
                   <div className="py-1">
                     <p className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Pages</p>
@@ -204,24 +227,24 @@ export default function Header({ title, subtitle }) {
                       <button
                         key={page.path}
                         onClick={() => handleSearchSelect(page.path)}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left group hover:bg-blue-900/20"
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left group ${isRayan ? 'hover:bg-blue-900/20' : 'hover:bg-blue-50'}`}
                       >
-                        <div className="p-1.5 rounded-lg transition-colors bg-blue-900/30 group-hover:bg-blue-900/50">
+                        <div className={`p-1.5 rounded-lg transition-colors ${isRayan ? 'bg-blue-900/30 group-hover:bg-blue-900/50' : 'bg-blue-50 group-hover:bg-blue-100'}`}>
                           <page.Icon className="w-4 h-4 text-blue-600" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate text-white">{page.label}</p>
+                          <p className={`text-sm font-medium truncate ${searchItemLabel}`}>{page.label}</p>
                           <p className="text-[11px] text-gray-500">{page.desc}</p>
                         </div>
-                        <FiArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-gray-600" />
+                        <FiArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400" />
                       </button>
                     ))}
                   </div>
                 ) : (
                   <div className="px-4 py-6 text-center">
-                    <FiSearch className="w-8 h-8 mx-auto mb-2 text-gray-600" />
-                    <p className="text-sm text-gray-400">Aucun résultat pour « {searchQuery} »</p>
-                    <p className="text-[11px] mt-1 text-gray-500">Essayez : dashboard, rapports, statistiques…</p>
+                    <FiSearch className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                    <p className={`text-sm ${isRayan ? 'text-gray-400' : 'text-gray-500'}`}>Aucun résultat pour « {searchQuery} »</p>
+                    <p className="text-[11px] mt-1 text-gray-400">Essayez : dashboard, rapports, statistiques…</p>
                   </div>
                 )}
               </div>
@@ -262,7 +285,7 @@ export default function Header({ title, subtitle }) {
           <div className="relative" ref={notifRef}>
             <button
               onClick={handleBellClick}
-              className="relative p-2 rounded-xl transition-colors text-gray-400 hover:bg-white/10"
+              className={`relative p-2 rounded-xl transition-colors ${bellCls}`}
             >
               <FiBell className="w-5 h-5" />
               {!notifSeen && (
@@ -275,14 +298,14 @@ export default function Header({ title, subtitle }) {
 
             {/* Notification dropdown */}
             {notifOpen && (
-              <div className="absolute right-0 top-full mt-2 w-96 rounded-xl shadow-2xl z-[60] overflow-hidden bg-[#1e293b] border border-[#1e3a5f]">
-                <div className="px-4 py-3 flex items-center justify-between border-b border-[#1e3a5f] bg-gradient-to-r from-blue-900/20 to-violet-900/20">
+              <div className={`absolute right-0 top-full mt-2 w-96 rounded-xl z-[60] overflow-hidden ${notifDropBg}`}>
+                <div className={`px-4 py-3 flex items-center justify-between border-b ${notifHeaderBorder} ${notifHeaderBg}`}>
                   <div className="flex items-center gap-2">
                     <FiBell className="w-4 h-4 text-blue-600" />
-                    <h3 className="text-sm font-bold text-white">Notifications</h3>
+                    <h3 className={`text-sm font-bold ${notifTitleCls}`}>Notifications</h3>
                   </div>
                   {notifications.length > 0 && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-blue-400 bg-blue-900/50">{notifications.length}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${notifBadgeCls}`}>{notifications.length}</span>
                   )}
                 </div>
                 <div className="max-h-[400px] overflow-y-auto">
@@ -293,7 +316,7 @@ export default function Header({ title, subtitle }) {
                     </div>
                   ) : notifications.length === 0 ? (
                     <div className="px-4 py-10 text-center">
-                      <FiBell className="w-10 h-10 mx-auto mb-3 text-gray-700" />
+                      <FiBell className="w-10 h-10 mx-auto mb-3 text-gray-400" />
                       <p className="text-sm text-gray-400">Aucune notification</p>
                     </div>
                   ) : (
@@ -303,7 +326,7 @@ export default function Header({ title, subtitle }) {
                       return (
                         <div
                           key={n.id}
-                          className={`px-4 py-3 transition-colors ${n.action ? 'cursor-pointer' : ''} border-b border-gray-800 hover:bg-gray-800/50`}
+                          className={`px-4 py-3 transition-colors ${n.action ? 'cursor-pointer' : ''} border-b ${notifItemBorder} ${notifItemHover}`}
                           onClick={() => { if (n.action) { navigate(n.action); setNotifOpen(false); } }}
                         >
                           <div className="flex items-start gap-3">
@@ -311,7 +334,7 @@ export default function Header({ title, subtitle }) {
                               <NIcon className={`w-4 h-4 ${colors.icon}`} />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-[13px] font-semibold leading-tight text-white">{n.title}</p>
+                              <p className={`text-[13px] font-semibold leading-tight ${notifItemTitle}`}>{n.title}</p>
                               <p className="text-[11px] mt-0.5 text-gray-400">{n.message}</p>
                             </div>
                             <span className="text-[10px] whitespace-nowrap flex-shrink-0 mt-0.5 text-gray-500">{timeAgo(n.time)}</span>
@@ -322,9 +345,9 @@ export default function Header({ title, subtitle }) {
                   )}
                 </div>
                 {notifications.length > 0 && !notifLoading && (
-                  <div className="px-4 py-2.5 border-t text-center border-[#1e3a5f]">
+                  <div className={`px-4 py-2.5 border-t text-center ${notifFooterBorder}`}>
                     <button onClick={() => { navigate(user?.role === 'admin' ? '/admin/reports' : '/dashboard/reports'); setNotifOpen(false); }}
-                      className="text-xs font-semibold transition-colors text-blue-400 hover:text-blue-300">
+                      className={`text-xs font-semibold transition-colors ${notifFooterLink}`}>
                       Voir tous les rapports →
                     </button>
                   </div>
@@ -333,12 +356,12 @@ export default function Header({ title, subtitle }) {
             )}
           </div>
 
-          <div className="flex items-center gap-3 pl-4 border-l border-[#1e3a5f]">
+          <div className={`flex items-center gap-3 pl-4 border-l ${userBorderCls}`}>
             <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold bg-blue-600">
               {user?.name?.charAt(0) || 'U'}
             </div>
             <div className="hidden md:block">
-              <p className="text-sm font-medium text-gray-300">{user?.email}</p>
+              <p className={`text-sm font-medium ${userEmailCls}`}>{user?.email}</p>
               <p className="text-xs capitalize text-gray-500">{user?.role === 'admin' ? 'Administrateur' : 'Cabinet'}</p>
             </div>
           </div>

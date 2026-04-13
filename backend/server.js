@@ -18,7 +18,9 @@ app.use((req, res, next) => {
     'https://projetefficienceofficiel.onrender.com',
     'https://projetefficienceofficiel-mk01.onrender.com',
     'http://localhost:5173',
-    'http://localhost:5000'
+    'http://localhost:5000',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
   ];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -42,7 +44,9 @@ app.use(cors({
     'https://projetefficienceofficiel.onrender.com',
     'https://projetefficienceofficiel-mk01.onrender.com',
     'http://localhost:5173',
-    'http://localhost:5000'
+    'http://localhost:5000',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

@@ -19,18 +19,20 @@ function normalizeMois(m) {
   return m;
 }
 
-// Helper: Get monthly historique for a practitioner (last 6 months)
-async function getHistorique(practitionerCode) {
+// Helper: Get monthly historique for a practitioner up to targetMois (ascending order)
+async function getHistorique(practitionerCode, targetMois = null) {
+  const match = { praticien: practitionerCode };
+  if (targetMois) match.mois = { $lte: targetMois };
+
   const results = await AnalyseRealisation.aggregate([
-    { $match: { praticien: practitionerCode } },
+    { $match: match },
     { $group: {
       _id: '$mois',
       ca: { $sum: '$montantFacture' },
       encaisse: { $sum: '$montantEncaisse' },
       patients: { $sum: '$nbPatients' }
     }},
-    { $sort: { _id: -1 } },
-    { $limit: 6 }
+    { $sort: { _id: 1 } }  // ascendant : du plus ancien vers targetMois
   ]);
 
   // Also get RDV and heures for each month
@@ -48,7 +50,7 @@ async function getHistorique(practitionerCode) {
     });
   }
 
-  return enriched.reverse(); // oldest first
+  return enriched; // déjà trié ascendant
 }
 
 // Helper: Calculer les KPI d'un praticien pour un mois donné
@@ -131,7 +133,7 @@ router.post('/generate', auth, async (req, res) => {
 
     const kpi = await calculateKPI(practitionerCode, mois);
     const recommandations = generateRecommendations(kpi);
-    const historique = await getHistorique(practitionerCode);
+    const historique = await getHistorique(practitionerCode, mois);
 
     // Formater le mois pour l'affichage
     const moisFormate = mois.substring(0, 4) + '-' + mois.substring(4, 6);
@@ -204,7 +206,7 @@ router.post('/generate-all', auth, async (req, res) => {
       try {
         const kpi = await calculateKPI(p.practitionerCode, mois);
         const recommandations = generateRecommendations(kpi);
-        const historique = await getHistorique(p.practitionerCode);
+        const historique = await getHistorique(p.practitionerCode, mois);
         const moisFormate = mois.substring(0, 4) + '-' + mois.substring(4, 6);
 
         const reportData = {
@@ -299,7 +301,7 @@ router.post('/send', auth, async (req, res) => {
           recommandations: kpi.recommandations || []
         };
 
-        const historique = await getHistorique(report.praticien);
+        const historique = await getHistorique(report.praticien, mois);
         reportData.historique = historique;
         const pdfBuffer = await generatePDFReport(reportData);
 
@@ -355,7 +357,7 @@ router.post('/send-now', auth, async (req, res) => {
       try {
         const kpi = await calculateKPI(p.practitionerCode, mois);
         const recommandations = generateRecommendations(kpi);
-        const historique = await getHistorique(p.practitionerCode);
+        const historique = await getHistorique(p.practitionerCode, mois);
 
         const reportData = {
           praticien: p.practitionerCode,
@@ -534,7 +536,7 @@ router.get('/download/:id', auth, async (req, res) => {
     const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
     const moisLabel = report.mois ? `${months[parseInt(report.mois.substring(4, 6)) - 1]} ${report.mois.substring(0, 4)}` : '';
 
-    const historique = await getHistorique(report.praticien);
+    const historique = await getHistorique(report.praticien, report.mois);
 
     const reportData = {
       praticien: report.praticien,
