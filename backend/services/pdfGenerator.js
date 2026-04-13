@@ -49,8 +49,21 @@ async function generatePDFReport(data) {
     try {
       const pdfPromise = (async () => {
         browser = await puppeteer.launch({
-          headless: 'new',
-          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+          headless: true,
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--disable-gpu',
+            '--no-zygote',
+            '--single-process',
+            '--disable-extensions',
+            '--disable-background-networking',
+            '--disable-default-apps',
+            '--mute-audio',
+            '--no-first-run'
+          ]
         });
         const page = await browser.newPage();
         await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
