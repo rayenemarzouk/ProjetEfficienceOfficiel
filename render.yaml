@@ -3,15 +3,15 @@ services:
     name: efficience-analytics
     runtime: node
     rootDir: backend
-    buildCommand: npm install && npx puppeteer browsers install chrome
+    buildCommand: npm install
     startCommand: node server.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: PUPPETEER_ENABLED
-        value: "true"
-      - key: PUPPETEER_SKIP_DOWNLOAD
         value: "false"
+      - key: PUPPETEER_SKIP_DOWNLOAD
+        value: "true"
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
