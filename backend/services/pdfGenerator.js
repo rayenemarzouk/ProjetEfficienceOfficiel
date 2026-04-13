@@ -38,24 +38,33 @@ async function generatePDFReport(data) {
   // Try Puppeteer for real PDF
   if (puppeteer) {
     let browser;
+    const PUPPETEER_TIMEOUT = 25000; // 25s max
     try {
-      browser = await puppeteer.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-      });
-      const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'networkidle0' });
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: { top: '10mm', bottom: '10mm', left: '5mm', right: '5mm' }
-      });
-      return Buffer.from(pdfBuffer);
+      const pdfPromise = (async () => {
+        browser = await puppeteer.launch({
+          headless: 'new',
+          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        });
+        const page = await browser.newPage();
+        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
+        const pdfBuffer = await page.pdf({
+          format: 'A4',
+          printBackground: true,
+          margin: { top: '10mm', bottom: '10mm', left: '5mm', right: '5mm' }
+        });
+        return Buffer.from(pdfBuffer);
+      })();
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Puppeteer timeout')), PUPPETEER_TIMEOUT)
+      );
+
+      return await Promise.race([pdfPromise, timeoutPromise]);
     } catch (err) {
       console.error('Puppeteer PDF error, falling back to HTML:', err.message);
       return Buffer.from(html, 'utf-8');
     } finally {
-      if (browser) await browser.close();
+      if (browser) await browser.close().catch(() => {});
     }
   }
 

@@ -62,20 +62,27 @@ export default function Reports() {
     }
   };
 
+  const withTimeout = (promise, ms, label) => {
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`Délai dépassé pour : ${label}`)), ms)
+    );
+    return Promise.race([promise, timeout]);
+  };
+
   const handleGenerate = async () => {
     setGenerating(true);
     setMessage(null);
     try {
       if (selectedPractitioner) {
-        await generateReport(selectedPractitioner, selectedMonth);
+        await withTimeout(generateReport(selectedPractitioner, selectedMonth), 60000, 'génération rapport');
         setMessage({ type: 'success', text: `Rapport généré pour ${selectedPractitioner}` });
       } else {
-        const res = await generateAllReports(selectedMonth);
+        const res = await withTimeout(generateAllReports(selectedMonth), 120000, 'génération tous rapports');
         setMessage({ type: 'success', text: res.data.message });
       }
       await fetchData();
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Erreur' });
+      setMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Erreur lors de la génération' });
     } finally {
       setGenerating(false);
     }
@@ -85,7 +92,7 @@ export default function Reports() {
     setSending(true);
     setMessage(null);
     try {
-      const res = await sendReports(selectedMonth);
+      const res = await withTimeout(sendReports(selectedMonth), 120000, 'envoi rapports');
       setMessage({ type: 'success', text: res.data.message });
       await fetchData();
     } catch (err) {
@@ -99,11 +106,11 @@ export default function Reports() {
     setSendingNow(true);
     setMessage(null);
     try {
-      const res = await sendReportsNow(selectedMonth);
+      const res = await withTimeout(sendReportsNow(selectedMonth), 180000, 'génération + envoi rapports');
       setMessage({ type: 'success', text: res.data.message });
       await fetchData();
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Erreur lors de l\'envoi' });
+      setMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Erreur lors de l\'envoi' });
     } finally {
       setSendingNow(false);
     }
