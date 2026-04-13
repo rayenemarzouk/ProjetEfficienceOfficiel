@@ -167,9 +167,9 @@ export default function Header({ title, subtitle }) {
     error: { icon: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/30' },
   };
 
-  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const isRayan = user?.email === 'maarzoukrayan3@gmail.com' || user?.email === 'younis@efficience.fr';
 
-  // Styles conditionnels selon l'utilisateur (Rayan garde son thème sombre)
+  // Styles conditionnels selon l'utilisateur (Rayan et Younis gardent le thème sombre)
   const headerBg = isRayan ? 'bg-[#0f1d2f] border-b border-[#1e3a5f]/50' : 'bg-white border-b border-gray-200 shadow-sm';
   const titleCls = isRayan ? 'text-white' : 'text-gray-900';
   const subtitleCls = isRayan ? 'text-gray-400' : 'text-gray-500';
