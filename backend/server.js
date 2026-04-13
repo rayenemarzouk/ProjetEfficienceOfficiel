@@ -115,6 +115,9 @@ const server = app.listen(PORT, () => {
   console.log(`Serveur Efficience Analytics démarré sur le port ${PORT}`);
 });
 
+// Timeout 120s pour les requêtes longues (génération rapports)
+server.setTimeout(120000);
+
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
     console.error(`⚠️ Le port ${PORT} est déjà utilisé. Arrêtez l'autre processus ou changez le port.`);
