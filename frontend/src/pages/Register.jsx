@@ -57,7 +57,7 @@ export default function Register() {
       });
       
       // Afficher message de succès
-      setSuccess('🎉 Félicitations ! Votre compte a été créé avec succès.');
+      setSuccess('Inscription enregistrée. Votre compte est en attente de validation par un administrateur. Vous recevrez un accès une fois validé.');
       setForm({ name: '', email: '', password: '', confirmPassword: '', cabinetName: '', practitionerCode: '' });
       
       // Rediriger vers la page de connexion après 3 secondes

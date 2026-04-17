@@ -1,3 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 32" width="220" height="32">
-  <text x="0" y="24" font-family="Arial Black, Arial, sans-serif" font-size="22" font-weight="900" fill="#1e3a8a" letter-spacing="2">EFFICIENCE</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 26" width="180" height="26">
+  <!-- E1 : 3 barres horizontales, calées sur la hauteur des capitales (font-size 18, baseline y=22, cap-height ~13px → top y=9) -->
+  <rect x="0"   y="9"    width="12" height="3.5" fill="currentColor"/>
+  <rect x="0"   y="14.5" width="12" height="3.5" fill="currentColor"/>
+  <rect x="0"   y="19"   width="12" height="3.5" fill="currentColor"/>
+
+  <!-- FFICI -->
+  <text x="15" y="22" font-family="Arial Black, Arial, sans-serif" font-size="18" font-weight="900" fill="currentColor">FFICI</text>
+
+  <!-- E2 -->
+  <rect x="79"  y="9"    width="12" height="3.5" fill="currentColor"/>
+  <rect x="79"  y="14.5" width="12" height="3.5" fill="currentColor"/>
+  <rect x="79"  y="19"   width="12" height="3.5" fill="currentColor"/>
+
+  <!-- NC -->
+  <text x="94" y="22" font-family="Arial Black, Arial, sans-serif" font-size="18" font-weight="900" fill="currentColor">NC</text>
+
+  <!-- E3 -->
+  <rect x="126" y="9"    width="12" height="3.5" fill="currentColor"/>
+  <rect x="126" y="14.5" width="12" height="3.5" fill="currentColor"/>
+  <rect x="126" y="19"   width="12" height="3.5" fill="currentColor"/>
 </svg>

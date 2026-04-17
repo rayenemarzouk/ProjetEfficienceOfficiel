@@ -129,7 +129,7 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Un compte avec cet email existe déjà.' });
     }
 
-    // Create user — actif immédiatement, pas de vérification requise
+    // Create user — inactif par défaut, validation admin requise
     const user = await User.create({
       name,
       email: email.toLowerCase(),
@@ -137,31 +137,14 @@ router.post('/register', async (req, res) => {
       cabinetName: cabinetName || 'Cabinet Dentaire',
       practitionerCode: practitionerCode || null,
       role: 'practitioner',
-      isActive: true,
-      isVerified: true
+      isActive: false,
+      isVerified: false
     });
 
-    // Générer un token JWT pour connexion immédiate
-    const token = jwt.sign(
-      { id: user._id, role: user.role, practitionerCode: user.practitionerCode },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    // Répondre immédiatement au client
+    // Aucun token retourné — le compte doit être activé par un admin avant connexion
     res.status(201).json({
-      message: 'Inscription réussie ! Bienvenue sur Efficience Analytics.',
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        practitionerCode: user.practitionerCode,
-        cabinetName: user.cabinetName
-      }
+      message: 'Inscription enregistrée. Votre compte est en attente de validation par un administrateur.'
     });
-    // (Optionnel) Ajoutez ici la notification email admin si besoin
   } catch (error) {
     console.error('Erreur inscription:', error);
     res.status(500).json({ message: "Erreur lors de l'inscription. Veuillez réessayer." });
