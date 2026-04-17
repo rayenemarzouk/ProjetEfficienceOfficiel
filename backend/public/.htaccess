@@ -1,13 +1,16 @@
-# MIME Types pour JavaScript modules
-<IfModule mod_mime.c>
-    AddType application/javascript .js .mjs
-    AddType text/css .css
-</IfModule>
+# MIME Types pour JavaScript modules - OBLIGATOIRE
+AddType application/javascript .js .mjs
+AddType text/javascript .js
+AddType text/css .css
+AddType image/svg+xml .svg
 
-# Désactiver le cache pour le développement (optionnel)
+# Headers pour les fichiers JS et CSS
 <IfModule mod_headers.c>
-    <FilesMatch "\.(js|css)$">
-        Header set Cache-Control "no-cache, no-store, must-revalidate"
+    <FilesMatch "\.(js|mjs)$">
+        Header set Content-Type "application/javascript"
+    </FilesMatch>
+    <FilesMatch "\.css$">
+        Header set Content-Type "text/css"
     </FilesMatch>
 </IfModule>
 
@@ -16,11 +19,14 @@
     RewriteEngine On
     RewriteBase /
     
-    # Ne pas réécrire les fichiers existants
+    # Ne pas réécrire les fichiers/dossiers existants
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
     
-    # Rediriger tout le reste vers index.html
+    # Tout le reste va vers index.html
     RewriteRule ^ index.html [L]
 </IfModule>
+
+# Empêcher l'affichage des erreurs PHP
+php_flag display_errors off
