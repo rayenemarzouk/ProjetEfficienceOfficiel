@@ -24,12 +24,14 @@ export default function Comparison() {
   const chartGridColor = (dark && !isRayan) ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)';
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
   const [period, setPeriod] = useState({ period: 'last_year' });
   const barChartRef = useRef(null);
   const doughnutChartRef = useRef(null);
   const { isDynamic: _isDynamic, dataAccessEnabled } = useDynamic();
   const isDynamic = isRayan || _isDynamic; // Rayan toujours dynamique
-  const showAI = dataAccessEnabled || isRayan;
+  const isAdmin = user?.role === 'admin';
+  const showAI = dataAccessEnabled || isRayan || isAdmin;
 
   // Helper pour calculer les dates de début/fin basées sur la période
   const getPeriodDates = useCallback((periodObj) => {
@@ -115,8 +117,10 @@ export default function Comparison() {
       try {
         const res = await getAdminDashboard();
         setData(res.data);
+        setError(null);
       } catch (err) {
         console.error(err);
+        setError('Impossible de charger les données. Vérifiez votre connexion.');
       } finally {
         setLoading(false);
       }
@@ -128,6 +132,17 @@ export default function Comparison() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p className="text-red-500 font-semibold mb-2">{error}</p>
+          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">Réessayer</button>
+        </div>
       </div>
     );
   }

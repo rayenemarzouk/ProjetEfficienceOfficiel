@@ -43,17 +43,17 @@ export default function Reports() {
 
   const fetchData = async () => {
     try {
-      const [reportsRes, dashRes, monthsRes] = await Promise.all([
+      const [reportsResult, dashResult, monthsResult] = await Promise.allSettled([
         getReportsList(),
         getAdminDashboard(),
         getAvailableMonths()
       ]);
-      setReports(reportsRes.data);
-      setPractitioners(dashRes.data.practitioners || []);
-      const months = monthsRes.data || [];
-      setAvailableMonths(months);
-      if (months.length > 0 && !selectedMonth) {
-        setSelectedMonth(months[0].value);
+      if (reportsResult.status === 'fulfilled') setReports(reportsResult.value.data);
+      if (dashResult.status === 'fulfilled') setPractitioners(dashResult.value.data.practitioners || []);
+      if (monthsResult.status === 'fulfilled') {
+        const months = monthsResult.value.data || [];
+        setAvailableMonths(months);
+        if (months.length > 0 && !selectedMonth) setSelectedMonth(months[0].value);
       }
     } catch (err) {
       console.error(err);
