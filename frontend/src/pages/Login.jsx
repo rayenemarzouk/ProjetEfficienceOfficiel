@@ -104,7 +104,7 @@ export default function Login() {
           {/* Header */}
           <div className="mb-10">
             <h2 className="text-3xl font-black text-gray-900 tracking-tight">
-              PRO ET EFFICACE !<br /><span className="text-blue-500">Connectez-vous</span>
+              <span className="text-blue-500">Connectez-vous</span>
             </h2>
           </div>
 
@@ -124,14 +124,7 @@ export default function Login() {
             </div>
           )}
 
-          {/* Dental badge */}
-          <div className="flex items-center gap-3 mb-6 p-3 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl border border-blue-100">
-            <img src="/dental-logo.svg" alt="Dentaire" className="w-10 h-10" />
-            <div>
-              <p className="text-sm font-bold text-gray-800">Santé & Dentaire</p>
-              <p className="text-[10px] text-gray-400">Plateforme de gestion de cabinet</p>
-            </div>
-          </div>
+
 
           {/* Form - autocomplete désactivé pour sécurité */}
           <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
