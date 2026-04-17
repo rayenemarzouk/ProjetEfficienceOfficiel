@@ -63,6 +63,10 @@ export default function Login() {
         <div className="absolute bottom-1/4 right-0 w-56 h-56 bg-blue-500 rounded-full opacity-5 blur-3xl"></div>
 
         <div className="relative z-10">
+          {/* Logo */}
+          <div className="mb-8">
+            <img src="/efficience-logo.svg" alt="Efficience" className="h-10" style={{ filter: 'brightness(0) invert(1)' }} />
+          </div>
           {/* Main title */}
           <h1 className="text-5xl xl:text-6xl font-black text-white leading-tight mb-6" style={{ fontStyle: 'italic' }}>
             EFFICIENCE<br />
@@ -103,6 +107,7 @@ export default function Login() {
         <div className="w-full max-w-md px-8 py-12">
           {/* Header */}
           <div className="mb-10">
+            <p className="text-sm font-medium text-gray-400 mb-1">Bienvenue de nouveau</p>
             <h2 className="text-3xl font-black text-gray-900 tracking-tight">
               <span className="text-blue-500">Connectez-vous</span>
             </h2>
