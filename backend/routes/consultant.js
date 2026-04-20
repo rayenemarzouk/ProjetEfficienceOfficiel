@@ -69,9 +69,9 @@ function getDateRangeFilter(period, startDate, endDate) {
       end = now;
   }
   
-  // Convertir en format YYYYMM pour les requêtes
-  const startMois = `${start.getFullYear()}${String(start.getMonth() + 1).padStart(2, '0')}`;
-  const endMois = `${end.getFullYear()}${String(end.getMonth() + 1).padStart(2, '0')}`;
+  // Convertir en format YYYYMM01 / YYYYMM31 pour correspondre au format des données en DB (YYYYMMDD)
+  const startMois = `${start.getFullYear()}${String(start.getMonth() + 1).padStart(2, '0')}01`;
+  const endMois = `${end.getFullYear()}${String(end.getMonth() + 1).padStart(2, '0')}31`;
   
   return { start, end, startMois, endMois };
 }
