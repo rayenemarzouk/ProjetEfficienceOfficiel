@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
-import { getAdminPractitioners, adminManualEntry } from '../../services/api';
-import { CheckCircleIcon, ExclamationCircleIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { getAdminPractitioners, adminManualEntry, addPractitioner } from '../../services/api';
+import {
+  CheckCircleIcon, ExclamationCircleIcon, PencilSquareIcon,
+  UserPlusIcon, ChevronDownIcon, ChevronUpIcon
+} from '@heroicons/react/24/outline';
 
 const generateMonthOptions = () => {
   const options = [];
@@ -16,19 +19,19 @@ const generateMonthOptions = () => {
 };
 
 const EMPTY_FORM = {
-  praticien: '',
-  mois: '',
-  caFacture: '',
-  caEncaisse: '',
-  nbPatients: '',
-  nouveauxPatients: '',
-  totalRdv: '',
-  heuresTravaillees: ''
+  praticien: '', mois: '', caFacture: '', caEncaisse: '',
+  nbPatients: '', nouveauxPatients: '', totalRdv: '', heuresTravaillees: ''
 };
 
-const Field = ({ label, ...props }) => (
+const EMPTY_NEW_PRAT = {
+  name: '', practitionerCode: '', cabinetName: '', email: '', password: ''
+};
+
+const Field = ({ label, required, ...props }) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
     <input
       className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
       {...props}
@@ -36,34 +39,62 @@ const Field = ({ label, ...props }) => (
   </div>
 );
 
+const Alert = ({ type, message }) => (
+  <div className={`flex items-center gap-3 p-4 rounded-xl border text-sm font-medium ${
+    type === 'success'
+      ? 'bg-green-50 border-green-200 text-green-700'
+      : 'bg-red-50 border-red-200 text-red-700'
+  }`}>
+    {type === 'success'
+      ? <CheckCircleIcon className="w-5 h-5 flex-shrink-0" />
+      : <ExclamationCircleIcon className="w-5 h-5 flex-shrink-0" />
+    }
+    {message}
+  </div>
+);
+
 export default function AdminSaisieData() {
   const [practitioners, setPractitioners] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState(null); // 'success' | 'error'
+
+  // Formulaire saisie données
   const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState(null);
+
+  // Formulaire nouveau praticien
+  const [showAddPrat, setShowAddPrat] = useState(false);
+  const [newPrat, setNewPrat] = useState(EMPTY_NEW_PRAT);
+  const [addingPrat, setAddingPrat] = useState(false);
+  const [addPratStatus, setAddPratStatus] = useState(null);
+
   const monthOptions = generateMonthOptions();
 
+  const loadPractitioners = async () => {
+    try {
+      const res = await getAdminPractitioners();
+      const list = res.data.practitioners || [];
+      setPractitioners(list);
+      return list;
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
+  };
+
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await getAdminPractitioners();
-        const list = res.data.practitioners || [];
-        setPractitioners(list);
-        if (list.length > 0) {
-          setForm(f => ({
-            ...f,
-            praticien: list[0].practitionerCode,
-            mois: monthOptions[1]?.value || ''
-          }));
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+    const init = async () => {
+      const list = await loadPractitioners();
+      if (list.length > 0) {
+        setForm(f => ({
+          ...f,
+          praticien: list[0].practitionerCode,
+          mois: monthOptions[1]?.value || ''
+        }));
       }
+      setLoading(false);
     };
-    fetch();
+    init();
   }, []);
 
   const handleChange = (field, value) => {
@@ -76,13 +107,37 @@ export default function AdminSaisieData() {
     try {
       setSaving(true);
       await adminManualEntry(form);
-      setStatus('success');
+      setStatus({ type: 'success', message: 'Données enregistrées avec succès !' });
       setForm(f => ({ ...EMPTY_FORM, praticien: f.praticien, mois: f.mois }));
     } catch (err) {
       console.error(err);
-      setStatus('error');
+      setStatus({ type: 'error', message: "Erreur lors de l'enregistrement. Vérifiez les données." });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleNewPratChange = (field, value) => {
+    setNewPrat(p => ({ ...p, [field]: value }));
+    setAddPratStatus(null);
+  };
+
+  const handleAddPraticien = async (e) => {
+    e.preventDefault();
+    try {
+      setAddingPrat(true);
+      const res = await addPractitioner(newPrat);
+      const created = res.data.practitioner;
+      await loadPractitioners();
+      setForm(f => ({ ...f, praticien: created.practitionerCode }));
+      setAddPratStatus({ type: 'success', message: `Praticien « ${created.practitionerName} » ajouté et sélectionné !` });
+      setNewPrat(EMPTY_NEW_PRAT);
+      setTimeout(() => { setShowAddPrat(false); setAddPratStatus(null); }, 2500);
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Erreur lors de la création du praticien.';
+      setAddPratStatus({ type: 'error', message: msg });
+    } finally {
+      setAddingPrat(false);
     }
   };
 
@@ -99,7 +154,71 @@ export default function AdminSaisieData() {
         </div>
       </div>
 
-      {/* Formulaire */}
+      {/* ── Bloc ajout praticien ─────────────────────────────────── */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => { setShowAddPrat(v => !v); setAddPratStatus(null); }}
+          className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+              <UserPlusIcon className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-semibold text-gray-800">Ajouter un nouveau praticien</p>
+              <p className="text-xs text-gray-500">Créez un compte praticien — il apparaîtra dans les filtres et graphes</p>
+            </div>
+          </div>
+          {showAddPrat
+            ? <ChevronUpIcon className="w-4 h-4 text-gray-400" />
+            : <ChevronDownIcon className="w-4 h-4 text-gray-400" />
+          }
+        </button>
+
+        {showAddPrat && (
+          <div className="border-t border-gray-100 px-6 pb-6 pt-5">
+            {addPratStatus && <div className="mb-5"><Alert type={addPratStatus.type} message={addPratStatus.message} /></div>}
+            <form onSubmit={handleAddPraticien} className="space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <Field label="Nom complet" required placeholder="Dr. Jean Dupont"
+                  value={newPrat.name} onChange={e => handleNewPratChange('name', e.target.value)} />
+                <Field label="Code praticien" required placeholder="ex: JD"
+                  value={newPrat.practitionerCode}
+                  onChange={e => handleNewPratChange('practitionerCode', e.target.value.toUpperCase())} />
+                <Field label="Nom du cabinet" placeholder="Cabinet Dentaire Paris"
+                  value={newPrat.cabinetName} onChange={e => handleNewPratChange('cabinetName', e.target.value)} />
+                <Field label="Email" required type="email" placeholder="jean.dupont@exemple.fr"
+                  value={newPrat.email} onChange={e => handleNewPratChange('email', e.target.value)} />
+              </div>
+              <Field label="Mot de passe" required type="password" placeholder="Mot de passe du compte"
+                value={newPrat.password} onChange={e => handleNewPratChange('password', e.target.value)} />
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  type="submit"
+                  disabled={addingPrat || !newPrat.name || !newPrat.practitionerCode || !newPrat.email || !newPrat.password}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-semibold rounded-xl text-sm transition"
+                >
+                  {addingPrat ? (
+                    <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Création...</>
+                  ) : (
+                    <><UserPlusIcon className="w-4 h-4" />Créer le praticien</>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setNewPrat(EMPTY_NEW_PRAT); setAddPratStatus(null); }}
+                  className="px-5 py-2.5 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-xl text-sm transition"
+                >
+                  Réinitialiser
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+      </div>
+
+      {/* ── Formulaire saisie données ────────────────────────────── */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -107,20 +226,7 @@ export default function AdminSaisieData() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-7">
-
-            {/* Feedback */}
-            {status === 'success' && (
-              <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700">
-                <CheckCircleIcon className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm font-medium">Données enregistrées avec succès !</span>
-              </div>
-            )}
-            {status === 'error' && (
-              <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
-                <ExclamationCircleIcon className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm font-medium">Erreur lors de l'enregistrement. Vérifiez les données.</span>
-              </div>
-            )}
+            {status && <Alert type={status.type} message={status.message} />}
 
             {/* Praticien + Mois */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -129,8 +235,7 @@ export default function AdminSaisieData() {
                   Praticien <span className="text-red-500">*</span>
                 </label>
                 <select
-                  required
-                  value={form.praticien}
+                  required value={form.praticien}
                   onChange={e => handleChange('praticien', e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                 >
@@ -148,8 +253,7 @@ export default function AdminSaisieData() {
                   Mois <span className="text-red-500">*</span>
                 </label>
                 <select
-                  required
-                  value={form.mois}
+                  required value={form.mois}
                   onChange={e => handleChange('mois', e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                 >
@@ -194,15 +298,9 @@ export default function AdminSaisieData() {
                 className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold rounded-xl text-sm transition"
               >
                 {saving ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    Enregistrement...
-                  </>
+                  <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Enregistrement...</>
                 ) : (
-                  <>
-                    <PencilSquareIcon className="w-4 h-4" />
-                    Enregistrer
-                  </>
+                  <><PencilSquareIcon className="w-4 h-4" />Enregistrer</>
                 )}
               </button>
               <button

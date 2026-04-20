@@ -97,5 +97,6 @@ export const consultantManualEntry = (data) => api.post('/consultant/manual-entr
 // Admin — saisie manuelle
 export const getAdminPractitioners = () => api.get('/admin/practitioners');
 export const adminManualEntry = (data) => api.post('/admin/manual-entry', data);
+export const addPractitioner = (data) => api.post('/admin/add-practitioner', data);
 
 export default api;

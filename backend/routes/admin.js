@@ -778,4 +778,47 @@ router.get('/practitioners', auth, adminOnly, async (req, res) => {
   }
 });
 
+// POST /api/admin/add-practitioner — Ajouter un nouveau praticien
+router.post('/add-practitioner', auth, adminOnly, async (req, res) => {
+  try {
+    const { name, practitionerCode, cabinetName, email, password } = req.body;
+    if (!name || !practitionerCode || !email || !password) {
+      return res.status(400).json({ message: 'Nom, code, email et mot de passe requis.' });
+    }
+
+    // Vérifier si email ou code déjà existant
+    const existing = await User.findOne({ $or: [{ email: email.toLowerCase() }, { practitionerCode }] });
+    if (existing) {
+      if (existing.email === email.toLowerCase()) {
+        return res.status(409).json({ message: 'Un compte avec cet email existe déjà.' });
+      }
+      return res.status(409).json({ message: `Le code praticien "${practitionerCode}" est déjà utilisé.` });
+    }
+
+    const newUser = await User.create({
+      name,
+      practitionerCode: practitionerCode.toUpperCase(),
+      cabinetName: cabinetName || 'Cabinet Dentaire',
+      email: email.toLowerCase(),
+      password,
+      role: 'practitioner',
+      isActive: true,
+      isVerified: true
+    });
+
+    res.status(201).json({
+      message: `Praticien "${name}" créé avec succès.`,
+      practitioner: {
+        practitionerCode: newUser.practitionerCode,
+        practitionerName: newUser.name,
+        cabinetName: newUser.cabinetName,
+        email: newUser.email
+      }
+    });
+  } catch (error) {
+    console.error('Erreur ajout praticien:', error);
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
 module.exports = router;
