@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
-import { getSettings, updateSettings, impersonateUser, deactivateSendCode, deactivateConfirm, aiToggleSendCode, aiToggleConfirm } from '../../services/api';
+import { getSettings, updateSettings, impersonateUser, deactivateSendCode, deactivateConfirm, aiToggleSendCode, aiToggleConfirm, toggleUserAccess } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useAppSettings } from '../../context/AppSettingsContext';
 import { useDynamic } from '../../context/DynamicContext';
@@ -58,11 +58,18 @@ export default function Settings() {
   const [aiError, setAiError] = useState(null);
   const [dynamicExpiresAt, setDynamicExpiresAt] = useState(null);
 
+  // ═══ Contrôles d'Accès state (Rayan only) ═══
+  const [younisActive, setYounisActive] = useState(true);
+  const [togglingYounis, setTogglingYounis] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await getSettings();
         setUsers(res.data.users || []);
+        // Initialiser l'état d'accès Younis
+        const younisUser = (res.data.users || []).find(u => u.email === 'younis@efficience.fr');
+        if (younisUser) setYounisActive(younisUser.isActive !== false);
         if (res.data.appSettings) {
           setAutoGeneration(res.data.appSettings.autoGeneration);
           setAutoEmail(res.data.appSettings.autoEmail);
@@ -94,9 +101,26 @@ export default function Settings() {
     setTimeout(() => setToast(null), 2500);
   };
 
+  // ═══ Handler : Bloquer/Débloquer Younis ═══
+  const handleToggleYounisAccess = async () => {
+    setTogglingYounis(true);
+    try {
+      const res = await toggleUserAccess('younis@efficience.fr');
+      setYounisActive(res.data.isActive);
+      setUsers(prev => prev.map(u =>
+        u.email === 'younis@efficience.fr' ? { ...u, isActive: res.data.isActive } : u
+      ));
+      showToast(res.data.message);
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Erreur lors du changement d\'accès.');
+    } finally {
+      setTogglingYounis(false);
+    }
+  };
+
   const handleToggle = async (field) => {
     const stateMap = { 
-      autoGeneration, autoEmail, maintenanceMode, importEnabled,
+      autoGeneration, autoEmail, maintenanceMode, importEnabled, aiModelsEnabled,
       chartsEnabled, alertsEnabled, animationsEnabled, forecastEnabled,
       scoresEnabled, statsCardsEnabled, trendLinesEnabled, kpisEnabled
     };
@@ -105,6 +129,7 @@ export default function Settings() {
       autoEmail: setAutoEmail,
       maintenanceMode: setMaintenanceMode,
       importEnabled: setImportEnabled,
+      aiModelsEnabled: setAiModelsEnabled,
       chartsEnabled: setChartsEnabled,
       alertsEnabled: setAlertsEnabled,
       animationsEnabled: setAnimationsEnabled,
@@ -588,6 +613,92 @@ export default function Settings() {
             )}
           </div>
         </div>
+
+        {/* ═══ Contrôles d'Accès (Rayan uniquement) ═══ */}
+        {isRayan && (
+        <div className={`${cardCls} rounded-2xl overflow-hidden mb-8 transition-colors`}>
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-red-800/40 flex items-center justify-between bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-lg">
+                <FiLock className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Contrôles d’Accès</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Bloquer l’accès utilisateurs et les modèles IA</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-6 flex flex-col gap-4">
+
+            {/* Toggle Younis */}
+            <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+              !younisActive ? 'bg-red-50 dark:bg-red-900/10 border-red-300 dark:border-red-700' : 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${!younisActive ? 'bg-red-100 dark:bg-red-900/40' : 'bg-green-100 dark:bg-green-900/40'}`}>
+                  <FiUser className={`w-4 h-4 ${!younisActive ? 'text-red-600' : 'text-green-600'}`} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Accès Younis</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">younis@efficience.fr &mdash; {younisActive ? 'Compte actif' : 'Compte bloqué'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                  younisActive ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                }`}>
+                  {younisActive ? 'ACTIF' : 'BLOQUÉ'}
+                </span>
+                <button
+                  onClick={handleToggleYounisAccess}
+                  disabled={togglingYounis}
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${
+                    younisActive ? 'bg-green-500' : 'bg-red-500'
+                  } disabled:opacity-50`}
+                >
+                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
+                    younisActive ? 'translate-x-[22px]' : 'translate-x-1'
+                  }`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Toggle AI Models */}
+            <div className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+              !aiModelsEnabled ? 'bg-red-50 dark:bg-red-900/10 border-red-300 dark:border-red-700' : 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${!aiModelsEnabled ? 'bg-red-100 dark:bg-red-900/40' : 'bg-green-100 dark:bg-green-900/40'}`}>
+                  <FiCpu className={`w-4 h-4 ${!aiModelsEnabled ? 'text-red-600' : 'text-green-600'}`} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Modèles IA</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Calculs prédictifs et scores — {aiModelsEnabled ? 'Activés' : 'Désactivés'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                  aiModelsEnabled ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                }`}>
+                  {aiModelsEnabled ? 'ACTIF' : 'BLOQUÉ'}
+                </span>
+                <button
+                  onClick={() => handleToggle('aiModelsEnabled')}
+                  disabled={saving}
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${
+                    aiModelsEnabled ? 'bg-green-500' : 'bg-red-500'
+                  } disabled:opacity-50`}
+                >
+                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
+                    aiModelsEnabled ? 'translate-x-[22px]' : 'translate-x-1'
+                  }`} />
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        )}
 
         {/* ═══ UI Controls (Rayan uniquement) — Contrôle visuel ═══ */}
         {isRayan && (

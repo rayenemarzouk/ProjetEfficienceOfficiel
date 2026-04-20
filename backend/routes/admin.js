@@ -821,6 +821,26 @@ router.post('/add-practitioner', auth, adminOnly, async (req, res) => {
   }
 });
 
+// PUT /api/admin/toggle-user-access/:email — Bloquer/débloquer un compte utilisateur (Rayan uniquement)
+router.put('/toggle-user-access/:email', auth, adminOnly, async (req, res) => {
+  try {
+    const email = decodeURIComponent(req.params.email).toLowerCase();
+    // Sécurité : ne pas permettre de se bloquer soi-même
+    if (email === 'maarzoukrayan3@gmail.com') {
+      return res.status(403).json({ message: 'Impossible de bloquer ce compte.' });
+    }
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'Utilisateur introuvable.' });
+    user.isActive = !user.isActive;
+    await user.save();
+    const action = user.isActive ? 'réactivé' : 'bloqué';
+    res.json({ message: `Compte "${user.name}" ${action} avec succès.`, isActive: user.isActive });
+  } catch (error) {
+    console.error('Erreur toggle user access:', error);
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
 // DELETE /api/admin/delete-practitioner/:code — Supprimer (désactiver) un praticien
 router.delete('/delete-practitioner/:code', auth, adminOnly, async (req, res) => {
   try {
