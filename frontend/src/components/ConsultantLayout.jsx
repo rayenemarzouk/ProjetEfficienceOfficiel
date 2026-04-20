@@ -70,7 +70,12 @@ export default function ConsultantLayout({ children }) {
     );
   };
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => {
+    if (path === '/consultant/dashboard') {
+      return location.pathname === '/consultant/dashboard' || location.pathname === '/consultant';
+    }
+    return location.pathname === path;
+  };
   const isSubActive = (subItems) => subItems?.some(item => location.pathname === item.path);
 
   return (

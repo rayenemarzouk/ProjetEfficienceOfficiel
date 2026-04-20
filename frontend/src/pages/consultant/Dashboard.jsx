@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getConsultantDashboard } from '../../services/api';
 import PeriodFilter from '../../components/PeriodFilter';
@@ -110,21 +110,39 @@ export default function ConsultantDashboard() {
     fetchDashboard();
   }, [period, selectedCabinets]);
 
+  // Agrégation mensuelle depuis caMensuel (structure: { _id: { praticien, mois }, totalFacture, totalEncaisse })
+  const fmtMois = (m) => {
+    const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    return `${months[parseInt(m.substring(4,6))-1]} ${m.substring(2,4)}`;
+  };
+
+  const monthlyEvolution = useMemo(() => {
+    const byMonth = {};
+    (data?.caMensuel || []).forEach(item => {
+      const mois = item._id?.mois;
+      if (!mois) return;
+      if (!byMonth[mois]) byMonth[mois] = { mois, totalCA: 0, totalEncaisse: 0 };
+      byMonth[mois].totalCA += item.totalFacture || 0;
+      byMonth[mois].totalEncaisse += item.totalEncaisse || 0;
+    });
+    return Object.values(byMonth).sort((a, b) => a.mois.localeCompare(b.mois));
+  }, [data]);
+
   // Chart configurations
   const evolutionChartData = {
-    labels: data?.monthlyEvolution?.map(m => m.month) || [],
+    labels: monthlyEvolution.map(m => fmtMois(m.mois)),
     datasets: [
       {
-        label: 'CA Réalisé',
-        data: data?.monthlyEvolution?.map(m => m.totalCA) || [],
+        label: 'CA Facturé',
+        data: monthlyEvolution.map(m => m.totalCA),
         borderColor: '#3b82f6',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         fill: true,
         tension: 0.4
       },
       {
-        label: 'Objectif',
-        data: data?.monthlyEvolution?.map(m => m.totalObjectif) || [],
+        label: 'CA Encaissé',
+        data: monthlyEvolution.map(m => m.totalEncaisse),
         borderColor: '#10b981',
         backgroundColor: 'transparent',
         borderDash: [5, 5],
@@ -134,15 +152,15 @@ export default function ConsultantDashboard() {
   };
 
   const cabinetBarData = {
-    labels: data?.cabinetPerformance?.slice(0, 10).map(c => c.practitionerName) || [],
+    labels: (data?.performanceParCabinet || []).slice(0, 10).map(c => c.praticienNom || c.praticien),
     datasets: [{
-      label: 'Taux de réalisation (%)',
-      data: data?.cabinetPerformance?.slice(0, 10).map(c => c.tauxRealisation) || [],
-      backgroundColor: data?.cabinetPerformance?.slice(0, 10).map(c => 
-        c.tauxRealisation >= 100 ? '#10b981' : 
-        c.tauxRealisation >= 80 ? '#3b82f6' : 
-        c.tauxRealisation >= 60 ? '#f59e0b' : '#ef4444'
-      ) || []
+      label: 'Score de performance (%)',
+      data: (data?.performanceParCabinet || []).slice(0, 10).map(c => c.score),
+      backgroundColor: (data?.performanceParCabinet || []).slice(0, 10).map(c =>
+        c.score >= 85 ? '#10b981' :
+        c.score >= 70 ? '#3b82f6' :
+        c.score >= 50 ? '#f59e0b' : '#ef4444'
+      )
     }]
   };
 
@@ -195,30 +213,30 @@ export default function ConsultantDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
         <KpiCard
           title="Taux Moyen de Réalisation"
-          value={`${(data?.globalMetrics?.tauxMoyenRealisation || 0).toFixed(1)}%`}
+          value={`${(data?.kpis?.performanceMoyenne || 0).toFixed(1)}%`}
           icon={ChartBarIcon}
           color="yellow"
-          trend={data?.globalMetrics?.tauxMoyenRealisation >= 80 ? 'up' : 'down'}
-          trendValue={data?.globalMetrics?.tauxMoyenRealisation >= 80 ? 'Objectif atteint' : 'Sous objectif'}
+          trend={data?.kpis?.performanceMoyenne >= 70 ? 'up' : 'down'}
+          trendValue={data?.kpis?.performanceMoyenne >= 70 ? 'Objectif atteint' : 'Sous objectif'}
         />
         <KpiCard
           title="Cabinets à surveiller"
-          value={data?.cabinetPerformance?.filter(c => c.tauxRealisation < 80).length || 0}
+          value={(data?.performanceParCabinet || []).filter(c => c.score < 70).length}
           icon={ExclamationTriangleIcon}
           color={
-            (data?.cabinetPerformance?.filter(c => c.tauxRealisation < 80).length || 0) === 0
+            (data?.performanceParCabinet || []).filter(c => c.score < 70).length === 0
               ? 'green'
               : 'pink'
           }
           trend={
-            (data?.cabinetPerformance?.filter(c => c.tauxRealisation < 80).length || 0) === 0
+            (data?.performanceParCabinet || []).filter(c => c.score < 70).length === 0
               ? 'up'
               : 'down'
           }
           trendValue={
-            (data?.cabinetPerformance?.filter(c => c.tauxRealisation < 80).length || 0) === 0
+            (data?.performanceParCabinet || []).filter(c => c.score < 70).length === 0
               ? 'Tous à l\'objectif'
-              : 'En dessous de 80%'
+              : 'En dessous de 70%'
           }
         />
       </div>
@@ -252,57 +270,55 @@ export default function ConsultantDashboard() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Cabinet</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">CA Réalisé</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Objectif</th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Taux</th>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">CA Facturé</th>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">CA Encaissé</th>
+                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Score</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Nouveaux Patients</th>
                 <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Performance</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {data?.cabinetPerformance?.map((cabinet, index) => (
-                <tr key={cabinet.practitionerCode} className="hover:bg-gray-50">
+              {(data?.performanceParCabinet || []).map((cabinet, index) => (
+                <tr key={cabinet.praticien} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div>
-                      <p className="font-medium text-gray-900">{cabinet.practitionerName}</p>
-                      <p className="text-xs text-gray-500">{cabinet.practitionerCode}</p>
+                      <p className="font-medium text-gray-900">{cabinet.praticienNom || cabinet.praticien}</p>
+                      <p className="text-xs text-gray-500">{cabinet.cabinetName || ''}</p>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700">
-                    {(cabinet.caRealise || 0).toLocaleString('fr-FR')} €
+                    {(cabinet.totalFacture || 0).toLocaleString('fr-FR')} €
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700">
-                    {(cabinet.objectif || 0).toLocaleString('fr-FR')} €
+                    {(cabinet.totalEncaisse || 0).toLocaleString('fr-FR')} €
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
                         <div 
                           className={`h-full rounded-full ${
-                            cabinet.tauxRealisation >= 100 ? 'bg-green-500' :
-                            cabinet.tauxRealisation >= 80 ? 'bg-blue-500' :
-                            cabinet.tauxRealisation >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                            cabinet.score >= 85 ? 'bg-green-500' :
+                            cabinet.score >= 70 ? 'bg-blue-500' :
+                            cabinet.score >= 50 ? 'bg-yellow-500' : 'bg-red-500'
                           }`}
-                          style={{ width: `${Math.min(cabinet.tauxRealisation, 100)}%` }}
+                          style={{ width: `${Math.min(cabinet.score, 100)}%` }}
                         />
                       </div>
-                      <span className="text-sm font-medium">{(cabinet.tauxRealisation || 0).toFixed(1)}%</span>
+                      <span className="text-sm font-medium">{(cabinet.score || 0).toFixed(0)}%</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700">
-                    {cabinet.nouveauxPatients || 0}
+                    {cabinet.totalNouveaux || 0}
                   </td>
                   <td className="px-6 py-4">
                     <span className={`
                       inline-flex px-2.5 py-1 rounded-full text-xs font-medium
-                      ${cabinet.tauxRealisation >= 100 ? 'bg-green-100 text-green-700' :
-                        cabinet.tauxRealisation >= 80 ? 'bg-blue-100 text-blue-700' :
-                        cabinet.tauxRealisation >= 60 ? 'bg-yellow-100 text-yellow-700' : 
+                      ${cabinet.score >= 85 ? 'bg-green-100 text-green-700' :
+                        cabinet.score >= 70 ? 'bg-blue-100 text-blue-700' :
+                        cabinet.score >= 50 ? 'bg-yellow-100 text-yellow-700' : 
                         'bg-red-100 text-red-700'}
                     `}>
-                      {cabinet.tauxRealisation >= 100 ? 'Excellent' :
-                       cabinet.tauxRealisation >= 80 ? 'Bon' :
-                       cabinet.tauxRealisation >= 60 ? 'Moyen' : 'À surveiller'}
+                      {cabinet.scoreLabel || (cabinet.score >= 85 ? 'Excellent' : cabinet.score >= 70 ? 'Bon' : cabinet.score >= 50 ? 'Moyen' : 'À surveiller')}
                     </span>
                   </td>
                 </tr>
