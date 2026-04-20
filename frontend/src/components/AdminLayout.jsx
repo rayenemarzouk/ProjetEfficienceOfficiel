@@ -12,7 +12,8 @@ import {
   XMarkIcon,
   ChevronDownIcon,
   ChevronRightIcon,
-  PresentationChartLineIcon
+  PresentationChartLineIcon,
+  PencilSquareIcon
 } from '@heroicons/react/24/outline';
 import { 
   FiHome, FiBarChart2, FiGitMerge, FiFileText, FiPieChart, 
@@ -36,6 +37,11 @@ const menuItems = [
     name: 'Gestion clients',
     icon: UsersIcon,
     path: '/admin/gestion'
+  },
+  {
+    name: 'Saisie de Données',
+    icon: PencilSquareIcon,
+    path: '/admin/saisie'
   },
   {
     name: 'Rapports',

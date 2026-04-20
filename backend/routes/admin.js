@@ -711,4 +711,71 @@ router.post('/ai-toggle-confirm', auth, adminOnly, async (req, res) => {
   }
 });
 
+// POST /api/admin/manual-entry — Saisie manuelle des données d'un praticien
+router.post('/manual-entry', auth, adminOnly, async (req, res) => {
+  try {
+    const { praticien, mois, caFacture, caEncaisse, nbPatients, nouveauxPatients, totalRdv, heuresTravaillees } = req.body;
+    if (!praticien || !mois) return res.status(400).json({ message: 'Praticien et mois requis.' });
+
+    // Format mois: accepter YYYYMM ou YYYYMMDD → stocker en YYYYMM01
+    const moisNorm = mois.length === 6 ? `${mois}01` : mois;
+
+    const [realisationResult, rdvResult, joursResult] = await Promise.all([
+      AnalyseRealisation.findOneAndUpdate(
+        { praticien, mois: moisNorm },
+        { $set: {
+            praticien,
+            mois: moisNorm,
+            ...(caFacture !== undefined && caFacture !== '' && { montantFacture: parseFloat(caFacture) }),
+            ...(caEncaisse !== undefined && caEncaisse !== '' && { montantEncaisse: parseFloat(caEncaisse) }),
+            ...(nbPatients !== undefined && nbPatients !== '' && { nbPatients: parseInt(nbPatients) }),
+            ...(nouveauxPatients !== undefined && nouveauxPatients !== '' && { nbNouveauxPatients: parseInt(nouveauxPatients) }),
+        }},
+        { upsert: true, new: true }
+      ),
+      AnalyseRendezVous.findOneAndUpdate(
+        { praticien, mois: moisNorm },
+        { $set: {
+            praticien,
+            mois: moisNorm,
+            ...(totalRdv !== undefined && totalRdv !== '' && { nbRdv: parseInt(totalRdv) }),
+            ...(nbPatients !== undefined && nbPatients !== '' && { nbPatients: parseInt(nbPatients) }),
+            ...(nouveauxPatients !== undefined && nouveauxPatients !== '' && { nbNouveauxPatients: parseInt(nouveauxPatients) }),
+        }},
+        { upsert: true, new: true }
+      ),
+      AnalyseJoursOuverts.findOneAndUpdate(
+        { praticien, mois: moisNorm },
+        { $set: {
+            praticien,
+            mois: moisNorm,
+            ...(heuresTravaillees !== undefined && heuresTravaillees !== '' && { nbHeures: Math.round(parseFloat(heuresTravaillees) * 60) }),
+        }},
+        { upsert: true, new: true }
+      )
+    ]);
+
+    res.json({ message: 'Données enregistrées avec succès.', mois: moisNorm, praticien });
+  } catch (error) {
+    console.error('Erreur saisie manuelle admin:', error);
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
+// GET /api/admin/practitioners — Liste des praticiens actifs
+router.get('/practitioners', auth, adminOnly, async (req, res) => {
+  try {
+    const practitioners = await User.find({ role: 'practitioner', isActive: true })
+      .select('name practitionerCode cabinetName email');
+    res.json({ practitioners: practitioners.map(p => ({
+      practitionerCode: p.practitionerCode || p.email,
+      practitionerName: p.name,
+      cabinetName: p.cabinetName,
+      email: p.email
+    }))});
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
 module.exports = router;

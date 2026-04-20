@@ -94,4 +94,8 @@ export const getConsultantClientDetail = (code, params) => api.get(`/consultant/
 export const getConsultantReports = (params) => api.get('/consultant/reports', { params });
 export const consultantManualEntry = (data) => api.post('/consultant/manual-entry', data);
 
+// Admin — saisie manuelle
+export const getAdminPractitioners = () => api.get('/admin/practitioners');
+export const adminManualEntry = (data) => api.post('/admin/manual-entry', data);
+
 export default api;

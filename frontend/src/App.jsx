@@ -18,6 +18,7 @@ import Reports from './pages/admin/Reports';
 import Statistics from './pages/admin/Statistics';
 import Settings from './pages/admin/Settings';
 import Comparison from './pages/admin/Comparison';
+import AdminSaisieData from './pages/admin/SaisieData';
 
 // Practitioner pages
 import PractitionerDashboard from './pages/practitioner/Dashboard';
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="/admin/cabinets" element={<AdminLayout><CabinetsUnified /></AdminLayout>} />
             <Route path="/admin/comparison" element={<AdminLayout><Comparison /></AdminLayout>} />
             <Route path="/admin/gestion" element={<AdminLayout><CabinetManagement /></AdminLayout>} />
+            <Route path="/admin/saisie" element={<AdminLayout><AdminSaisieData /></AdminLayout>} />
             <Route path="/admin/reports" element={<AdminLayout><Reports /></AdminLayout>} />
             <Route path="/admin/statistics" element={<AdminLayout><Statistics /></AdminLayout>} />
             <Route path="/admin/settings" element={<AdminLayout><Settings /></AdminLayout>} />
