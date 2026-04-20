@@ -4,10 +4,8 @@ import { getConsultantDashboard } from '../../services/api';
 import PeriodFilter from '../../components/PeriodFilter';
 import CabinetFilter from '../../components/CabinetFilter';
 import {
-  BuildingOfficeIcon,
-  UsersIcon,
   ChartBarIcon,
-  UserPlusIcon,
+  ExclamationTriangleIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon
 } from '@heroicons/react/24/outline';
@@ -193,33 +191,35 @@ export default function ConsultantDashboard() {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI Cards — 2 indicateurs clés uniquement */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
         <KpiCard
-          title="Cabinets Filtrés"
-          value={data?.globalMetrics?.totalCabinets || 0}
-          icon={BuildingOfficeIcon}
-          color="blue"
-        />
-        <KpiCard
-          title="Praticiens"
-          value={data?.globalMetrics?.totalPraticiens || 0}
-          icon={UsersIcon}
-          color="purple"
-        />
-        <KpiCard
-          title="Taux Moyen"
+          title="Taux Moyen de Réalisation"
           value={`${(data?.globalMetrics?.tauxMoyenRealisation || 0).toFixed(1)}%`}
           icon={ChartBarIcon}
           color="yellow"
           trend={data?.globalMetrics?.tauxMoyenRealisation >= 80 ? 'up' : 'down'}
-          trendValue={data?.globalMetrics?.tauxMoyenRealisation >= 80 ? 'Bon' : 'À améliorer'}
+          trendValue={data?.globalMetrics?.tauxMoyenRealisation >= 80 ? 'Objectif atteint' : 'Sous objectif'}
         />
         <KpiCard
-          title="Nouveaux Patients"
-          value={data?.globalMetrics?.totalNouveauxPatients || 0}
-          icon={UserPlusIcon}
-          color="pink"
+          title="Cabinets à surveiller"
+          value={data?.cabinetPerformance?.filter(c => c.tauxRealisation < 80).length || 0}
+          icon={ExclamationTriangleIcon}
+          color={
+            (data?.cabinetPerformance?.filter(c => c.tauxRealisation < 80).length || 0) === 0
+              ? 'green'
+              : 'pink'
+          }
+          trend={
+            (data?.cabinetPerformance?.filter(c => c.tauxRealisation < 80).length || 0) === 0
+              ? 'up'
+              : 'down'
+          }
+          trendValue={
+            (data?.cabinetPerformance?.filter(c => c.tauxRealisation < 80).length || 0) === 0
+              ? 'Tous à l\'objectif'
+              : 'En dessous de 80%'
+          }
         />
       </div>
 
