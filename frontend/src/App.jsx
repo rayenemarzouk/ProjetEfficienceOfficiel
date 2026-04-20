@@ -34,6 +34,7 @@ import ConsultantAnalyses from './pages/consultant/Analyses';
 import ConsultantClients from './pages/consultant/Clients';
 import ConsultantReports from './pages/consultant/Reports';
 import ConsultantSettings from './pages/consultant/Settings';
+import SaisieData from './pages/consultant/SaisieData';
 
 export default function App() {
   return (
@@ -77,6 +78,7 @@ export default function App() {
             <Route path="/consultant/dashboard" element={<ConsultantLayout><ConsultantDashboard /></ConsultantLayout>} />
             <Route path="/consultant/analyses" element={<ConsultantLayout><ConsultantAnalyses /></ConsultantLayout>} />
             <Route path="/consultant/clients" element={<ConsultantLayout><ConsultantClients /></ConsultantLayout>} />
+            <Route path="/consultant/saisie" element={<ConsultantLayout><SaisieData /></ConsultantLayout>} />
             <Route path="/consultant/reports" element={<ConsultantLayout><ConsultantReports /></ConsultantLayout>} />
             <Route path="/consultant/settings" element={<ConsultantLayout><ConsultantSettings /></ConsultantLayout>} />
           </Route>

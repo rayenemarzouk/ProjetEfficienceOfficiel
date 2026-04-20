@@ -9,9 +9,9 @@ import {
 } from 'react-icons/fi';
 import { 
   Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, 
-  Title, Tooltip, Legend, ArcElement 
+  Title, Tooltip, Legend, ArcElement, Filler
 } from 'chart.js';
-import { Bar, Doughnut } from 'react-chartjs-2';
+import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { 
   linearRegression, detectAnomalies, cabinetHealthScore, 
   generateAIInsight, analyzeTrend 
@@ -22,7 +22,7 @@ import { useDynamic } from '../../context/DynamicContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement);
+ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, ArcElement, Filler);
 
 const DOC_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
@@ -51,6 +51,7 @@ export default function CabinetsUnified() {
   const activiteChartRef = useRef(null);
   const barChartRef = useRef(null);
   const doughnutChartRef = useRef(null);
+  const lineEvolutionRef = useRef(null);
 
   // Helper pour calculer les dates de début/fin basées sur la période
   const getPeriodDates = useCallback((periodObj) => {
@@ -168,6 +169,64 @@ export default function CabinetsUnified() {
   const caMensuelFiltered = useMemo(() => {
     return filterByPeriod(rawCaMensuel, period, '_id.mois');
   }, [rawCaMensuel, period, filterByPeriod]);
+
+  // Agrégation mensuelle pour le graphe Évolution CA
+  const fmtMoisLabel = (m) => {
+    if (!m) return '';
+    const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    return `${months[parseInt(m.substring(4,6))-1]} ${m.substring(2,4)}`;
+  };
+
+  const monthlyEvolution = useMemo(() => {
+    const byMonth = {};
+    caMensuelFiltered.forEach(item => {
+      const mois = item._id?.mois;
+      if (!mois) return;
+      if (!byMonth[mois]) byMonth[mois] = { mois, facture: 0, encaisse: 0 };
+      byMonth[mois].facture += item.totalFacture || 0;
+      byMonth[mois].encaisse += item.totalEncaisse || 0;
+    });
+    return Object.values(byMonth).sort((a, b) => a.mois.localeCompare(b.mois));
+  }, [caMensuelFiltered]);
+
+  const evolutionLineData = useMemo(() => ({
+    labels: monthlyEvolution.map(m => fmtMoisLabel(m.mois)),
+    datasets: [
+      {
+        label: 'Facturé',
+        data: monthlyEvolution.map(m => m.facture),
+        borderColor: '#8b5cf6',
+        backgroundColor: 'rgba(139,92,246,0.12)',
+        fill: true, tension: 0.4, borderWidth: 2.5,
+        pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: '#8b5cf6', pointBorderWidth: 2,
+      },
+      {
+        label: 'Encaissé',
+        data: monthlyEvolution.map(m => m.encaisse),
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59,130,246,0.08)',
+        fill: true, tension: 0.4, borderWidth: 2.5,
+        pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: '#3b82f6', pointBorderWidth: 2,
+      }
+    ]
+  }), [monthlyEvolution]);
+
+  const evolutionLineOptions = {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'bottom', labels: { color: chartTextColor, usePointStyle: true, pointStyle: 'circle', font: { size: 11, weight: '500' }, padding: 20 } },
+      tooltip: {
+        backgroundColor: '#1e293b', titleColor: '#f8fafc', bodyColor: '#e2e8f0',
+        cornerRadius: 10, padding: 14, displayColors: true, usePointStyle: true,
+        callbacks: { label: (c) => ` ${c.dataset.label}: ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(c.raw || 0)}` }
+      }
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: chartTextColor, font: { size: 10 }, maxRotation: 45 }, border: { display: false } },
+      y: { beginAtZero: true, grid: { color: chartGridColor }, ticks: { color: chartTextColor, font: { size: 10 }, callback: v => `${(v/1000).toFixed(0)}k€` }, border: { display: false } }
+    }
+  };
   
   const rdvMensuelFiltered = useMemo(() => {
     return filterByPeriod(rawRdvMensuel, period, '_id.mois');
@@ -723,6 +782,21 @@ export default function CabinetsUnified() {
           {/* Period Filter */}
           <PeriodFilter value={period} onChange={setPeriod} />
         </div>
+
+        {/* Évolution du CA — graphe déplacé depuis le Dashboard */}
+        {showAI && monthlyEvolution.length > 0 && (
+          <div className={`rounded-2xl p-6 shadow-sm mb-6 ${cardCls}`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className={`text-base font-bold ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>Évolution du Chiffre d'Affaires</h3>
+                <p className={`text-xs mt-0.5 ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>Facturé vs encaissé — période sélectionnée</p>
+              </div>
+            </div>
+            <div style={{ height: '260px' }}>
+              <Line ref={lineEvolutionRef} data={evolutionLineData} options={evolutionLineOptions} />
+            </div>
+          </div>
+        )}
 
         {/* Content */}
         {activeTab === 'analysis' ? renderAnalysisView() : renderComparisonView()}

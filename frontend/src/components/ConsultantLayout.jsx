@@ -11,7 +11,8 @@ import {
   Bars3Icon,
   XMarkIcon,
   ChevronDownIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  PencilSquareIcon
 } from '@heroicons/react/24/outline';
 
 const menuItems = [
@@ -31,6 +32,11 @@ const menuItems = [
     name: 'Gestion clients',
     icon: UsersIcon,
     path: '/consultant/clients'
+  },
+  {
+    name: 'Saisie de Données',
+    icon: PencilSquareIcon,
+    path: '/consultant/saisie'
   },
   {
     name: 'Rapports',
