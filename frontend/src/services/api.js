@@ -98,5 +98,6 @@ export const consultantManualEntry = (data) => api.post('/consultant/manual-entr
 export const getAdminPractitioners = () => api.get('/admin/practitioners');
 export const adminManualEntry = (data) => api.post('/admin/manual-entry', data);
 export const addPractitioner = (data) => api.post('/admin/add-practitioner', data);
+export const deletePractitioner = (code) => api.delete(`/admin/delete-practitioner/${code}`);
 
 export default api;

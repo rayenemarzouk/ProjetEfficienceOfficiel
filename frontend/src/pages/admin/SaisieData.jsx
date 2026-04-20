@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { getAdminPractitioners, adminManualEntry, addPractitioner } from '../../services/api';
+import { getAdminPractitioners, adminManualEntry, addPractitioner, deletePractitioner } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import {
   CheckCircleIcon, ExclamationCircleIcon, PencilSquareIcon,
-  UserPlusIcon, ChevronDownIcon, ChevronUpIcon
+  UserPlusIcon, ChevronDownIcon, ChevronUpIcon, TrashIcon
 } from '@heroicons/react/24/outline';
 
 const generateMonthOptions = () => {
@@ -54,6 +55,9 @@ const Alert = ({ type, message }) => (
 );
 
 export default function AdminSaisieData() {
+  const { user } = useAuth();
+  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+
   const [practitioners, setPractitioners] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -67,6 +71,13 @@ export default function AdminSaisieData() {
   const [newPrat, setNewPrat] = useState(EMPTY_NEW_PRAT);
   const [addingPrat, setAddingPrat] = useState(false);
   const [addPratStatus, setAddPratStatus] = useState(null);
+
+  // Formulaire suppression praticien
+  const [showDelPrat, setShowDelPrat] = useState(false);
+  const [delCode, setDelCode] = useState('');
+  const [delConfirm, setDelConfirm] = useState(false);
+  const [deletingPrat, setDeletingPrat] = useState(false);
+  const [delStatus, setDelStatus] = useState(null);
 
   const monthOptions = generateMonthOptions();
 
@@ -138,6 +149,28 @@ export default function AdminSaisieData() {
       setAddPratStatus({ type: 'error', message: msg });
     } finally {
       setAddingPrat(false);
+    }
+  };
+
+  const handleDeletePraticien = async (e) => {
+    e.preventDefault();
+    if (!delCode || !delConfirm) return;
+    try {
+      setDeletingPrat(true);
+      const res = await deletePractitioner(delCode);
+      const updatedList = await loadPractitioners();
+      if (form.praticien === delCode) {
+        setForm(f => ({ ...f, praticien: updatedList[0]?.practitionerCode || '' }));
+      }
+      setDelStatus({ type: 'success', message: res.data.message });
+      setDelCode('');
+      setDelConfirm(false);
+      setTimeout(() => { setShowDelPrat(false); setDelStatus(null); }, 2500);
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Erreur lors de la suppression.';
+      setDelStatus({ type: 'error', message: msg });
+    } finally {
+      setDeletingPrat(false);
     }
   };
 
@@ -217,6 +250,93 @@ export default function AdminSaisieData() {
           </div>
         )}
       </div>
+
+      {/* ── Bloc suppression praticien (Rayan only) ──────────────── */}
+      {isRayan && (
+        <div className="bg-white rounded-2xl shadow-sm border border-rose-100 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => { setShowDelPrat(v => !v); setDelStatus(null); }}
+            className="w-full flex items-center justify-between px-6 py-4 hover:bg-rose-50 transition"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center">
+                <TrashIcon className="w-4 h-4 text-rose-600" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-rose-800">Supprimer un praticien</p>
+                <p className="text-xs text-rose-500">Désactive le compte — les données existantes sont conservées</p>
+              </div>
+            </div>
+            {showDelPrat
+              ? <ChevronUpIcon className="w-4 h-4 text-rose-400" />
+              : <ChevronDownIcon className="w-4 h-4 text-rose-400" />
+            }
+          </button>
+
+          {showDelPrat && (
+            <div className="border-t border-rose-100 px-6 pb-6 pt-5">
+              {delStatus && <div className="mb-5"><Alert type={delStatus.type} message={delStatus.message} /></div>}
+              <form onSubmit={handleDeletePraticien} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Praticien à désactiver <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={delCode}
+                    onChange={e => { setDelCode(e.target.value); setDelConfirm(false); }}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white"
+                  >
+                    <option value="">-- Sélectionner --</option>
+                    {practitioners.map(p => (
+                      <option key={p.practitionerCode} value={p.practitionerCode}>
+                        {p.practitionerName || p.practitionerCode}
+                        {p.cabinetName ? ` — ${p.cabinetName}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {delCode && (
+                  <label className="flex items-start gap-3 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={delConfirm}
+                      onChange={e => setDelConfirm(e.target.checked)}
+                      className="mt-0.5 accent-rose-600"
+                    />
+                    <span className="text-sm text-rose-700">
+                      Je confirme vouloir désactiver le praticien <strong>{practitioners.find(p => p.practitionerCode === delCode)?.practitionerName || delCode}</strong>. Cette action est réversible par un admin.
+                    </span>
+                  </label>
+                )}
+
+                <div className="flex items-center gap-3 pt-1">
+                  <button
+                    type="submit"
+                    disabled={deletingPrat || !delCode || !delConfirm}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 text-white font-semibold rounded-xl text-sm transition"
+                  >
+                    {deletingPrat ? (
+                      <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Suppression...</>
+                    ) : (
+                      <><TrashIcon className="w-4 h-4" />Désactiver le praticien</>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setDelCode(''); setDelConfirm(false); setDelStatus(null); }}
+                    className="px-5 py-2.5 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-xl text-sm transition"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Formulaire saisie données ────────────────────────────── */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">

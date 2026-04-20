@@ -821,4 +821,22 @@ router.post('/add-practitioner', auth, adminOnly, async (req, res) => {
   }
 });
 
+// DELETE /api/admin/delete-practitioner/:code — Supprimer (désactiver) un praticien
+router.delete('/delete-practitioner/:code', auth, adminOnly, async (req, res) => {
+  try {
+    const { code } = req.params;
+    const user = await User.findOne({ practitionerCode: code.toUpperCase(), role: 'practitioner' });
+    if (!user) {
+      return res.status(404).json({ message: 'Praticien introuvable.' });
+    }
+    // Soft delete — on désactive le compte
+    user.isActive = false;
+    await user.save();
+    res.json({ message: `Praticien "${user.name}" désactivé avec succès.` });
+  } catch (error) {
+    console.error('Erreur suppression praticien:', error);
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
 module.exports = router;
