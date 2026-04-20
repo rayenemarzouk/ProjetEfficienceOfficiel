@@ -7,7 +7,7 @@ import { FiTrendingUp, FiTrendingDown, FiUsers, FiFileText, FiMail, FiDollarSign
 import { useCountUp } from '../../utils/useCountUp';
 import { useDynamic } from '../../context/DynamicContext';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, Filler } from 'chart.js';
-import { Line, Doughnut } from 'react-chartjs-2';
+import { Line, Doughnut, Bar } from 'react-chartjs-2';
 import { generateTrendLineDataset, generateAIInsight, forecast as aiForecast } from '../../utils/aiModels';
 import { streamingLinePlugin, streamingDoughnutPlugin, startChartAnimation } from '../../utils/chartPlugins';
 import { useTheme } from '../../context/ThemeContext';
@@ -656,8 +656,87 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* KPI Cards — Animated */}
-        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6 ${isDynamic ? 'animate-fade-in' : ''}`} style={isDynamic ? { animationDelay: '0.2s' } : {}}>
+        {/* ═══ CHARTS : CA par cabinet + Répartition scores (Younis) ═══ */}
+        {!isRayan && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
+            {/* Bar chart — CA par cabinet */}
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+              <h3 className="text-base font-bold text-gray-900 mb-1">CA Moyen par cabinet</h3>
+              <p className="text-xs text-gray-400 mb-4">Facturé vs Encaissé — toutes périodes</p>
+              <div style={{ height: '240px' }}>
+                <Bar
+                  data={{
+                    labels: practitioners.map(p => p.name || p.code),
+                    datasets: [
+                      {
+                        label: 'CA Facturé',
+                        data: practitioners.map(p => data?.caByPractitioner?.find(c => c._id === p.code)?.totalFacture || 0),
+                        backgroundColor: '#10b981',
+                        borderRadius: 8,
+                        borderSkipped: false,
+                      },
+                      {
+                        label: 'CA Encaissé',
+                        data: practitioners.map(p => data?.caByPractitioner?.find(c => c._id === p.code)?.totalEncaisse || 0),
+                        backgroundColor: '#ef4444',
+                        borderRadius: 8,
+                        borderSkipped: false,
+                      },
+                    ]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { position: 'bottom', labels: { color: '#64748b', usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, padding: 16 } },
+                      tooltip: { backgroundColor: '#1e293b', titleColor: '#f8fafc', bodyColor: '#e2e8f0', cornerRadius: 10, padding: 12, callbacks: { label: (c) => ` ${c.dataset.label}: ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(c.raw || 0)}` } }
+                    },
+                    scales: {
+                      x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } }, border: { display: false } },
+                      y: { beginAtZero: true, grid: { color: 'rgba(226,232,240,0.5)' }, ticks: { color: '#64748b', font: { size: 10 }, callback: v => `${(v/1000).toFixed(0)}k€` }, border: { display: false } }
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Donut — Répartition des scores */}
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col">
+              <h3 className="text-base font-bold text-gray-900 mb-1">Répartition des Scores</h3>
+              <p className="text-xs text-gray-400 mb-4">Taux d'encaissement par cabinet</p>
+              <div className="flex-1 flex items-center justify-center" style={{ height: '200px' }}>
+                <Doughnut
+                  data={{
+                    labels: ['Excellent (≥85%)', 'Bon (70–84%)', 'À améliorer (<70%)'],
+                    datasets: [{
+                      data: [
+                        (data?.caByPractitioner || []).filter(p => p.totalFacture > 0 && (p.totalEncaisse / p.totalFacture) * 100 >= 85).length || 0,
+                        (data?.caByPractitioner || []).filter(p => p.totalFacture > 0 && (p.totalEncaisse / p.totalFacture) * 100 >= 70 && (p.totalEncaisse / p.totalFacture) * 100 < 85).length || 0,
+                        (data?.caByPractitioner || []).filter(p => p.totalFacture === 0 || (p.totalEncaisse / p.totalFacture) * 100 < 70).length || 0,
+                      ],
+                      backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                      borderWidth: 4,
+                      borderColor: '#ffffff',
+                      hoverOffset: 14,
+                    }]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                      legend: { position: 'bottom', labels: { color: '#64748b', usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, padding: 16 } },
+                      tooltip: { backgroundColor: '#1e293b', titleColor: '#f8fafc', bodyColor: '#e2e8f0', cornerRadius: 10, padding: 12 }
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* KPI Cards — Animated (Rayan uniquement) */}
+        {isRayan && <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6 ${isDynamic ? 'animate-fade-in' : ''}`} style={isDynamic ? { animationDelay: '0.2s' } : {}}>
           {/* CA Total */}
           {isRayan ? (
             <div className={`group rounded-2xl p-5 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 relative overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 shadow-lg shadow-blue-500/25 ${isDynamic ? 'animate-fade-in-up card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.1s' } : {}}>
@@ -762,33 +841,17 @@ export default function AdminDashboard() {
             </div>
           )}
           {/* Emails Envoyés */}
-          {isRayan ? (
-            <div className="group rounded-2xl p-5 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 relative overflow-hidden bg-gradient-to-br from-orange-400 via-amber-500 to-orange-600 shadow-lg shadow-orange-500/25">
-              <svg className="absolute bottom-0 left-0 w-full opacity-20" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M0 58 C45 38, 95 62, 145 48 C195 34, 245 60, 295 42 C345 24, 375 52, 400 38 L400 80 L0 80 Z" fill="white"/><path d="M0 68 C52 52, 108 74, 168 60 C228 46, 288 70, 348 56 C372 48, 390 58, 400 52 L400 80 L0 80 Z" fill="white" opacity="0.5"/></svg>
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-bold text-orange-100 uppercase tracking-wider">Emails Envoyés</p>
-                </div>
-                <p className="text-3xl font-black text-white tabular-nums mb-1">{animEmails}</p>
-                <p className="text-xs text-orange-200">Communications envoyées</p>
+          <div className="group rounded-2xl p-5 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 relative overflow-hidden bg-gradient-to-br from-orange-400 via-amber-500 to-orange-600 shadow-lg shadow-orange-500/25">
+            <svg className="absolute bottom-0 left-0 w-full opacity-20" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M0 58 C45 38, 95 62, 145 48 C195 34, 245 60, 295 42 C345 24, 375 52, 400 38 L400 80 L0 80 Z" fill="white"/><path d="M0 68 C52 52, 108 74, 168 60 C228 46, 288 70, 348 56 C372 48, 390 58, 400 52 L400 80 L0 80 Z" fill="white" opacity="0.5"/></svg>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-bold text-orange-100 uppercase tracking-wider">Emails Envoyés</p>
               </div>
+              <p className="text-3xl font-black text-white tabular-nums mb-1">{animEmails}</p>
+              <p className="text-xs text-orange-200">Communications envoyées</p>
             </div>
-          ) : (
-            <div className="group rounded-2xl p-5 hover:shadow-lg transition-all duration-500 hover:-translate-y-1 relative overflow-hidden bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-emerald-100/50 dark:hover:shadow-emerald-900/30">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 dark:from-emerald-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="p-3 rounded-xl transition-colors bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40"><FiMail className="w-6 h-6" /></div>
-                </div>
-                <p className="text-2xl font-black tabular-nums text-gray-900 dark:text-white">{animEmails}</p>
-                <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">Emails Envoyés</p>
-                <div className="mt-3 w-full rounded-full h-1.5 overflow-hidden bg-gray-100 dark:bg-gray-700">
-                  <div className={`h-1.5 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 ${isDynamic ? 'transition-all duration-[1200ms] ease-out' : ''}`} style={{ width: (!isDynamic || !loading) ? '100%' : '0%' }}></div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        </div>}
 
         {/* Practitioner Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
@@ -919,8 +982,8 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* CA Total & Objectif Total — Animated */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* CA Total & Objectif Total — Animated (Rayan uniquement) */}
+        {isRayan && <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className={`group rounded-2xl p-5 flex items-center gap-4 hover:shadow-lg transition-all duration-500 hover:-translate-y-0.5 relative overflow-hidden ${isRayan ? 'bg-white border border-gray-200 shadow-sm hover:shadow-green-100/50' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700 hover:shadow-green-100/50 dark:hover:shadow-green-900/30'}`}>
             <div className={`absolute inset-0 bg-gradient-to-r to-transparent opacity-0 group-hover:opacity-100 transition-opacity ${isRayan ? 'from-green-50/40' : 'from-green-50/40 dark:from-green-900/20'}`}></div>
             <div className="relative z-10 w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -944,7 +1007,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* ═══ AI RECOMMENDATIONS (Rayan) ═══ */}
         {isRayan && (

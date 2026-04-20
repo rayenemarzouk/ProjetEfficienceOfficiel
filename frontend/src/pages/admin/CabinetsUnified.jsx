@@ -342,6 +342,14 @@ export default function CabinetsUnified() {
   const totalPresents = pracData.reduce((s, p) => s + p.presents, 0);
   const moyenneCabinet = practitioners.length > 0 ? Math.round(totalConsultations / practitioners.length) : 0;
 
+  // KPI cartes haut de page — Analyse globales
+  const kpiCATotal = caByP.reduce((s, p) => s + (p.totalFacture || 0), 0);
+  const kpiEncaisseTotal = caByP.reduce((s, p) => s + (p.totalEncaisse || 0), 0);
+  const kpiPatientsTotal = caByP.reduce((s, p) => s + (p.totalPatients || 0), 0);
+  const kpiRapports = data?.dashboard?.totalReports || 0;
+  const kpiEmails = data?.dashboard?.reportsEnvoyes || 0;
+  const kpiPerf = pracData.length > 0 ? Math.round(pracData.reduce((s, p) => s + (p.score || 0), 0) / pracData.length) : 0;
+
   // ═══ MODÈLES IA ═══
   const patientsRdvArr = pracData.map(p => p.patientsRdv);
   const patientsTraitesArr = pracData.map(p => p.patientsTraites);
@@ -376,6 +384,11 @@ export default function CabinetsUnified() {
   const animMoyenne = useCountUp(moyenneCabinet, 1400, dyn);
   const animAbsents = useCountUp(totalAbsents, 1500, dyn);
   const animPresents = useCountUp(totalPresents, 1500, dyn);
+  const animKpiCA = useCountUp(Math.round(kpiCATotal), 2000, dyn);
+  const animKpiEncaisse = useCountUp(Math.round(kpiEncaisseTotal), 2000, dyn);
+  const animKpiPatients = useCountUp(kpiPatientsTotal, 1800, dyn);
+  const animKpiRapports = useCountUp(kpiRapports, 1200, dyn);
+  const animKpiPerf = useCountUp(kpiPerf, 1600, dyn);
 
   if (loading || !data) {
     return (
@@ -751,6 +764,67 @@ export default function CabinetsUnified() {
       <Header title="Analyse & Comparaison des Cabinets" />
       
       <div className="p-4 lg:p-6 max-w-7xl mx-auto">
+
+        {/* ── KPI Synthèse Globale ────────────────────────────────── */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-blue-600 font-medium">CA Total Facturé</p>
+                <p className="text-2xl font-bold text-blue-700 mt-1 tabular-nums">
+                  {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(animKpiCA)}
+                </p>
+                <p className="text-xs text-blue-500 mt-1">{practitioners.length} cabinets</p>
+              </div>
+              <FiDollarSign className="w-6 h-6 text-blue-400 flex-shrink-0" />
+            </div>
+          </div>
+          <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-emerald-600 font-medium">CA Encaissé</p>
+                <p className="text-2xl font-bold text-emerald-700 mt-1 tabular-nums">
+                  {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(animKpiEncaisse)}
+                </p>
+                <p className="text-xs text-emerald-500 mt-1">
+                  {kpiCATotal > 0 ? Math.round((kpiEncaisseTotal / kpiCATotal) * 100) : 0}% taux
+                </p>
+              </div>
+              <FiTrendingUp className="w-6 h-6 text-emerald-400 flex-shrink-0" />
+            </div>
+          </div>
+          <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-purple-600 font-medium">Patients Total</p>
+                <p className="text-2xl font-bold text-purple-700 mt-1 tabular-nums">{animKpiPatients.toLocaleString('fr-FR')}</p>
+                <p className="text-xs text-purple-500 mt-1">traités (période)</p>
+              </div>
+              <FiUsers className="w-6 h-6 text-purple-400 flex-shrink-0" />
+            </div>
+          </div>
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-amber-600 font-medium">Rapports Générés</p>
+                <p className="text-2xl font-bold text-amber-700 mt-1 tabular-nums">{animKpiRapports}</p>
+                <p className="text-xs text-amber-500 mt-1">au total</p>
+              </div>
+              <FiBarChart2 className="w-6 h-6 text-amber-400 flex-shrink-0" />
+            </div>
+          </div>
+          <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-rose-600 font-medium">Performance Moy.</p>
+                <p className="text-2xl font-bold text-rose-700 mt-1 tabular-nums">{animKpiPerf}%</p>
+                <p className="text-xs text-rose-500 mt-1">score moyen cabinets</p>
+              </div>
+              <FiTrendingUp className="w-6 h-6 text-rose-400 flex-shrink-0" />
+            </div>
+          </div>
+        </div>
+
         {/* Tabs + Filters */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           {/* Tabs */}
