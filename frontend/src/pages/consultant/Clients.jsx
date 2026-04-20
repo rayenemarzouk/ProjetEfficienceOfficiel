@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getConsultantClients, getConsultantClientDetail } from '../../services/api';
+import { getConsultantClients, getConsultantClientDetail, consultantManualEntry } from '../../services/api';
 import PeriodFilter from '../../components/PeriodFilter';
 import {
   MagnifyingGlassIcon,
@@ -10,7 +10,8 @@ import {
   ChartBarIcon,
   CalendarIcon,
   CurrencyEuroIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  PlusIcon
 } from '@heroicons/react/24/outline';
 import { Line, Bar } from 'react-chartjs-2';
 
@@ -67,6 +68,69 @@ export default function ConsultantClients() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [period, setPeriod] = useState({ period: 'this_month' });
+
+  // Modal saisie manuelle
+  const [showModal, setShowModal] = useState(false);
+  const [modalSaving, setModalSaving] = useState(false);
+  const [modalSuccess, setModalSuccess] = useState(false);
+  const [formData, setFormData] = useState({
+    praticien: '',
+    mois: '',
+    caFacture: '',
+    caEncaisse: '',
+    nbPatients: '',
+    nouveauxPatients: '',
+    totalRdv: '',
+    heuresTravaillees: ''
+  });
+
+  // Générer la liste des 24 derniers mois
+  const generateMonthOptions = () => {
+    const options = [];
+    const now = new Date();
+    for (let i = 0; i < 24; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+      options.push({ value: `${yyyy}${mm}`, label: `${months[d.getMonth()]} ${yyyy}` });
+    }
+    return options;
+  };
+  const monthOptions = generateMonthOptions();
+
+  const handleOpenModal = () => {
+    setFormData({
+      praticien: clients[0]?.practitionerCode || '',
+      mois: monthOptions[0]?.value || '',
+      caFacture: '',
+      caEncaisse: '',
+      nbPatients: '',
+      nouveauxPatients: '',
+      totalRdv: '',
+      heuresTravaillees: ''
+    });
+    setModalSuccess(false);
+    setShowModal(true);
+  };
+
+  const handleModalSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setModalSaving(true);
+      await consultantManualEntry(formData);
+      setModalSuccess(true);
+      fetchClients();
+      if (selectedClient === formData.praticien) {
+        fetchClientDetail(formData.praticien);
+      }
+      setTimeout(() => setShowModal(false), 1200);
+    } catch (err) {
+      console.error('Erreur saisie manuelle:', err);
+    } finally {
+      setModalSaving(false);
+    }
+  };
 
   const fetchClients = async () => {
     try {
@@ -168,8 +232,168 @@ export default function ConsultantClients() {
 
         <div className="flex items-center gap-3">
           <PeriodFilter value={period} onChange={setPeriod} />
+          <button
+            onClick={handleOpenModal}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+          >
+            <PlusIcon className="w-4 h-4" />
+            Saisie Mensuelle
+          </button>
         </div>
       </div>
+
+      {/* Modal Saisie Mensuelle */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-900">Saisie Mensuelle</h2>
+              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                <XMarkIcon className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <form onSubmit={handleModalSubmit} className="p-6 space-y-5">
+              {/* Praticien + Mois */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Praticien *</label>
+                  <select
+                    required
+                    value={formData.praticien}
+                    onChange={e => setFormData(f => ({ ...f, praticien: e.target.value }))}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">-- Choisir --</option>
+                    {clients.map(c => (
+                      <option key={c.practitionerCode} value={c.practitionerCode}>
+                        {c.practitionerName || c.practitionerCode}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mois *</label>
+                  <select
+                    required
+                    value={formData.mois}
+                    onChange={e => setFormData(f => ({ ...f, mois: e.target.value }))}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {monthOptions.map(o => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Chiffre d'Affaires */}
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">Chiffre d'Affaires</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">CA Facturé (€)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0"
+                      value={formData.caFacture}
+                      onChange={e => setFormData(f => ({ ...f, caFacture: e.target.value }))}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">CA Encaissé (€)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0"
+                      value={formData.caEncaisse}
+                      onChange={e => setFormData(f => ({ ...f, caEncaisse: e.target.value }))}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Patients & RDV */}
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">Patients & RDV</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Nb Patients</label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={formData.nbPatients}
+                      onChange={e => setFormData(f => ({ ...f, nbPatients: e.target.value }))}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Nouveaux Patients</label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={formData.nouveauxPatients}
+                      onChange={e => setFormData(f => ({ ...f, nouveauxPatients: e.target.value }))}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Total RDV</label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={formData.totalRdv}
+                      onChange={e => setFormData(f => ({ ...f, totalRdv: e.target.value }))}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Heures Travaillées</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      placeholder="0"
+                      value={formData.heuresTravaillees}
+                      onChange={e => setFormData(f => ({ ...f, heuresTravaillees: e.target.value }))}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={modalSaving}
+                  className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-colors ${
+                    modalSuccess ? 'bg-green-500' : 'bg-gray-900 hover:bg-gray-800'
+                  }`}
+                >
+                  {modalSaving ? 'Enregistrement...' : modalSuccess ? '✓ Enregistré !' : 'Enregistrer'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

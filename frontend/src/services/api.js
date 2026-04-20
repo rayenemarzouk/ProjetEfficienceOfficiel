@@ -92,5 +92,6 @@ export const getConsultantAnalyses = (params) => api.get('/consultant/analyses',
 export const getConsultantClients = (params) => api.get('/consultant/clients', { params });
 export const getConsultantClientDetail = (code, params) => api.get(`/consultant/client/${code}`, { params });
 export const getConsultantReports = (params) => api.get('/consultant/reports', { params });
+export const consultantManualEntry = (data) => api.post('/consultant/manual-entry', data);
 
 export default api;

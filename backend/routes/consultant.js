@@ -679,6 +679,68 @@ router.get('/reports', auth, consultantOnly, async (req, res) => {
   }
 });
 
+// POST /consultant/manual-entry — Saisie manuelle mensuelle pour un praticien
+router.post('/manual-entry', auth, consultantOnly, async (req, res) => {
+  try {
+    const {
+      praticien,
+      mois,             // format YYYYMM
+      caFacture,
+      caEncaisse,
+      nbPatients,
+      nouveauxPatients,
+      totalRdv,
+      heuresTravaillees // en heures, converti en minutes pour le stockage
+    } = req.body;
+
+    if (!praticien || !mois) {
+      return res.status(400).json({ message: 'Praticien et mois sont requis.' });
+    }
+
+    // Upsert AnalyseRealisation
+    await AnalyseRealisation.findOneAndUpdate(
+      { praticien, mois },
+      {
+        praticien,
+        mois,
+        montantFacture: Number(caFacture) || 0,
+        montantEncaisse: Number(caEncaisse) || 0,
+        nbPatients: Number(nbPatients) || 0
+      },
+      { upsert: true, new: true }
+    );
+
+    // Upsert AnalyseRendezVous
+    await AnalyseRendezVous.findOneAndUpdate(
+      { praticien, mois },
+      {
+        praticien,
+        mois,
+        nbRdv: Number(totalRdv) || 0,
+        nbNouveauxPatients: Number(nouveauxPatients) || 0,
+        nbPatients: Number(nbPatients) || 0
+      },
+      { upsert: true, new: true }
+    );
+
+    // Upsert AnalyseJoursOuverts (nbHeures stocké en minutes)
+    await AnalyseJoursOuverts.findOneAndUpdate(
+      { praticien, mois },
+      {
+        praticien,
+        mois,
+        nbHeures: (Number(heuresTravaillees) || 0) * 60
+      },
+      { upsert: true, new: true }
+    );
+
+    res.json({ message: 'Données enregistrées avec succès.' });
+  } catch (error) {
+    console.error('Erreur saisie manuelle consultant:', error);
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
 function formatMoisLabel(mois) {
   if (!mois) return '';
   const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
