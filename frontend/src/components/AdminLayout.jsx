@@ -168,7 +168,7 @@ export default function AdminLayout({ children }) {
               EFFICIENCE ANALYTICS
             </h1>
             <p className="text-[9px] font-semibold text-gray-500 tracking-wider uppercase mt-1">
-              Consultant
+              Administrateur
             </p>
           </div>
         </div>
@@ -181,7 +181,7 @@ export default function AdminLayout({ children }) {
             </div>
             <div>
               <p className="text-sm font-medium">{user?.name || 'Admin'}</p>
-              <p className="text-xs text-blue-200">Consultant</p>
+              <p className="text-xs text-blue-200">Administrateur</p>
             </div>
           </div>
         </div>
