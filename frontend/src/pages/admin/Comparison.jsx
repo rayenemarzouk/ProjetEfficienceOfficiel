@@ -128,6 +128,14 @@ export default function Comparison() {
     fetchAll();
   }, [period]);
 
+  // Build doctors dynamically from actual practitioners + their RDV data (REAL absences)
+  // Ces variables et useMemo DOIVENT être avant tout return conditionnel (règle des hooks React)
+  const practitioners = data?.practitioners || [];
+  const rdvByP = data?.rdvByPractitioner || [];
+  const caByP = data?.caByPractitioner || [];
+  const rawRdvMensuel = data?.rdvMensuel || [];
+  const rdvMensuel = useMemo(() => filterByPeriod(rawRdvMensuel, period), [rawRdvMensuel, period, filterByPeriod]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -146,14 +154,6 @@ export default function Comparison() {
       </div>
     );
   }
-
-  // Build doctors dynamically from actual practitioners + their RDV data (REAL absences)
-  const practitioners = data?.practitioners || [];
-  const rdvByP = data?.rdvByPractitioner || [];
-  const caByP = data?.caByPractitioner || [];
-  // Filtrer les données mensuelles par période
-  const rawRdvMensuel = data?.rdvMensuel || [];
-  const rdvMensuel = useMemo(() => filterByPeriod(rawRdvMensuel, period), [rawRdvMensuel, period, filterByPeriod]);
 
   const doctors = practitioners.map((p, idx) => {
     const rdvData = rdvByP.find(r => r._id === p.code);
