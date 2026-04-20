@@ -825,6 +825,51 @@ export default function CabinetsUnified() {
           </div>
         </div>
 
+        {/* ── Cartes Praticiens ──────────────────────────────────── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+          {practitioners.map((p, idx) => {
+            const ca = caByP.find(c => c._id === p.code);
+            const heuresEntry = rawHeuresByP.find(h => h._id === p.code);
+            const hTotal = heuresEntry ? (heuresEntry.totalMinutes / 60) : 0;
+            const cardThemes = [
+              { bg: 'from-violet-50 to-purple-50', badge: 'bg-violet-100', badgeText: 'text-violet-700', border: 'border-violet-100', accent: 'text-violet-600' },
+              { bg: 'from-blue-50 to-cyan-50', badge: 'bg-blue-100', badgeText: 'text-blue-700', border: 'border-blue-100', accent: 'text-blue-600' },
+              { bg: 'from-amber-50 to-orange-50', badge: 'bg-amber-100', badgeText: 'text-amber-700', border: 'border-amber-100', accent: 'text-amber-600' },
+              { bg: 'from-pink-50 to-rose-50', badge: 'bg-pink-100', badgeText: 'text-pink-700', border: 'border-pink-100', accent: 'text-pink-600' },
+            ];
+            const theme = cardThemes[idx % cardThemes.length];
+            return (
+              <div key={p.code} className={`bg-gradient-to-br ${theme.bg} rounded-2xl border ${theme.border} p-5 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5`}>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className={`w-11 h-11 ${theme.badge} rounded-xl flex items-center justify-center shadow-sm`}>
+                    <span className={`${theme.badgeText} font-bold text-sm`}>{p.code}</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{p.name}</h3>
+                    <p className="text-xs text-gray-400">{p.email}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="text-center p-3 bg-white/70 rounded-xl shadow-sm border border-white/50">
+                    <p className={`text-base font-bold ${theme.accent}`}>
+                      {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(ca?.totalFacture || 0)}
+                    </p>
+                    <p className="text-[10px] mt-0.5 text-gray-500">CA Total</p>
+                  </div>
+                  <div className="text-center p-3 bg-white/70 rounded-xl shadow-sm border border-white/50">
+                    <p className="text-base font-bold text-blue-600">{ca?.totalPatients || 0}</p>
+                    <p className="text-[10px] mt-0.5 text-gray-500">Patients</p>
+                  </div>
+                  <div className="text-center p-3 bg-white/70 rounded-xl shadow-sm border border-white/50">
+                    <p className="text-base font-bold text-amber-600">{hTotal.toFixed(0)}h</p>
+                    <p className="text-[10px] mt-0.5 text-gray-500">Heures</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
         {/* Tabs + Filters */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           {/* Tabs */}

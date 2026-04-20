@@ -666,18 +666,18 @@ export default function AdminDashboard() {
               <div style={{ height: '240px' }}>
                 <Bar
                   data={{
-                    labels: practitioners.map(p => p.name || p.code),
+                    labels: (data?.caByPractitioner || []).map(p => data?.practitioners?.find(pr => pr.code === p._id)?.name || p._id),
                     datasets: [
                       {
                         label: 'CA Facturé',
-                        data: practitioners.map(p => data?.caByPractitioner?.find(c => c._id === p.code)?.totalFacture || 0),
+                        data: (data?.caByPractitioner || []).map(p => p.totalFacture || 0),
                         backgroundColor: '#10b981',
                         borderRadius: 8,
                         borderSkipped: false,
                       },
                       {
                         label: 'CA Encaissé',
-                        data: practitioners.map(p => data?.caByPractitioner?.find(c => c._id === p.code)?.totalEncaisse || 0),
+                        data: (data?.caByPractitioner || []).map(p => p.totalEncaisse || 0),
                         backgroundColor: '#ef4444',
                         borderRadius: 8,
                         borderSkipped: false,
@@ -853,7 +853,8 @@ export default function AdminDashboard() {
           </div>
         </div>}
 
-        {/* Practitioner Cards */}
+        {/* Practitioner Cards — visible for Rayan only (moved to Analyse globales for Younis) */}
+        {isRayan && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
           {data?.practitioners?.map((p, idx) => {
             const ca = data.caByPractitioner?.find(c => c._id === p.code);
@@ -896,6 +897,7 @@ export default function AdminDashboard() {
             );
           })}
         </div>
+        )}
 
         {/* AI Insight Panel - Rayan only */}
         {isRayan && aiInsightCA && (
