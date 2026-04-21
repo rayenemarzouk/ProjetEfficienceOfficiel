@@ -869,6 +869,7 @@ router.put('/change-user-role', auth, adminOnly, async (req, res) => {
 });
 
 // DELETE /api/admin/delete-practitioner/:code — Supprimer (désactiver) un praticien
+router.delete('/delete-practitioner/:code', auth, adminOnly, async (req, res) => {
   try {
     const { code } = req.params;
     const user = await User.findOne({ practitionerCode: code.toUpperCase(), role: 'practitioner' });
