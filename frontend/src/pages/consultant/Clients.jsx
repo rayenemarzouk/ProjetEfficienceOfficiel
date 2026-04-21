@@ -83,7 +83,7 @@ export default function ConsultantClients() {
   const [clientDetail, setClientDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [period, setPeriod] = useState({ period: 'this_month' });
+  const [period, setPeriod] = useState({ period: 'this_year' });
 
   // Modal saisie manuelle
   const [showModal, setShowModal] = useState(false);

@@ -75,7 +75,7 @@ export default function ConsultantDashboard() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
-  const [period, setPeriod] = useState({ period: 'last_year' });
+  const [period, setPeriod] = useState({ period: 'this_year' });
   const [selectedCabinets, setSelectedCabinets] = useState([]);
   const [cabinets, setCabinets] = useState([]);
 

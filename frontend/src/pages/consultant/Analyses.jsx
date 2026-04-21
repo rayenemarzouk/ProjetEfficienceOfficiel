@@ -59,7 +59,7 @@ const ScoreBadge = ({ score }) => {
 export default function ConsultantAnalyses() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
-  const [period, setPeriod] = useState({ period: 'this_month' });
+  const [period, setPeriod] = useState({ period: 'this_year' });
   const [selectedCabinets, setSelectedCabinets] = useState([]);
   const [cabinets, setCabinets] = useState([]);
   const [selectedComparison, setSelectedComparison] = useState([]);
