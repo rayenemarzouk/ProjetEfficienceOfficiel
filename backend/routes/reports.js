@@ -55,8 +55,9 @@ async function getHistorique(practitionerCode, targetMois = null) {
 
 // Helper: Calculer les KPI d'un praticien pour un mois donné
 async function calculateKPI(practitionerCode, mois) {
+  const mois6 = String(mois).substring(0, 6);
   const realisation = await AnalyseRealisation.aggregate([
-    { $match: { praticien: practitionerCode, mois } },
+    { $match: { praticien: practitionerCode, mois: { $regex: '^' + mois6 } } },
     { $group: {
       _id: null,
       totalFacture: { $sum: '$montantFacture' },
@@ -65,9 +66,9 @@ async function calculateKPI(practitionerCode, mois) {
     }}
   ]);
 
-  const rdv = await AnalyseRendezVous.findOne({ praticien: practitionerCode, mois });
-  const heures = await AnalyseJoursOuverts.findOne({ praticien: practitionerCode, mois });
-  const devis = await AnalyseDevis.findOne({ praticien: practitionerCode, mois });
+  const rdv = await AnalyseRendezVous.findOne({ praticien: practitionerCode, mois: { $regex: '^' + mois6 } });
+  const heures = await AnalyseJoursOuverts.findOne({ praticien: practitionerCode, mois: { $regex: '^' + mois6 } });
+  const devis = await AnalyseDevis.findOne({ praticien: practitionerCode, mois: { $regex: '^' + mois6 } });
 
   const ca = realisation[0]?.totalFacture || 0;
   const patients = realisation[0]?.totalPatients || 0;

@@ -13,7 +13,23 @@ import {
   UserGroupIcon,
   PlusIcon
 } from '@heroicons/react/24/outline';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
+
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler);
 
 const ClientCard = ({ client, isSelected, onClick }) => {
   const getStatusColor = (taux) => {
@@ -207,19 +223,12 @@ export default function ConsultantClients() {
     ]
   };
 
-  const metricsChartData = {
-    labels: ['RDV', 'Nvx Patients', 'Jours Ouverts', 'Devis'],
-    datasets: [{
-      label: 'Valeurs',
-      data: [
-        clientDetail?.summary?.rdvMois || 0,
-        clientDetail?.summary?.nouveauxPatients || 0,
-        clientDetail?.summary?.joursOuverts || 0,
-        clientDetail?.summary?.devis || 0
-      ],
-      backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6']
-    }]
-  };
+  const metricsItems = [
+    { label: 'Nouveaux Patients', value: clientDetail?.summary?.nouveauxPatients || 0, max: 50, color: '#3b82f6', bg: '#dbeafe' },
+    { label: 'Patients Traités',  value: clientDetail?.summary?.patientsTraites || clientDetail?.summary?.nouveauxPatients || 0, max: 200, color: '#10b981', bg: '#d1fae5' },
+    { label: 'RDV / Mois',       value: clientDetail?.summary?.rdvMois || 0, max: 200, color: '#8b5cf6', bg: '#ede9fe' },
+    { label: 'Patients / RDV',   value: clientDetail?.summary?.rdvMois > 0 ? Math.round(((clientDetail?.summary?.nouveauxPatients || 0) / clientDetail.summary.rdvMois) * 100) : 0, max: 100, color: '#f59e0b', bg: '#fef3c7', isPercent: true },
+  ];
 
   return (
     <div className="space-y-6">
@@ -533,17 +542,27 @@ export default function ConsultantClients() {
                     </div>
                   </div>
                   <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-                    <h3 className="font-semibold text-gray-900 mb-4">Métriques</h3>
-                    <div className="h-64">
-                      <Bar 
-                        data={metricsChartData}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: { legend: { display: false } },
-                          scales: { y: { beginAtZero: true } }
-                        }}
-                      />
+                    <h3 className="font-semibold text-gray-900 mb-4">Métriques clés</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {metricsItems.map((item) => {
+                        const pct = Math.min(Math.round((item.value / item.max) * 100), 100);
+                        const doughnutData = {
+                          datasets: [{ data: [pct, 100 - pct], backgroundColor: [item.color, item.bg], borderWidth: 0, cutout: '72%' }]
+                        };
+                        return (
+                          <div key={item.label} className="flex flex-col items-center">
+                            <div className="relative w-24 h-24">
+                              <Doughnut data={doughnutData} options={{ plugins: { legend: { display: false }, tooltip: { enabled: false } }, animation: false }} />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-sm font-bold" style={{ color: item.color }}>
+                                  {item.isPercent ? `${item.value}%` : item.value}
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1 text-center">{item.label}</p>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

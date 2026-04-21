@@ -874,28 +874,12 @@ export default function CabinetsUnified() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           {/* Tabs */}
           <div className="flex bg-white dark:bg-gray-800 rounded-xl p-1 shadow-sm border border-gray-200 dark:border-gray-700">
-            <button
-              onClick={() => setActiveTab('analysis')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === 'analysis' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
+            <div
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white"
             >
               <FiGrid className="w-4 h-4" />
-              Analyse
-            </button>
-            <button
-              onClick={() => setActiveTab('comparison')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === 'comparison' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-            >
-              <FiBarChart2 className="w-4 h-4" />
-              Comparaison
-            </button>
+              Analyse et Comparaison
+            </div>
           </div>
 
           {/* Period Filter */}
@@ -917,8 +901,9 @@ export default function CabinetsUnified() {
           </div>
         )}
 
-        {/* Content */}
-        {activeTab === 'analysis' ? renderAnalysisView() : renderComparisonView()}
+        {/* Content — Analyse + Comparaison fusionnés */}
+        {renderAnalysisView()}
+        {renderComparisonView()}
       </div>
     </div>
   );

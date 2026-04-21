@@ -100,5 +100,6 @@ export const adminManualEntry = (data) => api.post('/admin/manual-entry', data);
 export const addPractitioner = (data) => api.post('/admin/add-practitioner', data);
 export const deletePractitioner = (code) => api.delete(`/admin/delete-practitioner/${code}`);
 export const toggleUserAccess = (email) => api.put(`/admin/toggle-user-access/${encodeURIComponent(email)}`);
+export const changeUserRole = (email, newRole) => api.put('/admin/change-user-role', { email, newRole });
 
 export default api;

@@ -841,8 +841,34 @@ router.put('/toggle-user-access/:email', auth, adminOnly, async (req, res) => {
   }
 });
 
+// PUT /api/admin/change-user-role — Changer le rôle d'un utilisateur (Rayan uniquement)
+router.put('/change-user-role', auth, adminOnly, async (req, res) => {
+  try {
+    if (req.user.email !== 'maarzoukrayan3@gmail.com') {
+      return res.status(403).json({ message: 'Seul l\'administrateur principal peut modifier les rôles.' });
+    }
+    const { email, newRole } = req.body;
+    if (!email || !newRole) return res.status(400).json({ message: 'Email et rôle requis.' });
+    if (!['admin', 'practitioner', 'consultant'].includes(newRole)) {
+      return res.status(400).json({ message: 'Rôle invalide. Valeurs acceptées: admin, practitioner, consultant.' });
+    }
+    // Empêcher de se rétrograder soi-même
+    if (email.toLowerCase() === 'maarzoukrayan3@gmail.com' && newRole !== 'admin') {
+      return res.status(403).json({ message: 'Impossible de modifier votre propre rôle administrateur.' });
+    }
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) return res.status(404).json({ message: 'Utilisateur introuvable.' });
+    const oldRole = user.role;
+    user.role = newRole;
+    await user.save();
+    res.json({ message: `Rôle de "${user.name}" changé de ${oldRole} à ${newRole}.`, user: { email: user.email, role: user.role } });
+  } catch (error) {
+    console.error('Erreur change-user-role:', error);
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
 // DELETE /api/admin/delete-practitioner/:code — Supprimer (désactiver) un praticien
-router.delete('/delete-practitioner/:code', auth, adminOnly, async (req, res) => {
   try {
     const { code } = req.params;
     const user = await User.findOne({ practitionerCode: code.toUpperCase(), role: 'practitioner' });
@@ -859,4 +885,11 @@ router.delete('/delete-practitioner/:code', auth, adminOnly, async (req, res) =>
   }
 });
 
+
+
+
+
+
 module.exports = router;
+
+

@@ -43,7 +43,7 @@ export default function App() {
     <ThemeProvider>
     <AuthProvider>
     <AppSettingsProvider>
-      <Router>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           {/* Public */}
           <Route path="/login" element={<Login />} />

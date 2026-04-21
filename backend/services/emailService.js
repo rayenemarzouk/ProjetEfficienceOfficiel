@@ -62,10 +62,8 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
   function buildComportementCabinet() {
     const hist = Array.isArray(historique) ? historique : [];
     if (hist.length === 0) {
-      return '<p style="margin:10px 0;font-size:13px;color:#94a3b8;text-align:center;">Aucune donn\u00E9e historique disponible.</p>';
+      return '<p style="margin:10px 0;font-size:13px;color:#94a3b8;text-align:center;">Aucune donnée historique disponible.</p>';
     }
-    const moisNoms = ['Jan','F\u00E9v','Mar','Avr','Mai','Jun','Jul','Ao\u00FB','Sep','Oct','Nov','D\u00E9c'];
-    const maxCA = Math.max(...hist.map(x => x.ca || 0), 1);
     const cur = hist[hist.length - 1] || {};
     const prv = hist.length > 1 ? hist[hist.length - 2] : null;
     const caEvol = prv && prv.ca > 0 ? (((cur.ca - prv.ca) / prv.ca) * 100).toFixed(1) : null;
@@ -76,8 +74,8 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
     o += '<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;"><tr>';
     // CA du mois
     o += '<td width="25%" style="text-align:center;padding:18px 10px;background:#eff6ff;border-right:1px solid #e2e8f0;">';
-    o += '<p style="margin:0;font-size:24px;font-weight:800;color:#2563eb;">' + fmtMoney(cur.ca || 0) + ' \u20AC</p>';
-    o += '<p style="margin:4px 0 0;font-size:10px;color:#64748b;">\uD83D\uDCB0 CA du mois</p>';
+    o += '<p style="margin:0;font-size:24px;font-weight:800;color:#2563eb;">' + fmtMoney(cur.ca || 0) + ' €</p>';
+    o += '<p style="margin:4px 0 0;font-size:10px;color:#64748b;">💰 CA du mois</p>';
     if (caEvol !== null) {
       const c = parseFloat(caEvol) >= 0 ? '#10b981' : '#ef4444';
       const s = parseFloat(caEvol) >= 0 ? '+' : '';
@@ -87,7 +85,7 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
     // Patients
     o += '<td width="25%" style="text-align:center;padding:18px 10px;background:#f0fdf4;border-right:1px solid #e2e8f0;">';
     o += '<p style="margin:0;font-size:24px;font-weight:800;color:#10b981;">' + (cur.patients || 0) + '</p>';
-    o += '<p style="margin:4px 0 0;font-size:10px;color:#64748b;">\uD83D\uDC65 Patients</p>';
+    o += '<p style="margin:4px 0 0;font-size:10px;color:#64748b;">👥 Patients</p>';
     if (patEvol !== null) {
       const c2 = parseFloat(patEvol) >= 0 ? '#10b981' : '#ef4444';
       const s2 = parseFloat(patEvol) >= 0 ? '+' : '';
@@ -97,46 +95,14 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
     // RDV
     o += '<td width="25%" style="text-align:center;padding:18px 10px;background:#faf5ff;border-right:1px solid #e2e8f0;">';
     o += '<p style="margin:0;font-size:24px;font-weight:800;color:#8b5cf6;">' + (cur.rdv || nbRdv || 0) + '</p>';
-    o += '<p style="margin:4px 0 0;font-size:10px;color:#64748b;">\uD83D\uDCC5 RDV</p></td>';
+    o += '<p style="margin:4px 0 0;font-size:10px;color:#64748b;">📅 RDV</p></td>';
     // Heures
     o += '<td width="25%" style="text-align:center;padding:18px 10px;background:#fffbeb;">';
     const hT = cur.heures ? (cur.heures / 60).toFixed(0) : Math.round(heuresTravaillees);
     o += '<p style="margin:0;font-size:24px;font-weight:800;color:#f59e0b;">' + hT + 'h</p>';
-    o += '<p style="margin:4px 0 0;font-size:10px;color:#64748b;">\u23F0 Heures</p></td>';
+    o += '<p style="margin:4px 0 0;font-size:10px;color:#64748b;">⏰ Heures</p></td>';
     o += '</tr></table>';
 
-    // Evolution bars
-    o += '<p style="margin:20px 0 8px;font-size:13px;font-weight:600;color:#475569;">\uD83D\uDCC8 \u00C9volution du CA (derniers mois)</p>';
-    hist.forEach(item => {
-      const mi = parseInt(item.mois.substring(4, 6)) - 1;
-      const yr = item.mois.substring(2, 4);
-      const lb = moisNoms[mi] + ' ' + yr;
-      const pc = Math.round((item.ca / maxCA) * 100);
-      const bc = item.mois === hist[hist.length - 1].mois ? '#2563eb' : '#93c5fd';
-      o += '<p style="margin:6px 0 2px;font-size:11px;color:#64748b;">' + lb + ' \u2014 ' + fmtMoney(item.ca) + ' \u20AC</p>';
-      o += '<table width="100%" cellpadding="0" cellspacing="0" style="background:#e2e8f0;border-radius:4px;overflow:hidden;"><tr>';
-      o += '<td style="width:' + Math.max(pc, 2) + '%;background:' + bc + ';padding:4px 8px;border-radius:4px;color:#fff;font-size:10px;font-weight:700;">' + pc + '%</td></tr></table>';
-    });
-
-    // Detail table
-    o += '<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px;border-collapse:collapse;border-radius:10px;overflow:hidden;">';
-    o += '<tr style="background:#1e293b;"><td style="padding:8px 12px;font-size:11px;color:#fff;font-weight:600;">Mois</td>';
-    o += '<td style="padding:8px 12px;font-size:11px;color:#fff;font-weight:600;text-align:center;">CA</td>';
-    o += '<td style="padding:8px 12px;font-size:11px;color:#fff;font-weight:600;text-align:center;">Patients</td>';
-    o += '<td style="padding:8px 12px;font-size:11px;color:#fff;font-weight:600;text-align:right;">Encaiss\u00E9</td></tr>';
-    hist.forEach((item, i) => {
-      const mi2 = parseInt(item.mois.substring(4, 6)) - 1;
-      const yr2 = item.mois.substring(0, 4);
-      const lb2 = moisNoms[mi2] + ' ' + yr2;
-      const bg = i % 2 === 0 ? '#ffffff' : '#f8fafc';
-      o += '<tr style="background:' + bg + ';border-bottom:1px solid #f1f5f9;">';
-      o += '<td style="padding:8px 12px;font-size:12px;color:#334155;">' + lb2 + '</td>';
-      o += '<td style="padding:8px 12px;font-size:12px;font-weight:700;color:#1e293b;text-align:center;">' + fmtMoney(item.ca) + ' \u20AC</td>';
-      o += '<td style="padding:8px 12px;font-size:12px;color:#475569;text-align:center;">' + (item.patients || 0) + '</td>';
-      o += '<td style="padding:8px 12px;font-size:12px;font-weight:600;color:#10b981;text-align:right;">' + fmtMoney(item.encaisse || 0) + ' \u20AC</td>';
-      o += '</tr>';
-    });
-    o += '</table>';
     return o;
   }
 
