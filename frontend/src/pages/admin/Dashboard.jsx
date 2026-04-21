@@ -448,69 +448,11 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className={`mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 rounded-2xl p-8 text-center ${isDynamic ? 'animate-fade-in-down hover-lift card-shine' : ''}`}>
-              <h3 className="text-3xl font-black text-gray-800 tracking-wide mb-2" style={{ fontFamily: 'monospace' }}>
-                EFFICIENCE ANALYTICS
-              </h3>
-              <p className="text-gray-600">L'accompagnement personnalisé de votre cabinet dentaire</p>
-            </div>
+
           </>
         )}
 
-        {/* ═══ AI COMMAND CENTER (Rayan) - affiché après EFFICIENCE ═══ */}
-        {isRayan && (
-          <div className={`mb-6 relative group ${isDynamic ? 'animate-fade-in-up' : ''}`} style={isDynamic ? { animationDelay: '0.2s' } : {}}>
-            <div className={`absolute -inset-0.5 bg-gradient-to-r from-violet-600/20 via-blue-500/20 to-cyan-500/20 rounded-2xl blur-lg opacity-60 group-hover:opacity-100 transition-opacity duration-700 ${isDynamic ? 'animate-pulse-soft' : ''}`}></div>
-            <div className="relative bg-white border border-gray-200 rounded-2xl p-5 overflow-hidden shadow-sm">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 via-blue-500 to-cyan-500"></div>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 rounded-full blur-3xl"></div>
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-500/5 rounded-full blur-3xl"></div>
 
-              <div className="relative flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
-                <div className="relative">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <div className="absolute inset-0 w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
-                </div>
-                <span className="text-[10px] font-bold text-green-600 uppercase tracking-[0.15em]">MOTEUR IA OPÉRATIONNEL</span>
-                <div className="ml-auto flex items-center gap-3">
-                  <span className="text-[10px] text-gray-600 font-mono">v2.4.0</span>
-                  <span className="px-2 py-0.5 bg-violet-500/10 border border-violet-500/20 rounded text-[10px] text-violet-600 font-bold">5 MODÈLES ACTIFS</span>
-                </div>
-              </div>
-
-              <div className="relative grid grid-cols-1 lg:grid-cols-5 gap-4">
-                <div className="lg:col-span-2">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/25">
-                      <FiCpu className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-gray-900">Centre de Commande IA</h3>
-                      <p className="text-[11px] text-gray-500">Intelligence artificielle temps réel</p>
-                    </div>
-                  </div>
-
-                </div>
-
-                <div className="text-center p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-blue-300 transition-colors">
-                  <FiGlobe className="w-5 h-5 text-blue-500 mx-auto mb-1.5" />
-                  <p className="text-xl font-black text-gray-900 tabular-nums">{practitioners.length}</p>
-                  <p className="text-[9px] text-gray-500 uppercase tracking-wider mt-0.5">Cabinets</p>
-                </div>
-                <div className="text-center p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-cyan-300 transition-colors">
-                  <FiZap className="w-5 h-5 text-amber-500 mx-auto mb-1.5" />
-                  <p className="text-xl font-black text-cyan-600 tabular-nums">{animHealthScore}<span className="text-sm text-gray-400">%</span></p>
-                  <p className="text-[9px] text-gray-500 uppercase tracking-wider mt-0.5">Score Santé</p>
-                </div>
-                <div className="text-center p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-emerald-300 transition-colors">
-                  <FiShield className="w-5 h-5 text-emerald-500 mx-auto mb-1.5" />
-                  <p className="text-xl font-black text-emerald-600 tabular-nums">97<span className="text-sm text-gray-400">%</span></p>
-                  <p className="text-[9px] text-gray-500 uppercase tracking-wider mt-0.5">Fiabilité</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
         {/* Synthèse Globale - KPI Cards */}
         {statsCardsEnabled && (
         <div className={`bg-white border border-gray-100 rounded-2xl p-6 shadow-sm ${isDynamic ? 'animate-fade-in' : ''}`}>
@@ -560,181 +502,81 @@ export default function AdminDashboard() {
         </div>
         )}
 
-        {/* ═══ AI HEALTH SCORE + QUICK METRICS (Rayan) ═══ */}
-        {isRayan && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 mb-6">
-            {/* Score Santé Global - Circular Gauge */}
-            <div className={`relative group ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.3s' } : {}}>
-              <div className={`absolute -inset-0.5 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isDynamic ? 'animate-pulse-glow' : ''}`}></div>
-              <div className="relative bg-white border border-gray-200 shadow-sm rounded-2xl p-5 h-full flex flex-col items-center justify-center">
-                <div className="relative w-28 h-28 mb-3">
-                  <svg className="w-28 h-28 -rotate-90" viewBox="0 0 120 120">
-                    <circle cx="60" cy="60" r="52" fill="none" stroke="#e5e7eb" strokeWidth="8" />
-                    <circle cx="60" cy="60" r="52" fill="none" stroke="url(#scoreGradient)" strokeWidth="8" strokeLinecap="round" style={{ strokeDasharray: `${animHealthScore * 3.27} 327` }} />
-                    <defs>
-                      <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#10b981" />
-                        <stop offset="50%" stopColor="#06b6d4" />
-                        <stop offset="100%" stopColor="#8b5cf6" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-3xl font-black text-gray-900 tabular-nums">{animHealthScore}</span>
-                    <span className="text-[10px] text-gray-400 font-medium">/ 100</span>
-                  </div>
-                </div>
-                <h4 className="text-sm font-bold text-gray-900">Score Santé IA</h4>
-                <p className="text-[10px] text-gray-500 mt-0.5">Indice de performance global</p>
-              </div>
-            </div>
-
-            {/* Prédictions IA */}
-            <div className={`bg-white border border-gray-200 shadow-sm rounded-2xl p-5 hover:border-violet-400/40 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.4s' } : {}}>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-1.5 bg-violet-500/10 rounded-lg"><FiTarget className="w-4 h-4 text-violet-500" /></div>
-                <h4 className="text-sm font-bold text-gray-900">Prédictions IA</h4>
-              </div>
-              <div className="space-y-3">
-                {aiForecastValues.slice(0, 3).map((val, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                    <span className="text-[11px] text-gray-500">{forecastMonthLabels[i]}</span>
-                    <span className="text-sm font-bold text-amber-600 tabular-nums">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val)}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-3 pt-3 border-t border-gray-200">
-                <div className="flex items-center gap-1.5">
-                  <FiTrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="text-[10px] text-emerald-600 font-medium">
-                    Tendance {trendCA !== null && trendCA >= 0 ? 'haussière' : 'baissière'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Taux de Recouvrement */}
-            <div className={`bg-white border border-gray-200 shadow-sm rounded-2xl p-5 hover:border-emerald-400/40 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.5s' } : {}}>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-1.5 bg-emerald-500/10 rounded-lg"><FiDollarSign className="w-4 h-4 text-emerald-500" /></div>
-                <h4 className="text-sm font-bold text-gray-900">Recouvrement</h4>
-              </div>
-              <div className="text-center mb-3">
-                <span className="text-4xl font-black text-gray-900 tabular-nums">{animEncaissePct}<span className="text-lg text-gray-400">%</span></span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
-                <div className={`h-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 ${isDynamic ? 'transition-all duration-[2000ms] ease-out' : ''}`} style={{ width: `${animEncaissePct}%` }}></div>
-              </div>
-              <div className="flex justify-between text-[10px] text-gray-500">
-                <span>Encaissé: {formatMoney(totalEncaisse)}</span>
-                <span>Facturé: {formatMoney(totalCA)}</span>
-              </div>
-            </div>
-
-            {/* Présences / Absences */}
-            <div className={`bg-white border border-gray-200 shadow-sm rounded-2xl p-5 hover:border-blue-400/40 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.6s' } : {}}>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-1.5 bg-blue-500/10 rounded-lg"><FiUsers className="w-4 h-4 text-blue-500" /></div>
-                <h4 className="text-sm font-bold text-gray-900">Présences RDV</h4>
-              </div>
-              <div className="flex items-end gap-4 mb-3">
-                <div>
-                  <span className="text-3xl font-black text-emerald-600 tabular-nums">{animPresences}</span>
-                  <p className="text-[10px] text-gray-500">Présents</p>
-                </div>
-                <div>
-                  <span className="text-xl font-bold text-red-500 tabular-nums">{animAbsences}</span>
-                  <p className="text-[10px] text-gray-500">Absents</p>
-                </div>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden flex">
-                <div className="h-2 bg-emerald-500 transition-all duration-1000" style={{ width: `${totalRdv > 0 ? (totalPresences / totalRdv) * 100 : 0}%` }}></div>
-                <div className="h-2 bg-red-500 transition-all duration-1000" style={{ width: `${totalRdv > 0 ? (totalAbsences / totalRdv) * 100 : 0}%` }}></div>
-              </div>
-              <p className="text-[10px] text-gray-500 mt-2">Taux: {totalRdv > 0 ? ((totalPresences / totalRdv) * 100).toFixed(1) : 0}%</p>
-            </div>
-          </div>
-        )}
-
-        {/* ═══ CHARTS : CA par cabinet + Répartition scores (Younis) ═══ */}
-        {!isRayan && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
-            {/* Bar chart — CA par cabinet */}
-            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-              <h3 className="text-base font-bold text-gray-900 mb-1">CA Moyen par cabinet</h3>
-              <p className="text-xs text-gray-400 mb-4">Facturé vs Encaissé — toutes périodes</p>
-              <div style={{ height: '240px' }}>
-                <Bar
-                  data={{
-                    labels: (data?.caByPractitioner || []).map(p => data?.practitioners?.find(pr => pr.code === p._id)?.name || p._id),
-                    datasets: [
-                      {
-                        label: 'CA Facturé',
-                        data: (data?.caByPractitioner || []).map(p => p.totalFacture || 0),
-                        backgroundColor: '#10b981',
-                        borderRadius: 8,
-                        borderSkipped: false,
-                      },
-                      {
-                        label: 'CA Encaissé',
-                        data: (data?.caByPractitioner || []).map(p => p.totalEncaisse || 0),
-                        backgroundColor: '#ef4444',
-                        borderRadius: 8,
-                        borderSkipped: false,
-                      },
-                    ]
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: { position: 'bottom', labels: { color: '#64748b', usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, padding: 16 } },
-                      tooltip: { backgroundColor: '#1e293b', titleColor: '#f8fafc', bodyColor: '#e2e8f0', cornerRadius: 10, padding: 12, callbacks: { label: (c) => ` ${c.dataset.label}: ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(c.raw || 0)}` } }
+        {/* ═══ CHARTS : CA Moyen par cabinet + Répartition des scores ═══ */}
+        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6 ${isDynamic ? 'animate-fade-in' : ''}`}>
+          {/* Bar chart — CA par cabinet */}
+          <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+            <h3 className="text-base font-bold text-gray-900 mb-1">CA Moyen par cabinet</h3>
+            <p className="text-xs text-gray-400 mb-4">Facturé vs Encaissé — toutes périodes</p>
+            <div style={{ height: '240px' }}>
+              <Bar
+                data={{
+                  labels: (data?.caByPractitioner || []).map(p => data?.practitioners?.find(pr => pr.code === p._id)?.name || p._id),
+                  datasets: [
+                    {
+                      label: 'CA Facturé',
+                      data: (data?.caByPractitioner || []).map(p => p.totalFacture || 0),
+                      backgroundColor: '#10b981',
+                      borderRadius: 8,
+                      borderSkipped: false,
                     },
-                    scales: {
-                      x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } }, border: { display: false } },
-                      y: { beginAtZero: true, grid: { color: 'rgba(226,232,240,0.5)' }, ticks: { color: '#64748b', font: { size: 10 }, callback: v => `${(v/1000).toFixed(0)}k€` }, border: { display: false } }
-                    }
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Donut — Répartition des scores */}
-            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col">
-              <h3 className="text-base font-bold text-gray-900 mb-1">Répartition des Scores</h3>
-              <p className="text-xs text-gray-400 mb-4">Taux d'encaissement par cabinet</p>
-              <div className="flex-1 flex items-center justify-center" style={{ height: '200px' }}>
-                <Doughnut
-                  data={{
-                    labels: ['Excellent (≥85%)', 'Bon (70–84%)', 'À améliorer (<70%)'],
-                    datasets: [{
-                      data: [
-                        (data?.caByPractitioner || []).filter(p => p.totalFacture > 0 && (p.totalEncaisse / p.totalFacture) * 100 >= 85).length || 0,
-                        (data?.caByPractitioner || []).filter(p => p.totalFacture > 0 && (p.totalEncaisse / p.totalFacture) * 100 >= 70 && (p.totalEncaisse / p.totalFacture) * 100 < 85).length || 0,
-                        (data?.caByPractitioner || []).filter(p => p.totalFacture === 0 || (p.totalEncaisse / p.totalFacture) * 100 < 70).length || 0,
-                      ],
-                      backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-                      borderWidth: 4,
-                      borderColor: '#ffffff',
-                      hoverOffset: 14,
-                    }]
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '60%',
-                    plugins: {
-                      legend: { position: 'bottom', labels: { color: '#64748b', usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, padding: 16 } },
-                      tooltip: { backgroundColor: '#1e293b', titleColor: '#f8fafc', bodyColor: '#e2e8f0', cornerRadius: 10, padding: 12 }
-                    }
-                  }}
-                />
-              </div>
+                    {
+                      label: 'CA Encaissé',
+                      data: (data?.caByPractitioner || []).map(p => p.totalEncaisse || 0),
+                      backgroundColor: '#ef4444',
+                      borderRadius: 8,
+                      borderSkipped: false,
+                    },
+                  ]
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { position: 'bottom', labels: { color: '#64748b', usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, padding: 16 } },
+                    tooltip: { backgroundColor: '#1e293b', titleColor: '#f8fafc', bodyColor: '#e2e8f0', cornerRadius: 10, padding: 12, callbacks: { label: (c) => ` ${c.dataset.label}: ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(c.raw || 0)}` } }
+                  },
+                  scales: {
+                    x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } }, border: { display: false } },
+                    y: { beginAtZero: true, grid: { color: 'rgba(226,232,240,0.5)' }, ticks: { color: '#64748b', font: { size: 10 }, callback: v => `${(v/1000).toFixed(0)}k€` }, border: { display: false } }
+                  }
+                }}
+              />
             </div>
           </div>
-        )}
 
+          {/* Donut — Répartition des scores */}
+          <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col">
+            <h3 className="text-base font-bold text-gray-900 mb-1">Répartition des Scores</h3>
+            <p className="text-xs text-gray-400 mb-4">Taux d'encaissement par cabinet</p>
+            <div className="flex-1 flex items-center justify-center" style={{ height: '200px' }}>
+              <Doughnut
+                data={{
+                  labels: ['Excellent (≥85%)', 'Bon (70–84%)', 'À améliorer (<70%)'],
+                  datasets: [{
+                    data: [
+                      (data?.caByPractitioner || []).filter(p => p.totalFacture > 0 && (p.totalEncaisse / p.totalFacture) * 100 >= 85).length || 0,
+                      (data?.caByPractitioner || []).filter(p => p.totalFacture > 0 && (p.totalEncaisse / p.totalFacture) * 100 >= 70 && (p.totalEncaisse / p.totalFacture) * 100 < 85).length || 0,
+                      (data?.caByPractitioner || []).filter(p => p.totalFacture === 0 || (p.totalEncaisse / p.totalFacture) * 100 < 70).length || 0,
+                    ],
+                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                    borderWidth: 4,
+                    borderColor: '#ffffff',
+                    hoverOffset: 14,
+                  }]
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  cutout: '60%',
+                  plugins: {
+                    legend: { position: 'bottom', labels: { color: '#64748b', usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, padding: 16 } },
+                    tooltip: { backgroundColor: '#1e293b', titleColor: '#f8fafc', bodyColor: '#e2e8f0', cornerRadius: 10, padding: 12 }
+                  }
+                }}              />
+            </div>
+          </div>
+        </div>
         {/* KPI Cards — Animated (Rayan uniquement) */}
         {isRayan && <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6 ${isDynamic ? 'animate-fade-in' : ''}`} style={isDynamic ? { animationDelay: '0.2s' } : {}}>
           {/* CA Total */}
@@ -853,67 +695,9 @@ export default function AdminDashboard() {
           </div>
         </div>}
 
-        {/* Practitioner Cards — visible for Rayan only (moved to Analyse globales for Younis) */}
-        {isRayan && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-          {data?.practitioners?.map((p, idx) => {
-            const ca = data.caByPractitioner?.find(c => c._id === p.code);
-            const heures = data.heuresByPractitioner?.find(h => h._id === p.code);
-            const hTotal = heures ? (heures.totalMinutes / 60) : 0;
-            const cardThemes = [
-              { bg: dark ? 'from-violet-900/30 to-purple-900/30' : 'from-violet-50 to-purple-50', badge: dark ? 'bg-violet-900/50' : 'bg-violet-100', badgeText: dark ? 'text-violet-300' : 'text-violet-700', border: dark ? 'border-violet-800' : 'border-violet-100', accent: dark ? 'text-violet-400' : 'text-violet-600' },
-              { bg: dark ? 'from-blue-900/30 to-cyan-900/30' : 'from-blue-50 to-cyan-50', badge: dark ? 'bg-blue-900/50' : 'bg-blue-100', badgeText: dark ? 'text-blue-300' : 'text-blue-700', border: dark ? 'border-blue-800' : 'border-blue-100', accent: dark ? 'text-blue-400' : 'text-blue-600' },
-              { bg: dark ? 'from-amber-900/30 to-orange-900/30' : 'from-amber-50 to-orange-50', badge: dark ? 'bg-amber-900/50' : 'bg-amber-100', badgeText: dark ? 'text-amber-300' : 'text-amber-700', border: dark ? 'border-amber-800' : 'border-amber-100', accent: dark ? 'text-amber-400' : 'text-amber-600' },
-              { bg: dark ? 'from-pink-900/30 to-rose-900/30' : 'from-pink-50 to-rose-50', badge: dark ? 'bg-pink-900/50' : 'bg-pink-100', badgeText: dark ? 'text-pink-300' : 'text-pink-700', border: dark ? 'border-pink-800' : 'border-pink-100', accent: dark ? 'text-pink-400' : 'text-pink-600' },
-            ];
-            const theme = cardThemes[idx % cardThemes.length];
 
-            return (
-              <div key={p.code} className={`bg-gradient-to-br ${theme.bg} rounded-2xl border ${theme.border} p-5 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5`}>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className={`w-11 h-11 ${theme.badge} rounded-xl flex items-center justify-center shadow-sm`}>
-                    <span className={`${theme.badgeText} font-bold text-sm`}>{p.code}</span>
-                  </div>
-                  <div>
-                    <h3 className={`font-semibold ${isRayan ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{p.name}</h3>
-                    <p className={`text-xs ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>{p.email}</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className={`text-center p-3 backdrop-blur-sm rounded-xl shadow-sm ${isRayan ? 'bg-white/10 border border-gray-600/50' : 'bg-white/70 dark:bg-white/10 border border-white/50 dark:border-gray-600/50'}`}>
-                    <p className={`text-base font-bold ${theme.accent}`}>{formatMoney(ca?.totalFacture || 0)}</p>
-                    <p className={`text-[10px] mt-0.5 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>CA Total</p>
-                  </div>
-                  <div className={`text-center p-3 backdrop-blur-sm rounded-xl shadow-sm ${isRayan ? 'bg-white/10 border border-gray-600/50' : 'bg-white/70 dark:bg-white/10 border border-white/50 dark:border-gray-600/50'}`}>
-                    <p className={`text-base font-bold ${isRayan ? 'text-blue-400' : 'text-blue-600'}`}>{ca?.totalPatients || 0}</p>
-                    <p className={`text-[10px] mt-0.5 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>Patients</p>
-                  </div>
-                  <div className={`text-center p-3 backdrop-blur-sm rounded-xl shadow-sm ${isRayan ? 'bg-white/10 border border-gray-600/50' : 'bg-white/70 dark:bg-white/10 border border-white/50 dark:border-gray-600/50'}`}>
-                    <p className={`text-base font-bold ${isRayan ? 'text-amber-400' : 'text-amber-600'}`}>{hTotal.toFixed(0)}h</p>
-                    <p className={`text-[10px] mt-0.5 ${isRayan ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>Heures</p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        )}
 
-        {/* AI Insight Panel - Rayan only */}
-        {isRayan && aiInsightCA && (
-          <div className="rounded-2xl p-5 mb-6 transition-colors bg-gradient-to-r from-violet-50 via-blue-50 to-amber-50 border border-violet-200">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-1.5 rounded-lg bg-violet-100"><FiCpu className="w-4 h-4 text-violet-600" /></div>
-              <h4 className="text-sm font-bold text-gray-900">Analyse IA — Chiffre d'Affaires</h4>
-              <span className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full text-violet-600 bg-violet-100">Fiabilité {aiInsightCA.confidence}%</span>
-            </div>
-            <div className="space-y-1">
-              {aiInsightCA.parts.map((part, i) => (
-                <p key={i} className="text-xs leading-relaxed text-gray-700">{part}</p>
-              ))}
-            </div>
-          </div>
-        )}
+
 
         {/* Alertes & Notifications - clickable */}
         {alertsEnabled && (
@@ -942,47 +726,7 @@ export default function AdminDashboard() {
         </div>
         )}
 
-        {/* ═══ AI ACTIVITY TIMELINE (Rayan) ═══ */}
-        {isRayan && (
-          <div className="mb-6">
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600/10 via-blue-500/10 to-cyan-500/10 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative bg-white border border-gray-200 shadow-sm rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-violet-50 rounded-lg border border-violet-200">
-                      <FiCpu className="w-4 h-4 text-violet-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-gray-900">Journal d'Activité IA</h3>
-                      <p className="text-[10px] text-gray-500">Dernières analyses effectuées par le moteur</p>
-                    </div>
-                  </div>
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 border border-green-200 rounded-full">
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
-                    </span>
-                    <span className="text-[10px] font-bold text-green-600">Actif</span>
-                  </span>
-                </div>
-                <div className="space-y-2.5">
-                  {aiActivities.map((activity, i) => (
-                    <div key={i} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-violet-300 transition-all duration-300 hover:bg-gray-100">
-                      <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0 border border-emerald-200">
-                        <FiCheck className="w-4 h-4 text-emerald-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                      </div>
-                      <span className="text-[10px] text-gray-400 flex-shrink-0 tabular-nums">{activity.time}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+
 
         {/* CA Total & Objectif Total — Animated (Rayan uniquement) */}
         {isRayan && <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -1011,47 +755,7 @@ export default function AdminDashboard() {
           </div>
         </div>}
 
-        {/* ═══ AI RECOMMENDATIONS (Rayan) ═══ */}
-        {isRayan && (
-          <div className="mt-6 mb-2">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="p-1.5 bg-amber-50 rounded-lg border border-amber-200">
-                <FiStar className="w-4 h-4 text-amber-600" />
-              </div>
-              <h3 className="text-base font-bold text-gray-900">Recommandations IA</h3>
-              <span className="ml-2 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded text-[9px] text-amber-600 font-bold uppercase tracking-wider">Auto-générées</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="group bg-white border border-emerald-200 rounded-xl p-4 hover:border-emerald-400 transition-all duration-300 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 bg-emerald-50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <FiTrendingUp className="w-4 h-4 text-emerald-600" />
-                  </div>
-                  <h4 className="text-xs font-bold text-emerald-600">Croissance</h4>
-                </div>
-                <p className="text-[11px] text-gray-500 leading-relaxed">{trendCA !== null && trendCA >= 0 ? 'Le CA montre une tendance positive. Maintenez cette dynamique pour maximiser la croissance.' : 'Le CA est en baisse. Analysez les causes et ajustez votre stratégie.'}</p>
-              </div>
-              <div className="group bg-white border border-blue-200 rounded-xl p-4 hover:border-blue-400 transition-all duration-300 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 bg-blue-50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <FiUsers className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <h4 className="text-xs font-bold text-blue-600">Patients</h4>
-                </div>
-                <p className="text-[11px] text-gray-500 leading-relaxed">{totalAbsences > 0 ? `${totalAbsences} absences détectées. Envisagez un système de rappel SMS pour réduire le taux d'absence.` : 'Taux de présence excellent. Continuez ainsi.'}</p>
-              </div>
-              <div className="group bg-white border border-violet-200 rounded-xl p-4 hover:border-violet-400 transition-all duration-300 shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 bg-violet-50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <FiDollarSign className="w-4 h-4 text-violet-600" />
-                  </div>
-                  <h4 className="text-xs font-bold text-violet-600">Recouvrement</h4>
-                </div>
-                <p className="text-[11px] text-gray-500 leading-relaxed">{caFaibleEncaissement > 0 ? `${caFaibleEncaissement} cabinet(s) sous 85%. Priorisez le suivi des impayés et relancez les factures en retard.` : 'Tous les cabinets ont un bon taux d\'encaissement. Excellent !'}</p>
-              </div>
-            </div>
-          </div>
-        )}
+
       </div>
     </div>
   );
