@@ -513,7 +513,7 @@ router.get('/list', auth, async (req, res) => {
       filter.mois = normalizeMois(req.query.mois);
     }
 
-    const reports = await Report.find(filter).sort({ createdAt: -1 });
+    const reports = await Report.find(filter).sort({ updatedAt: -1 });
     res.json(reports);
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur.' });
