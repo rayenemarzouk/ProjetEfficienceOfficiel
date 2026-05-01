@@ -75,7 +75,7 @@ export default function App() {
           </Route>
 
           {/* Consultant Routes */}
-          <Route element={<PrivateRoute allowedRoles={['consultant']} />}>
+          <Route element={<PrivateRoute allowedRoles={['consultant', 'admin']} />}>
             <Route path="/consultant" element={<ConsultantLayout><ConsultantDashboard /></ConsultantLayout>} />
             <Route path="/consultant/dashboard" element={<ConsultantLayout><ConsultantDashboard /></ConsultantLayout>} />
             <Route path="/consultant/analyses" element={<ConsultantLayout><ConsultantAnalyses /></ConsultantLayout>} />

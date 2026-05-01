@@ -685,17 +685,66 @@ router.post('/manual-entry', auth, consultantOnly, async (req, res) => {
     const {
       praticien,
       mois,             // format YYYYMM
+      // === Chiffre d'affaires ===
       caFacture,
       caEncaisse,
+      // === Patients ===
       nbPatients,
       nouveauxPatients,
+      nouveauxDossiers,
+      reglementsPourAnnee,
+      // === RDV ===
       totalRdv,
-      heuresTravaillees // en heures, converti en minutes pour le stockage
+      heuresTravaillees,
+      rdvHonores,
+      rdvManques,
+      annulations,
+      reports,
+      dureeMoyennePrevue,
+      rdvParJour,
+      rdvImportants,
+      // === Devis (capture 1) ===
+      nbDevis,
+      montantTotalPresente,
+      montantMoyenPresente,
+      nbDevisAcceptes,
+      tauxAcceptationNombre,
+      montantTotalAccepte,
+      montantMoyenAccepte,
+      tauxAcceptationMontant,
+      delaiMoyenAcceptation,
+      montantTotalRealise,
+      montantMoyenRealise,
+      // === Actes réalisés (capture 2) ===
+      soinsConservateurs,
+      prothesesFixes,
+      prothesesAmovibles,
+      prothesesMaxilloFaciales,
+      chirurgie,
+      odf,
+      consultations,
+      prophylaxie,
+      endodontie,
+      radiographie,
+      parodontologie,
+      implantologie,
+      implantologieChirurgicale,
+      implantologieProthetique,
+      occlusodontie,
+      esthetique
     } = req.body;
 
     if (!praticien || !mois) {
       return res.status(400).json({ message: 'Praticien et mois sont requis.' });
     }
+
+    // Helper pour nettoyer un objet acte
+    const parseActe = (acte) => ({
+      nombre:       Number(acte?.nombre)       || 0,
+      dents:        Number(acte?.dents)         || 0,
+      honoraires:   Number(acte?.honoraires)   || 0,
+      honorairesNR: Number(acte?.honorairesNR) || 0
+    });
 
     // Upsert AnalyseRealisation
     await AnalyseRealisation.findOneAndUpdate(
@@ -703,9 +752,27 @@ router.post('/manual-entry', auth, consultantOnly, async (req, res) => {
       {
         praticien,
         mois,
-        montantFacture: Number(caFacture) || 0,
-        montantEncaisse: Number(caEncaisse) || 0,
-        nbPatients: Number(nbPatients) || 0
+        montantFacture:   Number(caFacture)   || 0,
+        montantEncaisse:  Number(caEncaisse)  || 0,
+        nbPatients:       Number(nbPatients)  || 0,
+        nouveauxDossiers: Number(nouveauxDossiers) || 0,
+        reglementsPourAnnee: Number(reglementsPourAnnee) || 0,
+        soinsConservateurs:       parseActe(soinsConservateurs),
+        prothesesFixes:           parseActe(prothesesFixes),
+        prothesesAmovibles:       parseActe(prothesesAmovibles),
+        prothesesMaxilloFaciales: parseActe(prothesesMaxilloFaciales),
+        chirurgie:                parseActe(chirurgie),
+        odf:                      parseActe(odf),
+        consultations:            parseActe(consultations),
+        prophylaxie:              parseActe(prophylaxie),
+        endodontie:               parseActe(endodontie),
+        radiographie:             parseActe(radiographie),
+        parodontologie:           parseActe(parodontologie),
+        implantologie:            parseActe(implantologie),
+        implantologieChirurgicale:parseActe(implantologieChirurgicale),
+        implantologieProthetique: parseActe(implantologieProthetique),
+        occlusodontie:            parseActe(occlusodontie),
+        esthetique:               parseActe(esthetique)
       },
       { upsert: true, new: true }
     );
@@ -716,9 +783,16 @@ router.post('/manual-entry', auth, consultantOnly, async (req, res) => {
       {
         praticien,
         mois,
-        nbRdv: Number(totalRdv) || 0,
-        nbNouveauxPatients: Number(nouveauxPatients) || 0,
-        nbPatients: Number(nbPatients) || 0
+        nbRdv:              Number(totalRdv)           || 0,
+        nbNouveauxPatients: Number(nouveauxPatients)   || 0,
+        nbPatients:         Number(nbPatients)         || 0,
+        rdvHonores:         Number(rdvHonores)         || 0,
+        rdvManques:         Number(rdvManques)         || 0,
+        annulations:        Number(annulations)        || 0,
+        reports:            Number(reports)            || 0,
+        dureeMoyennePrevue: Number(dureeMoyennePrevue) || 0,
+        rdvParJour:         Number(rdvParJour)         || 0,
+        rdvImportants:      Number(rdvImportants)      || 0
       },
       { upsert: true, new: true }
     );
@@ -730,6 +804,27 @@ router.post('/manual-entry', auth, consultantOnly, async (req, res) => {
         praticien,
         mois,
         nbHeures: (Number(heuresTravaillees) || 0) * 60
+      },
+      { upsert: true, new: true }
+    );
+
+    // Upsert AnalyseDevis
+    await AnalyseDevis.findOneAndUpdate(
+      { praticien, mois },
+      {
+        praticien,
+        mois,
+        nbDevis:               Number(nbDevis)               || 0,
+        montantPropositions:   Number(montantTotalPresente)  || 0,
+        montantMoyenPresente:  Number(montantMoyenPresente)  || 0,
+        nbDevisAcceptes:       Number(nbDevisAcceptes)       || 0,
+        tauxAcceptationNombre: Number(tauxAcceptationNombre) || 0,
+        montantAccepte:        Number(montantTotalAccepte)   || 0,
+        montantMoyenAccepte:   Number(montantMoyenAccepte)   || 0,
+        tauxAcceptationMontant:Number(tauxAcceptationMontant)|| 0,
+        delaiMoyenAcceptation: Number(delaiMoyenAcceptation) || 0,
+        montantTotalRealise:   Number(montantTotalRealise)   || 0,
+        montantMoyenRealise:   Number(montantMoyenRealise)   || 0
       },
       { upsert: true, new: true }
     );
