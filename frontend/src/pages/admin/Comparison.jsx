@@ -499,9 +499,6 @@ export default function Comparison() {
               <span className="text-lg">📊</span>
               <h3 className="text-base font-bold text-gray-900 dark:text-white">Performance par Cabinet</h3>
             </div>
-            <span className="flex items-center gap-1 text-[9px] font-bold text-violet-600 bg-violet-50 px-2.5 py-1 rounded-full">
-              <FiCpu className="w-3 h-3" /> Modèle IA — Score Santé Multi-KPI
-            </span>
           </div>
           <div className={`grid gap-6 ${doctors.length <= 2 ? 'grid-cols-1 md:grid-cols-2 max-w-2xl mx-auto' : 'grid-cols-1 md:grid-cols-3'}`}>
             {doctors.map((doc, i) => {
@@ -528,23 +525,7 @@ export default function Comparison() {
                     <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 mt-1">
                       <div className="h-1.5 rounded-full" style={{ width: `${Math.min(tauxEnc, 100)}%`, backgroundColor: doc.color }}></div>
                     </div>
-                    {/* IA Health Score */}
-                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1"><FiCpu className="w-3 h-3 text-violet-500" /> Score Santé IA</span>
-                        <span className={`font-black text-lg ${
-                          doc.healthScore >= 80 ? 'text-green-500' :
-                          doc.healthScore >= 60 ? 'text-amber-500' : 'text-red-500'
-                        }`}>{doc.healthScore}<span className="text-xs font-normal text-gray-400 dark:text-gray-500">/100</span></span>
-                      </div>
-                      <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 mt-1">
-                        <div className="h-2 rounded-full transition-all" style={{ 
-                          width: `${doc.healthScore}%`, 
-                          background: doc.healthScore >= 80 ? 'linear-gradient(90deg, #10b981, #34d399)' : doc.healthScore >= 60 ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #ef4444, #f87171)'
-                        }}></div>
-                      </div>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">{doc.healthLabel} • Tendance absences: {doc.absenceTrend?.trend === 'upward' ? '↑ Hausse' : doc.absenceTrend?.trend === 'downward' ? '↓ Baisse' : doc.absenceTrend?.trend === 'stable' ? '→ Stable' : 'Données insuffisantes'}</p>
-                    </div>
+
                   </div>
                 </div>
               );
@@ -552,32 +533,7 @@ export default function Comparison() {
           </div>
         </div>
 
-        {/* IA Insight Panel - Analyse Comparative */}
-        <div className="bg-gradient-to-r from-violet-50 via-blue-50 to-amber-50 dark:from-violet-900/30 dark:via-blue-900/30 dark:to-amber-900/30 rounded-2xl border border-violet-100 dark:border-violet-800 p-6 mb-6 transition-colors">
-          <div className="flex items-center gap-2 mb-4">
-            <FiCpu className="w-4 h-4 text-violet-600" />
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Analyse IA — Comparaison des Cabinets</h3>
-            <span className="ml-auto text-[9px] font-semibold text-violet-600 bg-white/60 dark:bg-white/10 px-2.5 py-1 rounded-full">Régression + Score Multi-KPI</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {doctors.map((doc, i) => {
-              const absInsight = generateAIInsight(doc.monthlyAbsences, `absences de ${doc.name}`);
-              return (
-                <div key={i} className="bg-white/60 dark:bg-white/10 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold" style={{ backgroundColor: doc.color }}>{doc.code}</div>
-                    <span className="text-xs font-bold text-gray-800 dark:text-gray-200">{doc.name}</span>
-                    <span className={`ml-auto text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                      doc.healthScore >= 80 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
-                      doc.healthScore >= 60 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                    }`}>{doc.healthScore}/100</span>
-                  </div>
-                  {absInsight.parts.map((p, j) => <p key={j} className="text-[10px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+
         </>}
       </div>
     </div>

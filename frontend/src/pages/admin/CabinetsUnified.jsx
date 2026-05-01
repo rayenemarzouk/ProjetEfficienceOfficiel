@@ -555,45 +555,21 @@ export default function CabinetsUnified() {
         <div className={`${cardCls} rounded-xl p-6`}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-900 dark:text-white">Patients par Cabinet</h3>
-            {isRayan && trendPatientsLabel && (
-              <span className={`px-2 py-1 rounded text-xs font-medium ${
-                trendPatientsLabel === 'Croissance' ? 'bg-green-100 text-green-700' :
-                trendPatientsLabel === 'Décroissance' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
-              }`}>
-                <FiCpu className="inline mr-1" />{trendPatientsLabel}
-              </span>
-            )}
           </div>
           <div className="h-72">
             <Bar ref={patientsChartRef} data={patientsBarData} options={barOptions} plugins={isDynamic ? [streamingBarPlugin] : []} />
           </div>
-          {isRayan && insightPatients?.text && (
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <p className="text-sm text-blue-700 dark:text-blue-300 whitespace-pre-line"><FiCpu className="inline mr-1" />{insightPatients.text}</p>
-            </div>
-          )}
+          {/* AI insight removed */}
         </div>
 
         <div className={`${cardCls} rounded-xl p-6`}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-900 dark:text-white">Activité par Cabinet</h3>
-            {isRayan && (
-              <span className={`px-2 py-1 rounded text-xs font-medium ${
-                trendConsultLabel === 'Croissance' ? 'bg-green-100 text-green-700' :
-                trendConsultLabel === 'Décroissance' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
-              }`}>
-                <FiCpu className="inline mr-1" />{trendConsultLabel}
-              </span>
-            )}
           </div>
           <div className="h-72">
             <Bar ref={activiteChartRef} data={activiteBarData} options={barOptions} plugins={isDynamic ? [streamingBarPlugin] : []} />
           </div>
-          {isRayan && insightActivite?.text && (
-            <div className="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-              <p className="text-sm text-purple-700 dark:text-purple-300 whitespace-pre-line"><FiCpu className="inline mr-1" />{insightActivite.text}</p>
-            </div>
-          )}
+          {/* AI insight removed */}
         </div>
       </div>
 
@@ -688,74 +664,7 @@ export default function CabinetsUnified() {
         </div>
       </div>
 
-      {/* Table Comparaison */}
-      <div className={`${cardCls} rounded-xl overflow-hidden`}>
-        <div className="p-4 border-b border-gray-100 dark:border-gray-700">
-          <h3 className="font-semibold text-gray-900 dark:text-white">Détail par Praticien</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50">
-              <tr>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Praticien</th>
-                <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">RDV</th>
-                <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Présents</th>
-                <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Absents</th>
-                <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Taux Présence</th>
-                <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Tendance</th>
-                <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase">Score IA</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {pracData.map((p) => {
-                const tauxPresence = p.totalRdv > 0 ? Math.round((p.presents / p.totalRdv) * 100) : 0;
-                return (
-                  <tr key={p.code} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
-                        <span className="font-medium text-gray-900 dark:text-white">{p.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">{p.totalRdv}</td>
-                    <td className="px-4 py-3 text-center text-green-600 font-medium">{p.presents}</td>
-                    <td className="px-4 py-3 text-center text-red-500 font-medium">{p.absents}</td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full ${tauxPresence >= 80 ? 'bg-green-500' : tauxPresence >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                            style={{ width: `${tauxPresence}%` }}
-                          />
-                        </div>
-                        <span className="text-sm">{tauxPresence}%</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex items-center gap-1 text-xs font-medium ${
-                        p.tendance === 'Baisse' ? 'text-green-600' :
-                        p.tendance === 'Hausse' ? 'text-red-500' : 'text-gray-500'
-                      }`}>
-                        {p.tendance === 'Baisse' ? <FiTrendingDown /> : 
-                         p.tendance === 'Hausse' ? <FiTrendingUp /> : '—'}
-                        {p.tendance}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                        p.health.score >= 80 ? 'bg-green-100 text-green-700' :
-                        p.health.score >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
-                      }`}>
-                        {p.health.score}%
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+
     </div>
   );
 

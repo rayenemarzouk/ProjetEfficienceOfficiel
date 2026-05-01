@@ -69,6 +69,15 @@ export default function Reports() {
     return Promise.race([promise, timeout]);
   };
 
+  const reloadReports = async () => {
+    try {
+      const res = await getReportsList();
+      setReports(res.data);
+    } catch (err) {
+      console.error('Erreur rechargement rapports:', err);
+    }
+  };
+
   const handleGenerate = async () => {
     setGenerating(true);
     setMessage(null);
@@ -80,7 +89,8 @@ export default function Reports() {
         const res = await withTimeout(generateAllReports(selectedMonth), 120000, 'génération tous rapports');
         setMessage({ type: 'success', text: res.data.message });
       }
-      await fetchData();
+      await reloadReports();
+      fetchData();
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Erreur lors de la génération' });
     } finally {

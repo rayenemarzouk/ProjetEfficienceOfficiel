@@ -568,15 +568,6 @@ export default function Statistics() {
               <Line ref={caChartRef} data={filteredCALineData} options={lineOptions} plugins={isDynamic ? [streamingLinePlugin] : []} />
             </div>
           </div>
-          {/* AI Insight CA */}
-          <div className="mt-4 bg-gradient-to-r from-amber-50 to-violet-50 dark:from-amber-900/30 dark:to-violet-900/30 rounded-xl border border-amber-100 dark:border-amber-800 p-4 transition-colors">
-            <div className="flex items-center gap-2 mb-2">
-              <FiCpu className="w-3.5 h-3.5 text-amber-600" />
-              <span className="text-xs font-bold text-gray-800 dark:text-gray-200">Analyse IA — CA</span>
-              <span className="ml-auto text-[9px] font-semibold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Régression linéaire • R²={aiCA.confidence}%</span>
-            </div>
-            {aiCA.parts.map((p, i) => <p key={i} className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
-          </div>
         </div>
 
         {/* Patients chart */}
@@ -593,15 +584,6 @@ export default function Statistics() {
             <div className={isRayan ? 'bg-white rounded-xl p-3' : ''}>
               <Line ref={patientsChartRef} data={patientsLineData} options={patientsLineOptions} plugins={isDynamic ? [streamingLinePlugin] : []} />
             </div>
-          </div>
-          {/* AI Insight Patients */}
-          <div className="mt-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/30 dark:to-blue-900/30 rounded-xl border border-purple-100 dark:border-purple-800 p-4 transition-colors">
-            <div className="flex items-center gap-2 mb-2">
-              <FiCpu className="w-3.5 h-3.5 text-purple-600" />
-              <span className="text-xs font-bold text-gray-800 dark:text-gray-200">Analyse IA — Patients</span>
-              <span className="ml-auto text-[9px] font-semibold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Modèle Holt-Winters</span>
-            </div>
-            {aiPatients.parts.map((p, i) => <p key={i} className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">{p}</p>)}
           </div>
         </div>
 

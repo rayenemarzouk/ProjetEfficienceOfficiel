@@ -442,7 +442,7 @@ export default function Settings() {
                         : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
                     }`}>
                       <FiShield className="w-3 h-3" />
-                      {user.role === 'admin' ? 'Administrateur' : 'Praticien'}
+                      {user.role === 'admin' ? 'Consultant' : 'Praticien'}
                     </span>
                     <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
                       user.isActive !== false ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'

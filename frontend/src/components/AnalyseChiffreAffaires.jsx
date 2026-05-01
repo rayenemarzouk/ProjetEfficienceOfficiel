@@ -2,9 +2,9 @@ import { useMemo, useRef, useEffect } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, Filler } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import { FiDollarSign, FiTrendingUp } from 'react-icons/fi';
-import { startChartAnimation, streamingLinePlugin, streamingBarPlugin } from '../utils/chartPlugins';
+import { startChartAnimation, streamingLinePlugin } from '../utils/chartPlugins';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, Filler, streamingLinePlugin, streamingBarPlugin);
+ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, Filler, streamingLinePlugin);
 
 const fmt = (v) => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0));
 
@@ -136,13 +136,18 @@ export default function AnalyseChiffreAffaires({
       }),
       datasets: [
         {
-          label: 'Heures travaillées',
+          label: 'Heures travailées',
           data: combinedData.map((m) => m.heures || 0),
-          backgroundColor: 'rgba(59, 130, 246, 0.8)',
           borderColor: 'rgb(59, 130, 246)',
-          borderWidth: 2,
-          borderRadius: 6,
-          barPercentage: 0.7
+          backgroundColor: 'rgba(59, 130, 246, 0.15)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5,
+          pointBackgroundColor: 'rgb(59, 130, 246)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointHoverRadius: 8
         }
       ]
     };
@@ -161,11 +166,16 @@ export default function AnalyseChiffreAffaires({
         {
           label: 'Heures HP',
           data: combinedData.map((m) => m.heuresHP || 0),
-          backgroundColor: 'rgba(59, 130, 246, 0.8)',
-          borderColor: 'rgb(59, 130, 246)',
-          borderWidth: 2,
-          borderRadius: 6,
-          barPercentage: 0.7
+          borderColor: 'rgb(99, 102, 241)',
+          backgroundColor: 'rgba(99, 102, 241, 0.15)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5,
+          pointBackgroundColor: 'rgb(99, 102, 241)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointHoverRadius: 8
         }
       ]
     };
@@ -348,7 +358,7 @@ export default function AnalyseChiffreAffaires({
         {/* Chart 3: Heures travaillées */}
         <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
           <h4 className="text-xs font-bold text-gray-700 mb-3 uppercase">Nombre d'heures travaillées</h4>
-          <Bar
+          <Line
             ref={heuresBarRef}
             data={heuresTravailleesData}
             options={{
@@ -377,7 +387,7 @@ export default function AnalyseChiffreAffaires({
         {/* Chart 4: Heures HP */}
         <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
           <h4 className="text-xs font-bold text-gray-700 mb-3 uppercase">Nombre d'heures HP</h4>
-          <Bar
+          <Line
             ref={heuresHPRef}
             data={heuresHPData}
             options={{

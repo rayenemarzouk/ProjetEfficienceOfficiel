@@ -2,9 +2,9 @@ import { useMemo, useRef, useEffect } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, Filler } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
 import { FiCalendar, FiUsers } from 'react-icons/fi';
-import { startChartAnimation, streamingLinePlugin, streamingBarPlugin } from '../utils/chartPlugins';
+import { startChartAnimation, streamingLinePlugin } from '../utils/chartPlugins';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, Filler, streamingLinePlugin, streamingBarPlugin);
+ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, Filler, streamingLinePlugin);
 
 const fmt = (v) => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0));
 
@@ -97,11 +97,16 @@ export default function AnalyseAgenda({
         {
           label: 'Nouveaux patients',
           data: combinedData.map((m) => m.nbNouveauxPatients || 0),
-          backgroundColor: 'rgba(34, 197, 94, 0.8)',
           borderColor: 'rgb(34, 197, 94)',
-          borderWidth: 2,
-          borderRadius: 6,
-          barPercentage: 0.7
+          backgroundColor: 'rgba(34, 197, 94, 0.15)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5,
+          pointBackgroundColor: 'rgb(34, 197, 94)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointHoverRadius: 8
         }
       ]
     };
@@ -120,11 +125,16 @@ export default function AnalyseAgenda({
         {
           label: 'Patients traités',
           data: combinedData.map((m) => m.totalPatients || 0),
-          backgroundColor: 'rgba(34, 197, 94, 0.8)',
-          borderColor: 'rgb(34, 197, 94)',
-          borderWidth: 2,
-          borderRadius: 6,
-          barPercentage: 0.7
+          borderColor: 'rgb(16, 185, 129)',
+          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5,
+          pointBackgroundColor: 'rgb(16, 185, 129)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointHoverRadius: 8
         }
       ]
     };
@@ -171,11 +181,16 @@ export default function AnalyseAgenda({
         {
           label: 'Patients/RDV',
           data: combinedData.map((m) => m.patientsParRdv.toFixed(2)),
-          backgroundColor: 'rgba(34, 197, 94, 0.8)',
-          borderColor: 'rgb(34, 197, 94)',
-          borderWidth: 2,
-          borderRadius: 6,
-          barPercentage: 0.7
+          borderColor: 'rgb(52, 211, 153)',
+          backgroundColor: 'rgba(52, 211, 153, 0.15)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5,
+          pointBackgroundColor: 'rgb(52, 211, 153)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointHoverRadius: 8
         }
       ]
     };
@@ -347,7 +362,7 @@ export default function AnalyseAgenda({
         {/* Chart 1: Patients nouveaux */}
         <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
           <h4 className="text-xs font-bold text-gray-700 mb-3 uppercase">Nouveaux patients</h4>
-          <Bar
+          <Line
             ref={patientsNewRef}
             data={patientsNouveauxData}
             options={{
@@ -376,7 +391,7 @@ export default function AnalyseAgenda({
         {/* Chart 2: Patients traités */}
         <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
           <h4 className="text-xs font-bold text-gray-700 mb-3 uppercase">Patients traités</h4>
-          <Bar
+          <Line
             ref={patientsTotalRef}
             data={patientsTotauxData}
             options={{
@@ -434,7 +449,7 @@ export default function AnalyseAgenda({
         {/* Chart 4: Patients par RDV */}
         <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
           <h4 className="text-xs font-bold text-gray-700 mb-3 uppercase">Patients par rendez-vous</h4>
-          <Bar
+          <Line
             ref={patientsAvgRef}
             data={patientsParRdvData}
             options={{
