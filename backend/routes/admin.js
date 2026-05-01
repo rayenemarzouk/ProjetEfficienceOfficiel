@@ -714,22 +714,91 @@ router.post('/ai-toggle-confirm', auth, adminOnly, async (req, res) => {
 // POST /api/admin/manual-entry — Saisie manuelle des données d'un praticien
 router.post('/manual-entry', auth, adminOnly, async (req, res) => {
   try {
-    const { praticien, mois, caFacture, caEncaisse, nbPatients, nouveauxPatients, totalRdv, heuresTravaillees } = req.body;
+    const {
+      praticien,
+      mois,
+      caFacture,
+      caEncaisse,
+      nbPatients,
+      nouveauxPatients,
+      nouveauxDossiers,
+      reglementsPourAnnee,
+      totalRdv,
+      heuresTravaillees,
+      rdvHonores,
+      rdvManques,
+      annulations,
+      reports,
+      dureeMoyennePrevue,
+      rdvParJour,
+      rdvImportants,
+      nbDevis,
+      montantTotalPresente,
+      montantMoyenPresente,
+      nbDevisAcceptes,
+      tauxAcceptationNombre,
+      montantTotalAccepte,
+      montantMoyenAccepte,
+      tauxAcceptationMontant,
+      delaiMoyenAcceptation,
+      montantTotalRealise,
+      montantMoyenRealise,
+      soinsConservateurs,
+      prothesesFixes,
+      prothesesAmovibles,
+      prothesesMaxilloFaciales,
+      chirurgie,
+      odf,
+      consultations,
+      prophylaxie,
+      endodontie,
+      radiographie,
+      parodontologie,
+      implantologie,
+      implantologieChirurgicale,
+      implantologieProthetique,
+      occlusodontie,
+      esthetique
+    } = req.body;
     if (!praticien || !mois) return res.status(400).json({ message: 'Praticien et mois requis.' });
 
     // Format mois: accepter YYYYMM ou YYYYMMDD → stocker en YYYYMM01
     const moisNorm = mois.length === 6 ? `${mois}01` : mois;
 
-    const [realisationResult, rdvResult, joursResult] = await Promise.all([
+    const parseActe = (acte) => ({
+      nombre: Number(acte?.nombre) || 0,
+      dents: Number(acte?.dents) || 0,
+      honoraires: Number(acte?.honoraires) || 0,
+      honorairesNR: Number(acte?.honorairesNR) || 0
+    });
+
+    const [realisationResult, rdvResult, joursResult, devisResult] = await Promise.all([
       AnalyseRealisation.findOneAndUpdate(
         { praticien, mois: moisNorm },
         { $set: {
             praticien,
             mois: moisNorm,
-            ...(caFacture !== undefined && caFacture !== '' && { montantFacture: parseFloat(caFacture) }),
-            ...(caEncaisse !== undefined && caEncaisse !== '' && { montantEncaisse: parseFloat(caEncaisse) }),
-            ...(nbPatients !== undefined && nbPatients !== '' && { nbPatients: parseInt(nbPatients) }),
-            ...(nouveauxPatients !== undefined && nouveauxPatients !== '' && { nbNouveauxPatients: parseInt(nouveauxPatients) }),
+            montantFacture: Number(caFacture) || 0,
+            montantEncaisse: Number(caEncaisse) || 0,
+            nbPatients: Number(nbPatients) || 0,
+            nouveauxDossiers: Number(nouveauxDossiers) || 0,
+            reglementsPourAnnee: Number(reglementsPourAnnee) || 0,
+            soinsConservateurs: parseActe(soinsConservateurs),
+            prothesesFixes: parseActe(prothesesFixes),
+            prothesesAmovibles: parseActe(prothesesAmovibles),
+            prothesesMaxilloFaciales: parseActe(prothesesMaxilloFaciales),
+            chirurgie: parseActe(chirurgie),
+            odf: parseActe(odf),
+            consultations: parseActe(consultations),
+            prophylaxie: parseActe(prophylaxie),
+            endodontie: parseActe(endodontie),
+            radiographie: parseActe(radiographie),
+            parodontologie: parseActe(parodontologie),
+            implantologie: parseActe(implantologie),
+            implantologieChirurgicale: parseActe(implantologieChirurgicale),
+            implantologieProthetique: parseActe(implantologieProthetique),
+            occlusodontie: parseActe(occlusodontie),
+            esthetique: parseActe(esthetique),
         }},
         { upsert: true, new: true }
       ),
@@ -738,9 +807,16 @@ router.post('/manual-entry', auth, adminOnly, async (req, res) => {
         { $set: {
             praticien,
             mois: moisNorm,
-            ...(totalRdv !== undefined && totalRdv !== '' && { nbRdv: parseInt(totalRdv) }),
-            ...(nbPatients !== undefined && nbPatients !== '' && { nbPatients: parseInt(nbPatients) }),
-            ...(nouveauxPatients !== undefined && nouveauxPatients !== '' && { nbNouveauxPatients: parseInt(nouveauxPatients) }),
+            nbRdv: Number(totalRdv) || 0,
+            nbPatients: Number(nbPatients) || 0,
+            nbNouveauxPatients: Number(nouveauxPatients) || 0,
+            rdvHonores: Number(rdvHonores) || 0,
+            rdvManques: Number(rdvManques) || 0,
+            annulations: Number(annulations) || 0,
+            reports: Number(reports) || 0,
+            dureeMoyennePrevue: Number(dureeMoyennePrevue) || 0,
+            rdvParJour: Number(rdvParJour) || 0,
+            rdvImportants: Number(rdvImportants) || 0,
         }},
         { upsert: true, new: true }
       ),
@@ -749,7 +825,26 @@ router.post('/manual-entry', auth, adminOnly, async (req, res) => {
         { $set: {
             praticien,
             mois: moisNorm,
-            ...(heuresTravaillees !== undefined && heuresTravaillees !== '' && { nbHeures: Math.round(parseFloat(heuresTravaillees) * 60) }),
+            nbHeures: Math.round((Number(heuresTravaillees) || 0) * 60),
+        }},
+        { upsert: true, new: true }
+      ),
+      AnalyseDevis.findOneAndUpdate(
+        { praticien, mois: moisNorm },
+        { $set: {
+            praticien,
+            mois: moisNorm,
+            nbDevis: Number(nbDevis) || 0,
+            montantPropositions: Number(montantTotalPresente) || 0,
+            montantMoyenPresente: Number(montantMoyenPresente) || 0,
+            nbDevisAcceptes: Number(nbDevisAcceptes) || 0,
+            tauxAcceptationNombre: Number(tauxAcceptationNombre) || 0,
+            montantAccepte: Number(montantTotalAccepte) || 0,
+            montantMoyenAccepte: Number(montantMoyenAccepte) || 0,
+            tauxAcceptationMontant: Number(tauxAcceptationMontant) || 0,
+            delaiMoyenAcceptation: Number(delaiMoyenAcceptation) || 0,
+            montantTotalRealise: Number(montantTotalRealise) || 0,
+            montantMoyenRealise: Number(montantMoyenRealise) || 0,
         }},
         { upsert: true, new: true }
       )

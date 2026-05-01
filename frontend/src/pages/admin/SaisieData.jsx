@@ -20,9 +20,70 @@ const generateMonthOptions = () => {
 };
 
 const EMPTY_FORM = {
-  praticien: '', mois: '', caFacture: '', caEncaisse: '',
-  nbPatients: '', nouveauxPatients: '', totalRdv: '', heuresTravaillees: ''
+  praticien: '',
+  mois: '',
+  caFacture: '',
+  caEncaisse: '',
+  nbPatients: '',
+  nouveauxPatients: '',
+  nouveauxDossiers: '',
+  reglementsPourAnnee: '',
+  totalRdv: '',
+  heuresTravaillees: '',
+  rdvHonores: '',
+  rdvManques: '',
+  annulations: '',
+  reports: '',
+  dureeMoyennePrevue: '',
+  rdvParJour: '',
+  rdvImportants: '',
+  nbDevis: '',
+  montantTotalPresente: '',
+  montantMoyenPresente: '',
+  nbDevisAcceptes: '',
+  tauxAcceptationNombre: '',
+  montantTotalAccepte: '',
+  montantMoyenAccepte: '',
+  tauxAcceptationMontant: '',
+  delaiMoyenAcceptation: '',
+  montantTotalRealise: '',
+  montantMoyenRealise: '',
+  soinsConservateurs: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
+  prothesesFixes: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
+  prothesesAmovibles: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
+  prothesesMaxilloFaciales: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
+  chirurgie: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
+  odf: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
+  consultations: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
+  prophylaxie: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
+  endodontie: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
+  radiographie: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
+  parodontologie: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
+  implantologie: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
+  implantologieChirurgicale: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
+  implantologieProthetique: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
+  occlusodontie: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
+  esthetique: { nombre: '', dents: '', honoraires: '', honorairesNR: '' }
 };
+
+const ACTES_LIST = [
+  { key: 'soinsConservateurs', label: 'Soins conservateurs' },
+  { key: 'prothesesFixes', label: 'Prothèses fixes' },
+  { key: 'prothesesAmovibles', label: 'Prothèses amovibles' },
+  { key: 'prothesesMaxilloFaciales', label: 'Prothèses maxillo-faciales' },
+  { key: 'chirurgie', label: 'Chirurgie' },
+  { key: 'odf', label: 'ODF' },
+  { key: 'consultations', label: 'Consultations' },
+  { key: 'prophylaxie', label: 'Prophylaxie' },
+  { key: 'endodontie', label: 'Endodontie' },
+  { key: 'radiographie', label: 'Radiographie' },
+  { key: 'parodontologie', label: 'Parodontologie' },
+  { key: 'implantologie', label: 'Implantologie' },
+  { key: 'implantologieChirurgicale', label: 'Implantologie chirurgicale' },
+  { key: 'implantologieProthetique', label: 'Implantologie prothétique' },
+  { key: 'occlusodontie', label: 'Occlusodontie' },
+  { key: 'esthetique', label: 'Esthétique' }
+];
 
 const EMPTY_NEW_PRAT = {
   name: '', practitionerCode: '', cabinetName: '', email: '', password: ''
@@ -53,6 +114,23 @@ const Alert = ({ type, message }) => (
     {message}
   </div>
 );
+
+function Section({ title, children, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border border-gray-100 rounded-xl overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-5 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+      >
+        <span className="text-sm font-semibold text-gray-600 uppercase tracking-wider">{title}</span>
+        {open ? <ChevronDownIcon className="w-4 h-4 text-gray-400" /> : <ChevronUpIcon className="w-4 h-4 text-gray-400" />}
+      </button>
+      {open && <div className="p-5 space-y-5">{children}</div>}
+    </div>
+  );
+}
 
 export default function AdminSaisieData() {
   const { user } = useAuth();
@@ -112,6 +190,24 @@ export default function AdminSaisieData() {
     setForm(f => ({ ...f, [field]: value }));
     setStatus(null);
   };
+
+  const handleActeChange = (acteKey, subField, value) => {
+    setForm(f => ({
+      ...f,
+      [acteKey]: { ...f[acteKey], [subField]: value }
+    }));
+    setStatus(null);
+  };
+
+  const inputCls = 'w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+  const numInput = (field, placeholder = '0', step = '1') => (
+    <input
+      type="number" min="0" step={step} placeholder={placeholder}
+      value={form[field]}
+      onChange={e => handleChange(field, e.target.value)}
+      className={inputCls}
+    />
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -175,7 +271,7 @@ export default function AdminSaisieData() {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-6xl">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -345,7 +441,7 @@ export default function AdminSaisieData() {
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-7">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {status && <Alert type={status.type} message={status.message} />}
 
             {/* Praticien + Mois */}
@@ -385,30 +481,107 @@ export default function AdminSaisieData() {
             </div>
 
             {/* Chiffre d'affaires */}
-            <div>
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Chiffre d'Affaires</h3>
+            <Section title="📊 Chiffre d'Affaires">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <Field label="CA Facturé (€)" type="number" min="0" step="0.01" placeholder="0.00"
-                  value={form.caFacture} onChange={e => handleChange('caFacture', e.target.value)} />
-                <Field label="CA Encaissé (€)" type="number" min="0" step="0.01" placeholder="0.00"
-                  value={form.caEncaisse} onChange={e => handleChange('caEncaisse', e.target.value)} />
+                <Field label="CA Facturé (€)">{numInput('caFacture', '0.00', '0.01')}</Field>
+                <Field label="CA Encaissé (€)">{numInput('caEncaisse', '0.00', '0.01')}</Field>
               </div>
-            </div>
+            </Section>
 
-            {/* Patients & RDV */}
-            <div>
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Patients & Rendez-vous</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <Field label="Nb Patients" type="number" min="0" placeholder="0"
-                  value={form.nbPatients} onChange={e => handleChange('nbPatients', e.target.value)} />
-                <Field label="Nouveaux Patients" type="number" min="0" placeholder="0"
-                  value={form.nouveauxPatients} onChange={e => handleChange('nouveauxPatients', e.target.value)} />
-                <Field label="Total RDV" type="number" min="0" placeholder="0"
-                  value={form.totalRdv} onChange={e => handleChange('totalRdv', e.target.value)} />
-                <Field label="Heures Travaillées" type="number" min="0" step="0.5" placeholder="0"
-                  value={form.heuresTravaillees} onChange={e => handleChange('heuresTravaillees', e.target.value)} />
+            {/* Patients */}
+            <Section title="👥 Patients">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <Field label="Nb Patients">{numInput('nbPatients')}</Field>
+                <Field label="Nouveaux">{numInput('nouveauxPatients')}</Field>
+                <Field label="Nouveaux Dossiers">{numInput('nouveauxDossiers')}</Field>
+                <Field label="Règlements Année (€)">{numInput('reglementsPourAnnee', '0.00', '0.01')}</Field>
               </div>
-            </div>
+            </Section>
+
+            {/* RDV */}
+            <Section title="📅 Rendez-vous Détaillés">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-3 bg-green-50 rounded-lg">
+                  <Field label="Total RDV">{numInput('totalRdv')}</Field>
+                  <Field label="RDV Honorés">{numInput('rdvHonores')}</Field>
+                  <Field label="RDV Manqués">{numInput('rdvManques')}</Field>
+                  <Field label="RDV Importants">{numInput('rdvImportants')}</Field>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-3 bg-orange-50 rounded-lg">
+                  <Field label="Annulations">{numInput('annulations')}</Field>
+                  <Field label="Reports">{numInput('reports')}</Field>
+                  <Field label="Durée moy (min)">{numInput('dureeMoyennePrevue')}</Field>
+                  <Field label="RDV/Jour">{numInput('rdvParJour', '0', '0.1')}</Field>
+                </div>
+                <div className="p-3 bg-yellow-50 rounded-lg">
+                  <Field label="Heures Travaillées">{numInput('heuresTravaillees', '0', '0.5')}</Field>
+                </div>
+              </div>
+            </Section>
+
+            {/* Devis */}
+            <Section title="💼 Analyse Devis & Propositions" defaultOpen={false}>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3 bg-purple-50 rounded-lg">
+                  <Field label="Nb Devis">{numInput('nbDevis')}</Field>
+                  <Field label="Montant Total (€)">{numInput('montantTotalPresente', '0.00', '0.01')}</Field>
+                  <Field label="Montant Moyen (€)">{numInput('montantMoyenPresente', '0.00', '0.01')}</Field>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3 bg-pink-50 rounded-lg">
+                  <Field label="Devis Acceptés">{numInput('nbDevisAcceptes')}</Field>
+                  <Field label="Taux Accept. Nombre (%)">{numInput('tauxAcceptationNombre', '0', '0.1')}</Field>
+                  <Field label="Délai Moyen (j)">{numInput('delaiMoyenAcceptation', '0', '0.5')}</Field>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3 bg-indigo-50 rounded-lg">
+                  <Field label="Montant Accept. (€)">{numInput('montantTotalAccepte', '0.00', '0.01')}</Field>
+                  <Field label="Montant Moyen Accept. (€)">{numInput('montantMoyenAccepte', '0.00', '0.01')}</Field>
+                  <Field label="Taux Accept. Montant (%)">{numInput('tauxAcceptationMontant', '0', '0.1')}</Field>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-red-50 rounded-lg">
+                  <Field label="Montant Réalisé (€)">{numInput('montantTotalRealise', '0.00', '0.01')}</Field>
+                  <Field label="Montant Moyen Réalisé (€)">{numInput('montantMoyenRealise', '0.00', '0.01')}</Field>
+                </div>
+              </div>
+            </Section>
+
+            {/* Actes */}
+            <Section title="🦷 Actes Réalisés (Détails)" defaultOpen={false}>
+              <div className="text-xs text-gray-600 mb-3 p-2 bg-gray-50 rounded">
+                Remplissez: Nombre d'actes | Dents traitées | Honoraires | Honoraires dont NR
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                      <th className="text-left px-3 py-2 font-semibold border border-blue-700 min-w-[200px]">Acte</th>
+                      <th className="px-3 py-2 font-semibold border border-blue-700 w-20">Nombre</th>
+                      <th className="px-3 py-2 font-semibold border border-blue-700 w-20">Dents</th>
+                      <th className="px-3 py-2 font-semibold border border-blue-700 w-28">Honoraires (€)</th>
+                      <th className="px-3 py-2 font-semibold border border-blue-700 w-28">dont NR (€)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ACTES_LIST.map(({ key, label }, idx) => (
+                      <tr key={key} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-3 py-2 border border-gray-200 font-medium text-gray-800">{label}</td>
+                        {['nombre', 'dents', 'honoraires', 'honorairesNR'].map(sub => (
+                          <td key={sub} className="px-2 py-1 border border-gray-200">
+                            <input
+                              type="number" min="0"
+                              step={sub === 'honoraires' || sub === 'honorairesNR' ? '0.01' : '1'}
+                              placeholder="0"
+                              value={form[key][sub]}
+                              onChange={e => handleActeChange(key, sub, e.target.value)}
+                              className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm text-right focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Section>
 
             {/* Submit */}
             <div className="flex items-center gap-4 pt-2">
@@ -425,7 +598,7 @@ export default function AdminSaisieData() {
               </button>
               <button
                 type="button"
-                onClick={() => { setForm(EMPTY_FORM); setStatus(null); }}
+                onClick={() => { setForm(f => ({ ...EMPTY_FORM, praticien: f.praticien, mois: f.mois })); setStatus(null); }}
                 className="px-6 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-xl text-sm transition"
               >
                 Réinitialiser
