@@ -437,13 +437,93 @@ router.get('/statistics', auth, adminOnly, async (req, res) => {
       { $sort: { _id: 1 } }
     ]);
 
+    // RDV detail breakdown
+    const globalRdvDetail = await AnalyseRendezVous.aggregate([
+      { $match: { praticien: { $in: codes } } },
+      { $group: {
+        _id: null,
+        totalRdv: { $sum: '$nbRdv' },
+        totalHonores: { $sum: '$rdvHonores' },
+        totalManques: { $sum: '$rdvManques' },
+        totalAnnulations: { $sum: '$annulations' },
+        totalReports: { $sum: '$reports' },
+        totalImportants: { $sum: '$rdvImportants' },
+        totalNouveaux: { $sum: '$nbNouveauxPatients' },
+      }}
+    ]);
+
+    // Devis global
+    const globalDevis = await AnalyseDevis.aggregate([
+      { $match: { praticien: { $in: codes } } },
+      { $group: {
+        _id: null,
+        totalNbDevis: { $sum: '$nbDevis' },
+        totalNbAcceptes: { $sum: '$nbDevisAcceptes' },
+        totalMontantPropose: { $sum: '$montantPropositions' },
+        totalMontantAccepte: { $sum: '$montantAccepte' },
+        totalMontantRealise: { $sum: '$montantTotalRealise' },
+      }}
+    ]);
+
+    // Per practitioner summary for top table
+    const [caPerPract, rdvPerPract, devisPerPract, heuresPerPract] = await Promise.all([
+      AnalyseRealisation.aggregate([
+        { $match: { praticien: { $in: codes } } },
+        { $group: { _id: '$praticien', totalFacture: { $sum: '$montantFacture' }, totalEncaisse: { $sum: '$montantEncaisse' }, totalPatients: { $sum: '$nbPatients' } } }
+      ]),
+      AnalyseRendezVous.aggregate([
+        { $match: { praticien: { $in: codes } } },
+        { $group: { _id: '$praticien', totalRdv: { $sum: '$nbRdv' }, totalHonores: { $sum: '$rdvHonores' }, totalManques: { $sum: '$rdvManques' }, totalAnnulations: { $sum: '$annulations' } } }
+      ]),
+      AnalyseDevis.aggregate([
+        { $match: { praticien: { $in: codes } } },
+        { $group: { _id: '$praticien', totalNbDevis: { $sum: '$nbDevis' }, totalNbAcceptes: { $sum: '$nbDevisAcceptes' }, totalMontantRealise: { $sum: '$montantTotalRealise' } } }
+      ]),
+      AnalyseJoursOuverts.aggregate([
+        { $match: { praticien: { $in: codes } } },
+        { $group: { _id: '$praticien', totalMinutes: { $sum: '$nbHeures' } } }
+      ]),
+    ]);
+
+    const practMap = Object.fromEntries(practitioners.map(p => [getPraticienId(p), p.name || p.email]));
+    const caMap2 = Object.fromEntries(caPerPract.map(c => [c._id, c]));
+    const rdvMap2 = Object.fromEntries(rdvPerPract.map(r => [r._id, r]));
+    const devMap2 = Object.fromEntries(devisPerPract.map(d => [d._id, d]));
+    const heuresMap2 = Object.fromEntries(heuresPerPract.map(h => [h._id, h]));
+
+    const perPractitionerSummary = codes.map(code => {
+      const ca = caMap2[code] || {};
+      const rdv = rdvMap2[code] || {};
+      const dev = devMap2[code] || {};
+      const h = heuresMap2[code] || {};
+      const totalH = (h.totalMinutes || 0) / 60;
+      return {
+        code,
+        name: practMap[code] || code,
+        totalFacture: ca.totalFacture || 0,
+        totalEncaisse: ca.totalEncaisse || 0,
+        totalPatients: ca.totalPatients || 0,
+        totalRdv: rdv.totalRdv || 0,
+        totalHonores: rdv.totalHonores || 0,
+        totalManques: rdv.totalManques || 0,
+        totalAnnulations: rdv.totalAnnulations || 0,
+        totalNbDevis: dev.totalNbDevis || 0,
+        totalNbAcceptes: dev.totalNbAcceptes || 0,
+        totalMontantRealise: dev.totalMontantRealise || 0,
+        productivite: totalH > 0 ? Math.round((ca.totalFacture || 0) / totalH) : 0,
+      };
+    }).sort((a, b) => b.totalFacture - a.totalFacture);
+
     res.json({
       globalCA: globalCA[0] || {},
       globalRdv: globalRdv[0] || {},
+      globalRdvDetail: globalRdvDetail[0] || {},
+      globalDevis: globalDevis[0] || {},
       globalHeures: globalHeures[0] || {},
       encours,
       evolutionMensuelle,
       perPractitioner,
+      perPractitionerSummary,
       nbPraticiens: codes.length
     });
   } catch (error) {
