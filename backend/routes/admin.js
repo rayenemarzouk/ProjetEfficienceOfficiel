@@ -37,7 +37,9 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
         _id: '$praticien',
         totalFacture: { $sum: '$montantFacture' },
         totalEncaisse: { $sum: '$montantEncaisse' },
-        totalPatients: { $sum: '$nbPatients' }
+        totalPatients: { $sum: '$nbPatients' },
+        totalNouveauxDossiers: { $sum: '$nouveauxDossiers' },
+        totalReglementsAnnee: { $sum: '$reglementsPourAnnee' }
       }}
     ]);
 
@@ -49,7 +51,14 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
         totalRdv: { $sum: '$nbRdv' },
         totalPatients: { $sum: '$nbPatients' },
         totalNouveaux: { $sum: '$nbNouveauxPatients' },
-        totalDuree: { $sum: '$dureeTotaleRdv' }
+        totalDuree: { $sum: '$dureeTotaleRdv' },
+        totalRdvHonores: { $sum: '$rdvHonores' },
+        totalRdvManques: { $sum: '$rdvManques' },
+        totalAnnulations: { $sum: '$annulations' },
+        totalReports: { $sum: '$reports' },
+        totalRdvImportants: { $sum: '$rdvImportants' },
+        avgDureeMoyennePrevue: { $avg: '$dureeMoyennePrevue' },
+        avgRdvParJour: { $avg: '$rdvParJour' }
       }}
     ]);
 
@@ -85,7 +94,85 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
         totalDevis: { $sum: '$nbDevis' },
         totalMontantPropose: { $sum: '$montantPropositions' },
         totalAcceptes: { $sum: '$nbDevisAcceptes' },
-        totalMontantAccepte: { $sum: '$montantAccepte' }
+        totalMontantAccepte: { $sum: '$montantAccepte' },
+        totalMontantRealise: { $sum: '$montantTotalRealise' },
+        avgMontantMoyenPresente: { $avg: '$montantMoyenPresente' },
+        avgMontantMoyenAccepte: { $avg: '$montantMoyenAccepte' },
+        avgMontantMoyenRealise: { $avg: '$montantMoyenRealise' },
+        avgTauxAcceptationNombre: { $avg: '$tauxAcceptationNombre' },
+        avgTauxAcceptationMontant: { $avg: '$tauxAcceptationMontant' },
+        avgDelaiMoyenAcceptation: { $avg: '$delaiMoyenAcceptation' }
+      }}
+    ]);
+
+    const actesByPractitioner = await AnalyseRealisation.aggregate([
+      { $match: { praticien: { $in: practitionerCodes } } },
+      { $group: {
+        _id: '$praticien',
+        soinsConservateursNombre: { $sum: '$soinsConservateurs.nombre' },
+        soinsConservateursDents: { $sum: '$soinsConservateurs.dents' },
+        soinsConservateursHonoraires: { $sum: '$soinsConservateurs.honoraires' },
+        soinsConservateursHonorairesNR: { $sum: '$soinsConservateurs.honorairesNR' },
+        prothesesFixesNombre: { $sum: '$prothesesFixes.nombre' },
+        prothesesFixesDents: { $sum: '$prothesesFixes.dents' },
+        prothesesFixesHonoraires: { $sum: '$prothesesFixes.honoraires' },
+        prothesesFixesHonorairesNR: { $sum: '$prothesesFixes.honorairesNR' },
+        prothesesAmoviblesNombre: { $sum: '$prothesesAmovibles.nombre' },
+        prothesesAmoviblesDents: { $sum: '$prothesesAmovibles.dents' },
+        prothesesAmoviblesHonoraires: { $sum: '$prothesesAmovibles.honoraires' },
+        prothesesAmoviblesHonorairesNR: { $sum: '$prothesesAmovibles.honorairesNR' },
+        prothesesMaxilloFacialesNombre: { $sum: '$prothesesMaxilloFaciales.nombre' },
+        prothesesMaxilloFacialesDents: { $sum: '$prothesesMaxilloFaciales.dents' },
+        prothesesMaxilloFacialesHonoraires: { $sum: '$prothesesMaxilloFaciales.honoraires' },
+        prothesesMaxilloFacialesHonorairesNR: { $sum: '$prothesesMaxilloFaciales.honorairesNR' },
+        chirurgieNombre: { $sum: '$chirurgie.nombre' },
+        chirurgieDents: { $sum: '$chirurgie.dents' },
+        chirurgieHonoraires: { $sum: '$chirurgie.honoraires' },
+        chirurgieHonorairesNR: { $sum: '$chirurgie.honorairesNR' },
+        odfNombre: { $sum: '$odf.nombre' },
+        odfDents: { $sum: '$odf.dents' },
+        odfHonoraires: { $sum: '$odf.honoraires' },
+        odfHonorairesNR: { $sum: '$odf.honorairesNR' },
+        consultationsNombre: { $sum: '$consultations.nombre' },
+        consultationsDents: { $sum: '$consultations.dents' },
+        consultationsHonoraires: { $sum: '$consultations.honoraires' },
+        consultationsHonorairesNR: { $sum: '$consultations.honorairesNR' },
+        prophylaxieNombre: { $sum: '$prophylaxie.nombre' },
+        prophylaxieDents: { $sum: '$prophylaxie.dents' },
+        prophylaxieHonoraires: { $sum: '$prophylaxie.honoraires' },
+        prophylaxieHonorairesNR: { $sum: '$prophylaxie.honorairesNR' },
+        endodontieNombre: { $sum: '$endodontie.nombre' },
+        endodontieDents: { $sum: '$endodontie.dents' },
+        endodontieHonoraires: { $sum: '$endodontie.honoraires' },
+        endodontieHonorairesNR: { $sum: '$endodontie.honorairesNR' },
+        radiographieNombre: { $sum: '$radiographie.nombre' },
+        radiographieDents: { $sum: '$radiographie.dents' },
+        radiographieHonoraires: { $sum: '$radiographie.honoraires' },
+        radiographieHonorairesNR: { $sum: '$radiographie.honorairesNR' },
+        parodontologieNombre: { $sum: '$parodontologie.nombre' },
+        parodontologieDents: { $sum: '$parodontologie.dents' },
+        parodontologieHonoraires: { $sum: '$parodontologie.honoraires' },
+        parodontologieHonorairesNR: { $sum: '$parodontologie.honorairesNR' },
+        implantologieNombre: { $sum: '$implantologie.nombre' },
+        implantologieDents: { $sum: '$implantologie.dents' },
+        implantologieHonoraires: { $sum: '$implantologie.honoraires' },
+        implantologieHonorairesNR: { $sum: '$implantologie.honorairesNR' },
+        implantologieChirurgicaleNombre: { $sum: '$implantologieChirurgicale.nombre' },
+        implantologieChirurgicaleDents: { $sum: '$implantologieChirurgicale.dents' },
+        implantologieChirurgicaleHonoraires: { $sum: '$implantologieChirurgicale.honoraires' },
+        implantologieChirurgicaleHonorairesNR: { $sum: '$implantologieChirurgicale.honorairesNR' },
+        implantologieProthetiqueNombre: { $sum: '$implantologieProthetique.nombre' },
+        implantologieProthetiqueDents: { $sum: '$implantologieProthetique.dents' },
+        implantologieProthetiqueHonoraires: { $sum: '$implantologieProthetique.honoraires' },
+        implantologieProthetiqueHonorairesNR: { $sum: '$implantologieProthetique.honorairesNR' },
+        occlusodontieNombre: { $sum: '$occlusodontie.nombre' },
+        occlusodontieDents: { $sum: '$occlusodontie.dents' },
+        occlusodontieHonoraires: { $sum: '$occlusodontie.honoraires' },
+        occlusodontieHonorairesNR: { $sum: '$occlusodontie.honorairesNR' },
+        esthetiqueNombre: { $sum: '$esthetique.nombre' },
+        esthetiqueDents: { $sum: '$esthetique.dents' },
+        esthetiqueHonoraires: { $sum: '$esthetique.honoraires' },
+        esthetiqueHonorairesNR: { $sum: '$esthetique.honorairesNR' }
       }}
     ]);
 
@@ -96,7 +183,12 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
         _id: { mois: '$mois', praticien: '$praticien' },
         totalRdv: { $sum: '$nbRdv' },
         totalPatients: { $sum: '$nbPatients' },
-        totalNouveaux: { $sum: '$nbNouveauxPatients' }
+        totalNouveaux: { $sum: '$nbNouveauxPatients' },
+        totalRdvHonores: { $sum: '$rdvHonores' },
+        totalRdvManques: { $sum: '$rdvManques' },
+        totalAnnulations: { $sum: '$annulations' },
+        totalReports: { $sum: '$reports' },
+        totalRdvImportants: { $sum: '$rdvImportants' }
       }},
       { $sort: { '_id.mois': 1 } }
     ]);
@@ -143,6 +235,7 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
       caMensuel,
       rdvMensuel,
       devisStats,
+      actesByPractitioner,
       trendCA,
       trendPatients,
       totalAbsences,

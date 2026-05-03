@@ -1,540 +1,389 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Header from '../../components/Header';
-import { getAdminDashboard } from '../../services/api';
 import PeriodFilter from '../../components/PeriodFilter';
-import { FiArrowLeft, FiAlertTriangle, FiUsers, FiTrendingDown, FiCalendar, FiCpu } from 'react-icons/fi';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import { getAdminDashboard } from '../../services/api';
+import { FiActivity, FiCalendar, FiCheckCircle, FiDollarSign, FiFileText, FiRefreshCw, FiTrendingUp, FiUsers, FiXCircle } from 'react-icons/fi';
+import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, Legend, LinearScale, Title, Tooltip } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
-import { cabinetHealthScore, analyzeTrend, generateAIInsight } from '../../utils/aiModels';
-import { streamingBarPlugin, startChartAnimation } from '../../utils/chartPlugins';
-import { useDynamic } from '../../context/DynamicContext';
-import { useTheme } from '../../context/ThemeContext';
-import { useAuth } from '../../context/AuthContext';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
+ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Title, Tooltip, Legend);
 
-const DOC_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+const DOC_COLORS = ['#38bdf8', '#22c55e', '#f59e0b', '#f97316', '#60a5fa', '#f43f5e', '#2dd4bf'];
+
+const parseMonth = (mois) => {
+  if (!mois) return null;
+  const str = String(mois);
+  if (str.includes('-')) {
+    const [yy, mm] = str.split('-');
+    return new Date(Number(yy), Number(mm) - 1, 1);
+  }
+  if (str.length >= 6) {
+    return new Date(Number(str.slice(0, 4)), Number(str.slice(4, 6)) - 1, 1);
+  }
+  return null;
+};
+
+const inPeriod = (mois, period) => {
+  const d = parseMonth(mois);
+  if (!d) return true;
+  const now = new Date();
+  let start;
+  let end;
+
+  switch (period?.period) {
+    case 'this_month':
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      break;
+    case 'last_month':
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 0);
+      break;
+    case '3_months':
+      start = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      break;
+    case '6_months':
+      start = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      break;
+    case 'this_year':
+      start = new Date(now.getFullYear(), 0, 1);
+      end = new Date(now.getFullYear(), 11, 31);
+      break;
+    case 'custom':
+      start = period?.startDate ? new Date(period.startDate) : new Date(now.getFullYear() - 1, 0, 1);
+      end = period?.endDate ? new Date(period.endDate) : now;
+      break;
+    case 'last_year':
+    default:
+      start = new Date(now.getFullYear() - 1, 0, 1);
+      end = new Date(now.getFullYear() - 1, 11, 31);
+      break;
+  }
+
+  return d >= start && d <= end;
+};
+
+const toMap = (arr) => Object.fromEntries((arr || []).map((it) => [it._id, it]));
+
+const sumActesHonoraires = (actes = {}) =>
+  Object.entries(actes).reduce((acc, [key, value]) => {
+    if (!key.endsWith('Honoraires')) return acc;
+    return acc + (Number(value) || 0);
+  }, 0);
 
 export default function Comparison() {
-  const { dark } = useTheme();
-  const { user } = useAuth();
-  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
-  const cardCls = isRayan ? 'bg-white border border-gray-200 shadow-sm' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700';
-  const chartTextColor = (dark && !isRayan) ? '#94a3b8' : '#64748b';
-  const chartGridColor = (dark && !isRayan) ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.5)';
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
   const [period, setPeriod] = useState({ period: 'last_year' });
-  const barChartRef = useRef(null);
-  const doughnutChartRef = useRef(null);
-  const { isDynamic: _isDynamic, dataAccessEnabled } = useDynamic();
-  const isDynamic = isRayan || _isDynamic; // Rayan toujours dynamique
-  const isAdmin = user?.role === 'admin';
-  const showAI = dataAccessEnabled || isRayan || isAdmin;
-
-  // Helper pour calculer les dates de début/fin basées sur la période
-  const getPeriodDates = useCallback((periodObj) => {
-    const now = new Date();
-    let startDate, endDate;
-    
-    switch (periodObj?.period) {
-      case 'this_month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        break;
-      case 'last_month':
-        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        endDate = new Date(now.getFullYear(), now.getMonth(), 0);
-        break;
-      case '3_months':
-        startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        break;
-      case '6_months':
-        startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        break;
-      case 'this_year':
-        startDate = new Date(now.getFullYear(), 0, 1);
-        endDate = new Date(now.getFullYear(), 11, 31);
-        break;
-      case 'last_year':
-        startDate = new Date(now.getFullYear() - 1, 0, 1);
-        endDate = new Date(now.getFullYear() - 1, 11, 31);
-        break;
-      case 'custom':
-        startDate = periodObj.startDate ? new Date(periodObj.startDate) : new Date(now.getFullYear(), 0, 1);
-        endDate = periodObj.endDate ? new Date(periodObj.endDate) : now;
-        break;
-      default:
-        startDate = new Date(now.getFullYear() - 1, 0, 1);
-        endDate = new Date(now.getFullYear(), 11, 31);
-    }
-    return { startDate, endDate };
-  }, []);
-
-  // Filtrer les données par période (format mois: YYYYMMDD, YYYY-MM ou YYYYMM)
-  const filterByPeriod = useCallback((dataArray, periodObj) => {
-    if (!dataArray || !Array.isArray(dataArray)) return [];
-    const { startDate, endDate } = getPeriodDates(periodObj);
-    
-    return dataArray.filter(item => {
-      let moisStr = item._id?.mois || item.mois;
-      if (!moisStr) return true;
-      
-      let year, month;
-      if (moisStr.includes('-')) {
-        // Format YYYY-MM
-        const parts = moisStr.split('-');
-        year = parseInt(parts[0]);
-        month = parseInt(parts[1]) - 1;
-      } else if (moisStr.length === 8) {
-        // Format YYYYMMDD
-        year = parseInt(moisStr.substring(0, 4));
-        month = parseInt(moisStr.substring(4, 6)) - 1;
-      } else {
-        // Format YYYYMM
-        year = parseInt(moisStr.substring(0, 4));
-        month = parseInt(moisStr.substring(4, 6)) - 1;
-      }
-      const itemDate = new Date(year, month, 1);
-      
-      return itemDate >= startDate && itemDate <= endDate;
-    });
-  }, [getPeriodDates]);
-
-  // Animation loop pour rafraîchir les charts (effet streaming)
-  useEffect(() => {
-    if (!isDynamic) return;
-    const stopBar = startChartAnimation(barChartRef);
-    return () => { stopBar(); };
-  }, [loading, isDynamic]);
 
   useEffect(() => {
-    const fetchAll = async () => {
+    const run = async () => {
       setLoading(true);
       try {
         const res = await getAdminDashboard();
         setData(res.data);
-        setError(null);
+        setError('');
       } catch (err) {
-        console.error(err);
-        setError('Impossible de charger les données. Vérifiez votre connexion.');
+        setError("Impossible de charger la comparaison des cabinets.");
       } finally {
         setLoading(false);
       }
     };
-    fetchAll();
+    run();
   }, [period]);
 
-  // Build doctors dynamically from actual practitioners + their RDV data (REAL absences)
-  // Ces variables et useMemo DOIVENT être avant tout return conditionnel (règle des hooks React)
-  const practitioners = data?.practitioners || [];
-  const rdvByP = data?.rdvByPractitioner || [];
-  const caByP = data?.caByPractitioner || [];
-  const rawRdvMensuel = data?.rdvMensuel || [];
-  const rdvMensuel = useMemo(() => filterByPeriod(rawRdvMensuel, period), [rawRdvMensuel, period, filterByPeriod]);
+  const computed = useMemo(() => {
+    const practitioners = data?.practitioners || [];
+    const caMap = toMap(data?.caByPractitioner);
+    const rdvMap = toMap(data?.rdvByPractitioner);
+    const devisMap = toMap(data?.devisStats);
+    const actesMap = toMap(data?.actesByPractitioner);
+    const heuresMap = toMap(data?.heuresByPractitioner);
+
+    const monthlyRdv = (data?.rdvMensuel || []).filter((row) => inPeriod(row?._id?.mois, period));
+    const monthlyByDoctor = {};
+    for (const row of monthlyRdv) {
+      const code = row?._id?.praticien;
+      if (!code) continue;
+      if (!monthlyByDoctor[code]) {
+        monthlyByDoctor[code] = {
+          totalRdv: 0,
+          totalRdvHonores: 0,
+          totalRdvManques: 0,
+          totalAnnulations: 0,
+          totalReports: 0,
+          totalRdvImportants: 0,
+          totalPatients: 0
+        };
+      }
+      monthlyByDoctor[code].totalRdv += Number(row.totalRdv) || 0;
+      monthlyByDoctor[code].totalRdvHonores += Number(row.totalRdvHonores) || 0;
+      monthlyByDoctor[code].totalRdvManques += Number(row.totalRdvManques) || 0;
+      monthlyByDoctor[code].totalAnnulations += Number(row.totalAnnulations) || 0;
+      monthlyByDoctor[code].totalReports += Number(row.totalReports) || 0;
+      monthlyByDoctor[code].totalRdvImportants += Number(row.totalRdvImportants) || 0;
+      monthlyByDoctor[code].totalPatients += Number(row.totalPatients) || 0;
+    }
+
+    const doctors = practitioners.map((p, idx) => {
+      const ca = caMap[p.code] || {};
+      const rdv = rdvMap[p.code] || {};
+      const rdvPeriod = monthlyByDoctor[p.code] || rdv;
+      const devis = devisMap[p.code] || {};
+      const actes = actesMap[p.code] || {};
+      const heures = heuresMap[p.code] || {};
+
+      const totalRdv = Number(rdvPeriod.totalRdv) || 0;
+      const totalPatients = Number(rdvPeriod.totalPatients ?? rdv.totalPatients) || 0;
+      const absences = Math.max(0, totalRdv - totalPatients);
+      const tauxAbsence = totalRdv > 0 ? (absences / totalRdv) * 100 : 0;
+      const caFacture = Number(ca.totalFacture) || 0;
+      const caEncaisse = Number(ca.totalEncaisse) || 0;
+      const minutes = Number(heures.totalMinutes) || 0;
+      const hours = minutes / 60;
+
+      return {
+        code: p.code,
+        name: p.name,
+        color: DOC_COLORS[idx % DOC_COLORS.length],
+        caFacture,
+        caEncaisse,
+        nbPatients: Number(ca.totalPatients) || 0,
+        nouveauxDossiers: Number(ca.totalNouveauxDossiers) || 0,
+        reglementsAnnee: Number(ca.totalReglementsAnnee) || 0,
+        totalRdv,
+        totalPatients,
+        rdvHonores: Number(rdvPeriod.totalRdvHonores ?? rdv.totalRdvHonores) || 0,
+        rdvManques: Number(rdvPeriod.totalRdvManques ?? rdv.totalRdvManques) || 0,
+        annulations: Number(rdvPeriod.totalAnnulations ?? rdv.totalAnnulations) || 0,
+        reports: Number(rdvPeriod.totalReports ?? rdv.totalReports) || 0,
+        rdvImportants: Number(rdvPeriod.totalRdvImportants ?? rdv.totalRdvImportants) || 0,
+        rdvParJour: Number(rdv.avgRdvParJour) || 0,
+        dureeMoyennePrevue: Number(rdv.avgDureeMoyennePrevue) || 0,
+        totalDevis: Number(devis.totalDevis) || 0,
+        devisAcceptes: Number(devis.totalAcceptes) || 0,
+        montantAccepte: Number(devis.totalMontantAccepte) || 0,
+        montantRealise: Number(devis.totalMontantRealise) || 0,
+        tauxAcceptMontant: Number(devis.avgTauxAcceptationMontant) || 0,
+        delaiMoyen: Number(devis.avgDelaiMoyenAcceptation) || 0,
+        heuresTravaillees: hours,
+        honorairesActes: sumActesHonoraires(actes),
+        tauxAbsence
+      };
+    });
+
+    const totals = {
+      caFacture: doctors.reduce((s, d) => s + d.caFacture, 0),
+      caEncaisse: doctors.reduce((s, d) => s + d.caEncaisse, 0),
+      patients: doctors.reduce((s, d) => s + d.nbPatients, 0),
+      nouveauxDossiers: doctors.reduce((s, d) => s + d.nouveauxDossiers, 0),
+      rdv: doctors.reduce((s, d) => s + d.totalRdv, 0),
+      rdvHonores: doctors.reduce((s, d) => s + d.rdvHonores, 0),
+      rdvManques: doctors.reduce((s, d) => s + d.rdvManques, 0),
+      annulations: doctors.reduce((s, d) => s + d.annulations, 0),
+      reports: doctors.reduce((s, d) => s + d.reports, 0),
+      devis: doctors.reduce((s, d) => s + d.totalDevis, 0),
+      montantRealise: doctors.reduce((s, d) => s + d.montantRealise, 0),
+      honorairesActes: doctors.reduce((s, d) => s + d.honorairesActes, 0)
+    };
+
+    return { doctors, totals };
+  }, [data, period]);
+
+  const doctors = computed.doctors;
+  const totals = computed.totals;
+
+  const barData = {
+    labels: doctors.map((d) => d.code),
+    datasets: [
+      { label: 'RDV honorés', data: doctors.map((d) => d.rdvHonores), backgroundColor: '#22c55e', borderRadius: 6 },
+      { label: 'RDV manqués', data: doctors.map((d) => d.rdvManques), backgroundColor: '#ef4444', borderRadius: 6 },
+      { label: 'Annulations', data: doctors.map((d) => d.annulations), backgroundColor: '#f59e0b', borderRadius: 6 },
+      { label: 'Reports', data: doctors.map((d) => d.reports), backgroundColor: '#38bdf8', borderRadius: 6 }
+    ]
+  };
+
+  const doughnutData = {
+    labels: doctors.map((d) => d.code),
+    datasets: [
+      {
+        data: doctors.map((d) => d.caFacture),
+        backgroundColor: doctors.map((d) => d.color),
+        borderWidth: 0
+      }
+    ]
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex h-screen items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-cyan-500" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <p className="text-red-500 font-semibold mb-2">{error}</p>
-          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">Réessayer</button>
+      <div className="flex h-screen items-center justify-center">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
+          <p className="mb-3 text-sm font-semibold text-red-600">{error}</p>
+          <button onClick={() => window.location.reload()} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white">
+            Recharger
+          </button>
         </div>
       </div>
     );
   }
 
-  const doctors = practitioners.map((p, idx) => {
-    const rdvData = rdvByP.find(r => r._id === p.code);
-    const caData = caByP.find(c => c._id === p.code);
-    const totalRdv = rdvData?.totalRdv || 0;
-    const totalPatients = rdvData?.totalPatients || 0;
-    const absents = Math.max(0, totalRdv - totalPatients); // REAL absences
-    const presents = totalPatients;
-    const totalCA = caData?.totalFacture || 0;
-    const totalEncaisse = caData?.totalEncaisse || 0;
-
-    // Compute real tendance from last 2 months of RDV data
-    const moisForP = rdvMensuel
-      .filter(r => r._id?.praticien === p.code)
-      .sort((a, b) => (a._id?.mois || '').localeCompare(b._id?.mois || ''));
-    let tendance = 'Stable';
-    if (moisForP.length >= 2) {
-      const lastAbsences = (moisForP[moisForP.length - 1]?.totalRdv || 0) - (moisForP[moisForP.length - 1]?.totalPatients || 0);
-      const prevAbsences = (moisForP[moisForP.length - 2]?.totalRdv || 0) - (moisForP[moisForP.length - 2]?.totalPatients || 0);
-      if (prevAbsences > 0) {
-        const diff = ((lastAbsences - prevAbsences) / prevAbsences) * 100;
-        tendance = diff > 10 ? 'Hausse' : diff < -10 ? 'Baisse' : 'Stable';
-      } else if (lastAbsences > 0) {
-        tendance = 'Hausse';
-      }
-    }
-
-    // IA: Health score multi-KPI
-    const tauxEnc = totalCA > 0 ? Math.round((totalEncaisse / totalCA) * 100) : 0;
-    const tauxAbs = totalRdv > 0 ? (absents / totalRdv) * 100 : 0;
-    const prodHoraire = totalCA; // proxy
-    const health = cabinetHealthScore({
-      tauxEncaissement: tauxEnc,
-      evolutionCA: tendance === 'Hausse' ? -5 : tendance === 'Baisse' ? 5 : 0,
-      tauxAbsence: tauxAbs,
-      productionHoraire: prodHoraire,
-      tauxNouveauxPatients: 10,
-    });
-
-    // IA: Absence monthly trend
-    const monthlyAbsences = moisForP.map(m => Math.max(0, (m.totalRdv || 0) - (m.totalPatients || 0)));
-    const absenceTrend = analyzeTrend(monthlyAbsences);
-
-    return {
-      name: p.name,
-      code: p.code,
-      totalRdv,
-      presents,
-      absents,
-      tendance,
-      color: DOC_COLORS[idx % DOC_COLORS.length],
-      totalCA,
-      totalEncaisse,
-      healthScore: health.score,
-      healthLabel: health.label,
-      absenceTrend,
-      monthlyAbsences,
-    };
-  });
-
-  const totalAbsences = doctors.reduce((s, d) => s + d.absents, 0);
-  const totalPresences = doctors.reduce((s, d) => s + d.presents, 0);
-  const totalRdv = doctors.reduce((s, d) => s + d.totalRdv, 0);
-  const tauxAbsence = totalRdv > 0 ? ((totalAbsences / totalRdv) * 100).toFixed(1) : 0;
-  const cabinetsEnAlerte = doctors.filter(d => d.totalRdv > 0 && (d.absents / d.totalRdv) > 0.08).length;
-
-  // Presences vs Absences bar chart
-  const barData = {
-    labels: doctors.map(d => `Dr. ${d.name}`),
-    datasets: [
-      {
-        label: 'Présents',
-        data: doctors.map(d => d.presents),
-        backgroundColor: 'rgba(37, 99, 235, 0.85)',
-        hoverBackgroundColor: '#2563eb',
-        borderRadius: 6,
-        borderSkipped: false,
-        barPercentage: 0.5,
-        categoryPercentage: 0.7,
-      },
-      {
-        label: 'Absents',
-        data: doctors.map(d => d.absents),
-        backgroundColor: 'rgba(239, 68, 68, 0.75)',
-        hoverBackgroundColor: '#ef4444',
-        borderRadius: 6,
-        borderSkipped: false,
-        barPercentage: 0.5,
-        categoryPercentage: 0.7,
-      },
-    ],
-  };
-
-  const barOptions = {
-    indexAxis: 'y',
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
-    plugins: {
-      legend: {
-        position: 'top',
-        align: 'end',
-        labels: {
-          usePointStyle: true,
-          pointStyle: 'circle',
-          padding: 16,
-          font: { size: 11, weight: '500' },
-          color: chartTextColor,
-        },
-      },
-      tooltip: {
-        backgroundColor: '#1e293b',
-        titleColor: '#f8fafc',
-        bodyColor: '#e2e8f0',
-        titleFont: { size: 13, weight: '600' },
-        bodyFont: { size: 12 },
-        padding: 12,
-        cornerRadius: 8,
-        callbacks: {
-          label: (ctx) => {
-            const total = doctors[ctx.dataIndex]?.totalRdv || 0;
-            const pct = total > 0 ? ((ctx.parsed.x / total) * 100).toFixed(1) : '0';
-            return `  ${ctx.dataset.label}: ${ctx.parsed.x} (${pct}%)`;
-          },
-        },
-      },
-    },
-    scales: {
-      x: {
-        stacked: false,
-        beginAtZero: true,
-        border: { display: false },
-        grid: { color: chartGridColor, drawBorder: false },
-        ticks: { color: chartTextColor, font: { size: 11 }, padding: 4 },
-      },
-      y: {
-        stacked: false,
-        border: { display: false },
-        grid: { display: false },
-        ticks: { color: chartTextColor, font: { size: 12, weight: '600' }, padding: 8 },
-      },
-    },
-  };
-
-  // CA comparison doughnut per practitioner
-  const caDoughnut = {
-    labels: doctors.map(d => d.code),
-    datasets: [{
-      data: doctors.map(d => d.totalCA),
-      backgroundColor: doctors.map(d => d.color),
-      borderWidth: 0,
-    }],
-  };
-  const totalCAAll = doctors.reduce((s, d) => s + d.totalCA, 0);
-
   return (
     <div>
-      <Header title="Statistiques et comparaison des cabinets" subtitle="Suivi détaillé des absences par cabinet" />
-      
+      <Header title="Analyse & Comparaison des Cabinets" subtitle="Dashboard enrichi avec CA, RDV détaillés, devis et actes" />
+
       <div className="p-6">
-        {/* Alert badge + Period Filter */}
-        <div className="flex justify-between items-center mb-6">
-          <button className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
-            <FiArrowLeft className="w-4 h-4" />
-          </button>
-          <div className="flex items-center gap-4">
+        <div className="mb-6 rounded-3xl border border-slate-700 bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950 p-5 text-slate-100 shadow-2xl">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Pulse Board</p>
+              <h2 className="text-xl font-black">Vue Consolidée des Performances</h2>
+            </div>
             <PeriodFilter value={period} onChange={setPeriod} />
-            {cabinetsEnAlerte > 0 && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-full">
-                <FiAlertTriangle className="w-4 h-4 text-red-500" />
-                <span className="text-sm font-semibold text-red-600">{cabinetsEnAlerte} cabinet(s) en alerte</span>
-              </div>
-            )}
           </div>
-        </div>
 
-        {/* KPI Cards */}
-        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 ${isDynamic ? 'animate-fade-in' : ''}`}>
-          <div className={`${cardCls} rounded-2xl p-5 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.1s' } : {}}>
-            <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-xl bg-red-50 dark:bg-red-900/30 ${isDynamic ? 'animate-float-soft' : ''}`}><FiUsers className="w-5 h-5 text-red-500" /></div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Total Absences</p>
-                <p className="text-3xl font-black text-gray-900 dark:text-white">{totalAbsences}</p>
-              </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-2xl border border-cyan-400/30 bg-cyan-500/10 p-4">
+              <div className="mb-2 flex items-center gap-2 text-cyan-300"><FiDollarSign /> CA Facturé</div>
+              <p className="text-2xl font-black">{totals.caFacture.toLocaleString('fr-FR')} €</p>
+              <p className="text-xs text-slate-300">Encaissé: {totals.caEncaisse.toLocaleString('fr-FR')} €</p>
             </div>
-          </div>
-          <div className={`${cardCls} rounded-2xl p-5 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.2s' } : {}}>
-            <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-xl bg-green-50 dark:bg-green-900/30 ${isDynamic ? 'animate-float-soft' : ''}`}><FiUsers className="w-5 h-5 text-green-500" /></div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Total Présences</p>
-                <p className="text-3xl font-black text-gray-900 dark:text-white">{totalPresences}</p>
-              </div>
+            <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4">
+              <div className="mb-2 flex items-center gap-2 text-emerald-300"><FiUsers /> Patients</div>
+              <p className="text-2xl font-black">{totals.patients.toLocaleString('fr-FR')}</p>
+              <p className="text-xs text-slate-300">Nouveaux dossiers: {totals.nouveauxDossiers.toLocaleString('fr-FR')}</p>
             </div>
-          </div>
-          <div className={`${cardCls} rounded-2xl p-5 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.3s' } : {}}>
-            <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-xl bg-amber-50 dark:bg-amber-900/30 ${isDynamic ? 'animate-float-soft' : ''}`}><FiTrendingDown className="w-5 h-5 text-amber-500" /></div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Taux d'absence global</p>
-                <p className="text-3xl font-black text-gray-900 dark:text-white">{tauxAbsence}%</p>
-              </div>
+            <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-4">
+              <div className="mb-2 flex items-center gap-2 text-amber-300"><FiCalendar /> RDV détaillés</div>
+              <p className="text-2xl font-black">{totals.rdv.toLocaleString('fr-FR')}</p>
+              <p className="text-xs text-slate-300">Honorés: {totals.rdvHonores} | Manqués: {totals.rdvManques}</p>
             </div>
-          </div>
-          <div className={`${cardCls} rounded-2xl p-5 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.4s' } : {}}>
-            <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-xl bg-blue-50 dark:bg-blue-900/30 ${isDynamic ? 'animate-float-soft' : ''}`}><FiCalendar className="w-5 h-5 text-blue-500" /></div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Total RDV</p>
-                <p className="text-3xl font-black text-gray-900 dark:text-white">{totalRdv}</p>
-              </div>
+            <div className="rounded-2xl border border-fuchsia-400/30 bg-fuchsia-500/10 p-4">
+              <div className="mb-2 flex items-center gap-2 text-fuchsia-300"><FiFileText /> Devis & Actes</div>
+              <p className="text-2xl font-black">{totals.devis.toLocaleString('fr-FR')} devis</p>
+              <p className="text-xs text-slate-300">Actes honoraires: {totals.honorairesActes.toLocaleString('fr-FR')} €</p>
             </div>
           </div>
         </div>
 
-        {/* Detail Table */}
-        <div className={`${cardCls} rounded-2xl overflow-hidden mb-6 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.5s' } : {}}>
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">Détail par Cabinet</h3>
+        <div className="mb-6 grid grid-cols-1 gap-5 xl:grid-cols-3">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm xl:col-span-2">
+            <h3 className="mb-1 text-sm font-extrabold uppercase tracking-wider text-gray-700">Rendez-vous par praticien</h3>
+            <p className="mb-4 text-xs text-gray-500">Honorés, manqués, annulations et reports</p>
+            <div className="h-[340px]">
+              <Bar
+                data={barData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true } }
+                  },
+                  scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true }
+                  }
+                }}
+              />
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Cabinet</th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Total RDV</th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Présents</th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Absents</th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Taux d'absence</th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Tendance</th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Statut</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {doctors.map((doc, i) => {
-                  const taux = doc.totalRdv > 0 ? ((doc.absents / doc.totalRdv) * 100).toFixed(1) : '0.0';
-                  const isOk = true;
-                  return (
-                    <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <td className="px-6 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: doc.color }}>
-                            {doc.code}
-                          </div>
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">{doc.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-3 text-center text-sm text-gray-700 dark:text-gray-300">{doc.totalRdv}</td>
-                      <td className="px-6 py-3 text-center text-sm font-semibold text-green-600">{doc.presents}</td>
-                      <td className="px-6 py-3 text-center text-sm font-semibold text-red-500">{doc.absents}</td>
-                      <td className="px-6 py-3 text-center text-sm text-gray-700 dark:text-gray-300">{taux}%</td>
-                      <td className="px-6 py-3 text-center">
-                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                          doc.tendance === 'Hausse' ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400' :
-                          doc.tendance === 'Baisse' ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
-                          'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                        }`}>
-                          {doc.tendance === 'Hausse' ? '↑ Hausse' : doc.tendance === 'Baisse' ? '↓ Baisse' : '→ Stable'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 text-center">
-                        <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                          isOk ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400'
-                        }`}>
-                          {isOk ? '✅ OK' : '⚠️ À surveiller'}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
 
-        {/* Charts Row: Presences vs Absences + Raisons Global */}
-        {!showAI && (
-          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 p-12 text-center mb-6">
-            <FiCpu className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-gray-400 dark:text-gray-500 mb-2">Modèles IA désactivés</h3>
-            <p className="text-sm text-gray-400 dark:text-gray-500">Les graphiques et analyses IA sont temporairement indisponibles.<br/>Contactez l'administrateur pour réactiver les modèles.</p>
-          </div>
-        )}
-        {showAI && <>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
-          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Comparaison Présences et Absences des Patients</h3>
-              <span className="flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
-                <span className="relative flex h-2 w-2"><span className={`${isDynamic ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75`}></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
-                Temps réel
-              </span>
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="mb-1 text-sm font-extrabold uppercase tracking-wider text-gray-700">Part de CA</h3>
+            <p className="mb-4 text-xs text-gray-500">Répartition du CA facturé</p>
+            <div className="mx-auto max-w-[260px]">
+              <Doughnut
+                data={doughnutData}
+                options={{
+                  cutout: '62%',
+                  plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                      callbacks: {
+                        label: (ctx) => `${ctx.label}: ${(ctx.raw || 0).toLocaleString('fr-FR')} €`
+                      }
+                    }
+                  }
+                }}
+              />
             </div>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Répartition par cabinet dentaire</p>
-            <div style={{ height: `${Math.max(200, doctors.length * 80)}px` }}>
-              <div className={isRayan ? 'bg-white rounded-xl p-3' : ''}>
-                <Bar ref={barChartRef} data={barData} options={barOptions} plugins={isDynamic ? [streamingBarPlugin] : []} />
-              </div>
-            </div>
-            <div className="flex gap-4 mt-3 pt-3 border-t border-gray-50 dark:border-gray-700">
-              {doctors.map((doc, i) => {
-                const taux = doc.totalRdv > 0 ? ((doc.absents / doc.totalRdv) * 100).toFixed(1) : '0';
+            <div className="mt-4 space-y-2">
+              {doctors.map((doc) => {
+                const part = totals.caFacture > 0 ? Math.round((doc.caFacture / totals.caFacture) * 100) : 0;
                 return (
-                  <div key={i} className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: doc.color }}></span>
-                    <span>{doc.code}: <span className="font-semibold text-gray-700 dark:text-gray-300">{taux}%</span> absence</span>
+                  <div key={doc.code} className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-2 text-gray-600">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: doc.color }} />
+                      {doc.name}
+                    </span>
+                    <span className="font-semibold text-gray-900">{part}%</span>
                   </div>
                 );
               })}
             </div>
           </div>
-          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">Répartition du CA par Cabinet</h3>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Part de chaque cabinet</p>
-            <div className="max-w-xs mx-auto">
-              <div className={isRayan ? 'bg-white rounded-xl p-3' : ''}>
-                <Doughnut ref={doughnutChartRef} data={caDoughnut} options={{
-                responsive: true,
-                cutout: '55%',
-                plugins: {
-                  legend: { display: false },
-                  tooltip: { callbacks: { label: (c) => `${c.label}: ${(c.raw || 0).toLocaleString('fr-FR')} €` } },
-                },
-              }} />
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-3 justify-center mt-4">
-              {doctors.map((doc, i) => (
-                <div key={i} className="flex items-center gap-1.5 text-xs">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: doc.color }}></span>
-                  <span className="text-gray-600 dark:text-gray-400">{doc.code} {totalCAAll > 0 ? Math.round((doc.totalCA / totalCAAll) * 100) : 0}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
-        {/* Performance par Cabinet: CA Facturé vs Encaissé + AI Health Score */}
-        <div className={`${cardCls} rounded-2xl p-6 mb-6 transition-colors`}>
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">📊</span>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Performance par Cabinet</h3>
-            </div>
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="grid grid-cols-1 gap-2 border-b border-gray-100 bg-gray-50 px-5 py-4 md:grid-cols-3">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500"><FiCheckCircle /> Honorés: {totals.rdvHonores}</div>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500"><FiXCircle /> Manqués: {totals.rdvManques}</div>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500"><FiRefreshCw /> Reports: {totals.reports}</div>
           </div>
-          <div className={`grid gap-6 ${doctors.length <= 2 ? 'grid-cols-1 md:grid-cols-2 max-w-2xl mx-auto' : 'grid-cols-1 md:grid-cols-3'}`}>
-            {doctors.map((doc, i) => {
-              const tauxEnc = doc.totalCA > 0 ? Math.round((doc.totalEncaisse / doc.totalCA) * 100) : 0;
-              return (
-                <div key={i} className="border border-gray-100 dark:border-gray-700 rounded-xl p-4 text-center">
-                  <div className="w-10 h-10 rounded-full mx-auto flex items-center justify-center text-white text-xs font-bold mb-2" style={{ backgroundColor: doc.color }}>
-                    {doc.code}
-                  </div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white mb-3">{doc.name}</p>
-                  <div className="space-y-2 text-left">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-500 dark:text-gray-400">CA Facturé</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">{doc.totalCA.toLocaleString('fr-FR')} €</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-500 dark:text-gray-400">Encaissé</span>
-                      <span className="font-semibold text-green-600">{doc.totalEncaisse.toLocaleString('fr-FR')} €</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-500 dark:text-gray-400">Taux encaissement</span>
-                      <span className={`font-bold ${tauxEnc >= 85 ? 'text-green-600' : tauxEnc >= 70 ? 'text-amber-500' : 'text-red-500'}`}>{tauxEnc}%</span>
-                    </div>
-                    <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 mt-1">
-                      <div className="h-1.5 rounded-full" style={{ width: `${Math.min(tauxEnc, 100)}%`, backgroundColor: doc.color }}></div>
-                    </div>
 
-                  </div>
-                </div>
-              );
-            })}
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-white text-[11px] uppercase tracking-wide text-gray-500">
+                <tr>
+                  <th className="px-4 py-3 text-left">Praticien</th>
+                  <th className="px-4 py-3 text-right">CA Facturé</th>
+                  <th className="px-4 py-3 text-right">CA Encaissé</th>
+                  <th className="px-4 py-3 text-right">Patients</th>
+                  <th className="px-4 py-3 text-right">RDV</th>
+                  <th className="px-4 py-3 text-right">Absence %</th>
+                  <th className="px-4 py-3 text-right">Devis</th>
+                  <th className="px-4 py-3 text-right">Montant réalisé</th>
+                  <th className="px-4 py-3 text-right">Actes honoraires</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {doctors.map((doc) => (
+                  <tr key={doc.code} className="hover:bg-sky-50/40">
+                    <td className="px-4 py-3 font-semibold text-gray-800">{doc.name}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-gray-900">{doc.caFacture.toLocaleString('fr-FR')} €</td>
+                    <td className="px-4 py-3 text-right text-emerald-600">{doc.caEncaisse.toLocaleString('fr-FR')} €</td>
+                    <td className="px-4 py-3 text-right">{doc.nbPatients.toLocaleString('fr-FR')}</td>
+                    <td className="px-4 py-3 text-right">{doc.totalRdv.toLocaleString('fr-FR')}</td>
+                    <td className="px-4 py-3 text-right font-semibold" style={{ color: doc.tauxAbsence > 12 ? '#dc2626' : '#2563eb' }}>
+                      {doc.tauxAbsence.toFixed(1)}%
+                    </td>
+                    <td className="px-4 py-3 text-right">{doc.totalDevis.toLocaleString('fr-FR')}</td>
+                    <td className="px-4 py-3 text-right">{doc.montantRealise.toLocaleString('fr-FR')} €</td>
+                    <td className="px-4 py-3 text-right">{doc.honorairesActes.toLocaleString('fr-FR')} €</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 border-t border-gray-100 bg-gray-50 px-5 py-4 text-xs text-gray-600 md:grid-cols-5">
+            <div className="rounded-lg bg-white px-3 py-2">Annulations: <strong>{totals.annulations}</strong></div>
+            <div className="rounded-lg bg-white px-3 py-2">Reports: <strong>{totals.reports}</strong></div>
+            <div className="rounded-lg bg-white px-3 py-2">RDV manqués: <strong>{totals.rdvManques}</strong></div>
+            <div className="rounded-lg bg-white px-3 py-2">Montant réalisé: <strong>{totals.montantRealise.toLocaleString('fr-FR')} €</strong></div>
+            <div className="rounded-lg bg-white px-3 py-2">Honoraires actes: <strong>{totals.honorairesActes.toLocaleString('fr-FR')} €</strong></div>
           </div>
         </div>
-
-
-        </>}
       </div>
     </div>
   );
