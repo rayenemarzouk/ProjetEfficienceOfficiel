@@ -1,11 +1,118 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Header from '../../components/Header';
-import { getReportsList, generateReport, generateAllReports, sendReports, sendReportsNow, downloadReport, getAdminDashboard, getAvailableMonths } from '../../services/api';
-import { FiFileText, FiSend, FiDownload, FiRefreshCw, FiCheck, FiAlertCircle, FiZap, FiFilter, FiCalendar, FiUsers } from 'react-icons/fi';
+import {
+  getAvailableMonths, getReportKPIs,
+  generateReport, generateAllReports,
+  sendReportsNow, downloadReport
+} from '../../services/api';
+import {
+  FiFileText, FiDownload, FiRefreshCw,
+  FiCheck, FiAlertCircle, FiZap, FiCalendar,
+  FiActivity, FiTrendingUp, FiClock, FiBarChart2
+} from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
-import { useDynamic } from '../../context/DynamicContext';
 
-// Options de période pour le filtre
+const fmt = (n) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n || 0);
+const pct = (n) => `${Number(n || 0).toFixed(1)}%`;
+
+const MONTH_NAMES = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+
+function formatMonth(m) {
+  if (!m) return '';
+  return `${MONTH_NAMES[parseInt(m.substring(4, 6)) - 1]} ${m.substring(0, 4)}`;
+}
+
+function KpiRow({ icon: Icon, color, label, value, sub }) {
+  return (
+    <div className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
+      <div className={`p-1.5 rounded-lg ${color}`}>
+        <Icon className="w-3.5 h-3.5" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-gray-500 truncate">{label}</p>
+        {sub && <p className="text-xs text-gray-400">{sub}</p>}
+      </div>
+      <span className="text-sm font-semibold text-gray-800 whitespace-nowrap">{value}</span>
+    </div>
+  );
+}
+
+function CabinetCard({ cab, onGenerate, onDownload, generating }) {
+  const { kpi, name, cabinetName, hasData, reportGenerated, reportSent, reportId, code } = cab;
+  const isGenerating = generating === code;
+
+  return (
+    <div className={`bg-white border rounded-2xl overflow-hidden shadow-sm flex flex-col transition-all ${hasData ? 'border-gray-200' : 'border-dashed border-gray-300 opacity-70'}`}>
+      <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-5 py-4 flex items-center justify-between">
+        <div>
+          <p className="text-white font-semibold text-sm leading-tight">{name}</p>
+          <p className="text-slate-400 text-xs mt-0.5">{cabinetName} · {code}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {reportSent && <span className="bg-green-500/20 text-green-300 text-xs px-2 py-0.5 rounded-full border border-green-500/30">✓ Envoyé</span>}
+          {reportGenerated && !reportSent && <span className="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full border border-amber-500/30">⏳ Généré</span>}
+          {!reportGenerated && <span className="bg-slate-500/20 text-slate-400 text-xs px-2 py-0.5 rounded-full border border-slate-500/30">Non généré</span>}
+        </div>
+      </div>
+
+      <div className="px-5 py-3 flex-1">
+        {!hasData ? (
+          <p className="text-center text-gray-400 text-xs py-4">Aucune donnée pour ce mois</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="bg-cyan-50 rounded-xl p-3 text-center">
+                <p className="text-xs text-cyan-600 font-medium">CA Facturé</p>
+                <p className="text-lg font-bold text-cyan-700 leading-tight">{fmt(kpi.caMensuel)}</p>
+                <p className="text-xs text-cyan-500">{fmt(kpi.montantEncaisse)} encaissé</p>
+                <p className="text-xs text-cyan-400">{pct(kpi.tauxEncaissement)} taux</p>
+              </div>
+              <div className="bg-emerald-50 rounded-xl p-3 text-center">
+                <p className="text-xs text-emerald-600 font-medium">Patients</p>
+                <p className="text-lg font-bold text-emerald-700 leading-tight">{kpi.nbPatients}</p>
+                <p className="text-xs text-emerald-500">{kpi.nbNouveauxPatients} nouveaux</p>
+                <p className="text-xs text-emerald-400">Panier {fmt(kpi.panierMoyen)}</p>
+              </div>
+            </div>
+            <div>
+              <KpiRow icon={FiActivity} color="bg-amber-100 text-amber-600" label="RDV" value={kpi.nbRdv}
+                sub={`${kpi.rdvHonores} honorés · ${kpi.rdvManques} manqués · ${kpi.annulations} annulés`} />
+              <KpiRow icon={FiClock} color="bg-violet-100 text-violet-600" label="Heures travaillées" value={`${kpi.heuresTravaillees}h`}
+                sub={`${kpi.joursOuverts} jours · Prod. ${fmt(kpi.productionHoraire)}/h`} />
+              <KpiRow icon={FiFileText} color="bg-rose-100 text-rose-600" label="Devis"
+                value={`${kpi.nbDevisAcceptes}/${kpi.nbDevis}`}
+                sub={`Taux ${pct(kpi.tauxAcceptationDevis)} · Réalisé ${fmt(kpi.montantDevisRealise)}`} />
+              <KpiRow icon={FiTrendingUp} color="bg-indigo-100 text-indigo-600" label="Absence" value={pct(kpi.tauxAbsence)}
+                sub={`${kpi.reportsRdv} reports · ${kpi.rdvImportants} importants`} />
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex items-center gap-2">
+        <button
+          onClick={() => onGenerate(code)}
+          disabled={isGenerating || !hasData}
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-primary-600 text-white rounded-xl text-xs font-medium hover:bg-primary-700 disabled:opacity-40 transition-colors"
+        >
+          {isGenerating ? <FiRefreshCw className="animate-spin w-3.5 h-3.5" /> : <FiFileText className="w-3.5 h-3.5" />}
+          Générer PDF
+        </button>
+        {reportGenerated && reportId && (
+          <button
+            onClick={() => onDownload(reportId, code)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-medium hover:bg-red-100 transition-colors"
+          >
+            <FiDownload className="w-3.5 h-3.5" />
+            PDF
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const periodOptions = [
   { value: 'all', label: 'Toutes les périodes' },
   { value: 'this_month', label: 'Ce mois' },
@@ -17,408 +124,206 @@ const periodOptions = [
 ];
 
 export default function Reports() {
-  const { user } = useAuth();
-  const { isDynamic: _isDynamic } = useDynamic();
-  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
-  const isDynamic = isRayan || _isDynamic;
-  const cardCls = isRayan ? 'bg-white border border-gray-200 shadow-sm' : 'bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-gray-700';
-  const [reports, setReports] = useState([]);
-  const [practitioners, setPractitioners] = useState([]);
+  const { user: _user } = useAuth();
   const [availableMonths, setAvailableMonths] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState('');
-  const [selectedPractitioner, setSelectedPractitioner] = useState('');
+  const [kpisData, setKpisData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [sendingNow, setSendingNow] = useState(false);
+  const [loadingKpis, setLoadingKpis] = useState(false);
+  const [generating, setGenerating] = useState(null);
+  const [sendingAll, setSendingAll] = useState(false);
   const [message, setMessage] = useState(null);
-  
-  // Nouveaux filtres pour la liste des rapports
-  const [filterPeriod, setFilterPeriod] = useState('all');
-  const [filterCabinet, setFilterCabinet] = useState('all');
 
   useEffect(() => {
-    fetchData();
+    const init = async () => {
+      try {
+        const res = await getAvailableMonths();
+        const months = res.data || [];
+        setAvailableMonths(months);
+        if (months.length > 0) setSelectedMonth(months[0].value);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
   }, []);
 
-  const fetchData = async () => {
+  const loadKPIs = useCallback(async (mois) => {
+    if (!mois) return;
+    setLoadingKpis(true);
     try {
-      const [reportsResult, dashResult, monthsResult] = await Promise.allSettled([
-        getReportsList(),
-        getAdminDashboard(),
-        getAvailableMonths()
-      ]);
-      if (reportsResult.status === 'fulfilled') setReports(reportsResult.value.data);
-      if (dashResult.status === 'fulfilled') setPractitioners(dashResult.value.data.practitioners || []);
-      if (monthsResult.status === 'fulfilled') {
-        const months = monthsResult.value.data || [];
-        setAvailableMonths(months);
-        if (months.length > 0 && !selectedMonth) setSelectedMonth(months[0].value);
-      }
+      const res = await getReportKPIs(mois);
+      setKpisData(res.data);
     } catch (err) {
-      console.error(err);
+      console.error('Erreur chargement KPIs:', err);
     } finally {
-      setLoading(false);
+      setLoadingKpis(false);
     }
+  }, []);
+
+  useEffect(() => {
+    if (selectedMonth) loadKPIs(selectedMonth);
+  }, [selectedMonth, loadKPIs]);
+
+  const showMessage = (type, text) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 5000);
   };
 
-  const withTimeout = (promise, ms, label) => {
-    const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(`Délai dépassé pour : ${label}`)), ms)
-    );
-    return Promise.race([promise, timeout]);
-  };
-
-  const reloadReports = async () => {
+  const handleGenerate = async (code) => {
+    setGenerating(code);
     try {
-      const res = await getReportsList();
-      setReports(res.data);
+      await generateReport(code, selectedMonth);
+      showMessage('success', `Rapport généré pour ${code}`);
+      await loadKPIs(selectedMonth);
     } catch (err) {
-      console.error('Erreur rechargement rapports:', err);
-    }
-  };
-
-  const handleGenerate = async () => {
-    setGenerating(true);
-    setMessage(null);
-    try {
-      if (selectedPractitioner) {
-        await withTimeout(generateReport(selectedPractitioner, selectedMonth), 60000, 'génération rapport');
-        setMessage({ type: 'success', text: `Rapport généré pour ${selectedPractitioner}` });
-      } else {
-        const res = await withTimeout(generateAllReports(selectedMonth), 120000, 'génération tous rapports');
-        setMessage({ type: 'success', text: res.data.message });
-      }
-      await reloadReports();
-      fetchData();
-    } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Erreur lors de la génération' });
+      showMessage('error', err.response?.data?.message || 'Erreur génération');
     } finally {
-      setGenerating(false);
+      setGenerating(null);
     }
   };
 
-  const handleSend = async () => {
-    setSending(true);
-    setMessage(null);
+  const handleGenerateAll = async () => {
+    setGenerating('__all__');
     try {
-      const res = await withTimeout(sendReports(selectedMonth), 120000, 'envoi rapports');
-      setMessage({ type: 'success', text: res.data.message });
-      await fetchData();
+      const res = await generateAllReports(selectedMonth);
+      showMessage('success', res.data.message);
+      await loadKPIs(selectedMonth);
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Erreur' });
+      showMessage('error', err.response?.data?.message || 'Erreur génération');
     } finally {
-      setSending(false);
+      setGenerating(null);
     }
   };
 
-  const handleSendNow = async () => {
-    setSendingNow(true);
-    setMessage(null);
+  const handleSendAll = async () => {
+    setSendingAll(true);
     try {
-      const res = await withTimeout(sendReportsNow(selectedMonth), 180000, 'génération + envoi rapports');
-      setMessage({ type: 'success', text: res.data.message });
-      await fetchData();
+      const res = await sendReportsNow(selectedMonth);
+      showMessage('success', res.data.message);
+      await loadKPIs(selectedMonth);
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || err.message || 'Erreur lors de l\'envoi' });
+      showMessage('error', err.response?.data?.message || err.message || 'Erreur envoi');
     } finally {
-      setSendingNow(false);
+      setSendingAll(false);
     }
   };
 
-  const handleDownload = async (id, praticien, mois) => {
+  const handleDownload = async (id, code) => {
     try {
       const res = await downloadReport(id);
       const contentType = res.headers['content-type'] || '';
-      const isPdf = contentType.includes('application/pdf');
-      const ext = isPdf ? 'pdf' : 'html';
+      const ext = contentType.includes('pdf') ? 'pdf' : 'html';
       const url = window.URL.createObjectURL(new Blob([res.data], { type: contentType }));
       const a = document.createElement('a');
       a.href = url;
-      a.download = `rapport_${praticien}_${mois}.${ext}`;
+      a.download = `rapport_${code}_${selectedMonth}.${ext}`;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error(err);
+      showMessage('error', 'Erreur téléchargement');
     }
   };
 
-  const formatMonth = (m) => {
-    if (!m) return '';
-    const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-    return `${months[parseInt(m.substring(4, 6)) - 1]} ${m.substring(0, 4)}`;
-  };
-
-  // Fonction pour vérifier si un mois est dans la période sélectionnée
-  const isInPeriod = (mois) => {
-    if (filterPeriod === 'all') return true;
-    if (!mois) return false;
-    
-    const now = new Date();
-    const year = parseInt(mois.substring(0, 4));
-    const month = parseInt(mois.substring(4, 6)) - 1; // 0-indexed
-    const reportDate = new Date(year, month, 1);
-    
-    switch (filterPeriod) {
-      case 'this_month': {
-        return year === now.getFullYear() && month === now.getMonth();
-      }
-      case 'last_month': {
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        return year === lastMonth.getFullYear() && month === lastMonth.getMonth();
-      }
-      case '3_months': {
-        const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-        return reportDate >= threeMonthsAgo;
-      }
-      case '6_months': {
-        const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-        return reportDate >= sixMonthsAgo;
-      }
-      case 'this_year': {
-        return year === now.getFullYear();
-      }
-      case 'last_year': {
-        return year === now.getFullYear() - 1;
-      }
-      default:
-        return true;
-    }
-  };
-
-  // Filtrer les rapports selon les critères sélectionnés
-  const filteredReports = reports.filter(r => {
-    const matchesCabinet = filterCabinet === 'all' || r.praticien === filterCabinet;
-    const matchesPeriod = isInPeriod(r.mois);
-    return matchesCabinet && matchesPeriod;
-  });
-
-  // Stats — basées sur les rapports filtrés
-  const totalGeneres = filteredReports.length;
-  const totalEnvoyes = filteredReports.filter(r => r.emailEnvoye).length;
+  const practitioners = kpisData?.practitioners || [];
+  const withData = practitioners.filter(p => p.hasData);
+  const generated = practitioners.filter(p => p.reportGenerated).length;
+  const sent = practitioners.filter(p => p.reportSent).length;
 
   return (
     <div>
-      <Header title="Rapports Mensuels" subtitle="Générer et envoyer les rapports aux cabinets" />
+      <Header title="Rapports Mensuels" subtitle="Rapports par cabinet selon le mois sélectionné" />
 
-      <div className="p-8">
-        {/* Stats rapports */}
-        <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 ${isDynamic ? 'animate-fade-in' : ''}`}>
-          <div className={`${cardCls} rounded-2xl p-6 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.1s' } : {}}>
-            <div className="flex items-center gap-3">
-              <div className={`p-3 bg-primary-50 dark:bg-primary-900/30 rounded-xl ${isDynamic ? 'animate-float-soft' : ''}`}><FiFileText className="w-6 h-6 text-primary-600" /></div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalGeneres}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Rapports Générés</p>
-              </div>
-            </div>
-          </div>
-          <div className={`${cardCls} rounded-2xl p-6 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift card-shine' : ''}`} style={isDynamic ? { animationDelay: '0.2s' } : {}}>
-            <div className="flex items-center gap-3">
-              <div className={`p-3 bg-green-50 dark:bg-green-900/30 rounded-xl ${isDynamic ? 'animate-float-soft' : ''}`}><FiSend className="w-6 h-6 text-green-600" /></div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalEnvoyes}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Emails Envoyés</p>
-              </div>
-            </div>
-          </div>
-          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
-            <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-xl ${totalGeneres === totalEnvoyes && totalGeneres > 0 ? 'bg-green-50 dark:bg-green-900/30' : 'bg-amber-50 dark:bg-amber-900/30'}`}>
-                <FiCheck className={`w-6 h-6 ${totalGeneres === totalEnvoyes && totalGeneres > 0 ? 'text-green-600' : 'text-amber-600'}`} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {totalGeneres === totalEnvoyes && totalGeneres > 0 ? '✅' : '⏳'}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {totalGeneres === totalEnvoyes && totalGeneres > 0 ? 'Tout envoyé' : 'En attente'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className={`${cardCls} rounded-2xl p-6 mb-8 transition-colors`}>
-          <h3 className="text-lg font-semibold dark:text-white mb-4">Générer & Envoyer des Rapports</h3>
-          
-          {message && (
-            <div className={`mb-4 p-3 rounded-lg flex items-center gap-2 text-sm ${
-              message.type === 'success' ? 'bg-green-50 dark:bg-green-900/30 text-green-700 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/30 text-red-700 border border-red-200 dark:border-red-800'
-            }`}>
-              {message.type === 'success' ? <FiCheck /> : <FiAlertCircle />}
-              {message.text}
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4 items-end">
+      <div className="p-6 md:p-8">
+        {/* Month selector + global actions */}
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-8">
+          <div className="flex flex-col md:flex-row md:items-end gap-4 flex-wrap">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mois</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <FiCalendar className="inline w-4 h-4 mr-1.5 text-gray-400" />
+                Mois du rapport
+              </label>
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-white text-sm"
+                className="w-full md:w-64 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 bg-white"
               >
                 {availableMonths.map(m => (
                   <option key={m.value} value={m.value}>{m.label}</option>
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Praticien (optionnel)</label>
-              <select
-                value={selectedPractitioner}
-                onChange={(e) => setSelectedPractitioner(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-white text-sm"
+
+            {kpisData && (
+              <div className="flex items-center gap-6 text-sm text-gray-500 flex-wrap">
+                <span className="flex items-center gap-1.5"><FiBarChart2 className="text-blue-500" />{withData.length} cabinets avec données</span>
+                <span className="flex items-center gap-1.5"><FiFileText className="text-amber-500" />{generated} générés</span>
+                <span className="flex items-center gap-1.5"><FiCheck className="text-green-500" />{sent} envoyés</span>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 md:ml-auto">
+              <button
+                onClick={handleGenerateAll}
+                disabled={!!generating || loadingKpis}
+                className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-medium hover:bg-primary-700 disabled:opacity-50 transition-colors"
               >
-                <option value="">Tous les praticiens</option>
-                {practitioners.map(p => (
-                  <option key={p.code} value={p.code}>{p.name} ({p.code})</option>
-                ))}
-              </select>
+                {generating === '__all__' ? <FiRefreshCw className="animate-spin w-4 h-4" /> : <FiFileText className="w-4 h-4" />}
+                Générer tout
+              </button>
+              <button
+                onClick={handleSendAll}
+                disabled={sendingAll || loadingKpis}
+                className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+              >
+                {sendingAll ? <FiRefreshCw className="animate-spin w-4 h-4" /> : <FiZap className="w-4 h-4" />}
+                Générer & Envoyer tout
+              </button>
             </div>
-            <button
-              onClick={handleGenerate}
-              disabled={generating}
-              className="px-3 py-2.5 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm"
-            >
-              {generating ? <FiRefreshCw className="animate-spin w-4 h-4" /> : <FiFileText className="w-4 h-4" />}
-              Générer
-            </button>
-            <button
-              onClick={handleSend}
-              disabled={sending}
-              className="px-3 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm"
-            >
-              {sending ? <FiRefreshCw className="animate-spin w-4 h-4" /> : <FiSend className="w-4 h-4" />}
-              Envoyer
-            </button>
-            <button
-              onClick={handleSendNow}
-              disabled={sendingNow}
-              className="px-3 py-2.5 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 text-sm whitespace-nowrap"
-            >
-              {sendingNow ? <FiRefreshCw className="animate-spin w-4 h-4" /> : <FiZap className="w-4 h-4" />}
-              Générer & Envoyer
-            </button>
           </div>
+
+          {message && (
+            <div className={`mt-4 p-3 rounded-xl flex items-center gap-2 text-sm border ${
+              message.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+            }`}>
+              {message.type === 'success' ? <FiCheck /> : <FiAlertCircle />}
+              {message.text}
+            </div>
+          )}
         </div>
 
-        {/* Liste des rapports */}
-        <div className={`${cardCls} rounded-2xl overflow-hidden transition-colors`}>
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <h3 className="text-lg font-semibold dark:text-white flex items-center gap-2">
-              <FiFilter className="w-5 h-5 text-gray-400" />
-              Historique des Rapports
-            </h3>
-            
-            {/* Filtres */}
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2">
-                <FiCalendar className="w-4 h-4 text-gray-400" />
-                <select
-                  value={filterPeriod}
-                  onChange={(e) => setFilterPeriod(e.target.value)}
-                  className="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-white"
-                >
-                  {periodOptions.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <FiUsers className="w-4 h-4 text-gray-400" />
-                <select
-                  value={filterCabinet}
-                  onChange={(e) => setFilterCabinet(e.target.value)}
-                  className="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-white"
-                >
-                  <option value="all">Tous les cabinets</option>
-                  {practitioners.map(p => (
-                    <option key={p.code} value={p.code}>{p.name} ({p.code})</option>
-                  ))}
-                </select>
-              </div>
-              
-              {(filterPeriod !== 'all' || filterCabinet !== 'all') && (
-                <button
-                  onClick={() => { setFilterPeriod('all'); setFilterCabinet('all'); }}
-                  className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                >
-                  Réinitialiser
-                </button>
-              )}
-            </div>
+        {/* Cabinet cards */}
+        {loading || loadingKpis ? (
+          <div className="flex justify-center py-20">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600" />
           </div>
-          
-          {/* Indicateur de filtres actifs */}
-          {(filterPeriod !== 'all' || filterCabinet !== 'all') && (
-            <div className="px-6 py-2 bg-primary-50 dark:bg-primary-900/20 border-b border-primary-100 dark:border-primary-800 text-sm text-primary-700 dark:text-primary-300">
-              {filteredReports.length} rapport(s) trouvé(s)
-              {filterPeriod !== 'all' && ` • Période: ${periodOptions.find(o => o.value === filterPeriod)?.label}`}
-              {filterCabinet !== 'all' && ` • Cabinet: ${filterCabinet}`}
+        ) : practitioners.length === 0 ? (
+          <div className="text-center py-20 text-gray-400">
+            <FiCalendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <p className="font-medium">Aucune donnée disponible</p>
+            <p className="text-sm mt-1">Sélectionnez un mois avec des données saisies</p>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-gray-500 mb-4 font-medium">
+              Rapport du mois de <span className="text-gray-800 font-semibold">{formatMonth(selectedMonth)}</span>
+              {' · '}{practitioners.length} cabinet{practitioners.length > 1 ? 's' : ''}
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {practitioners.map((cab) => (
+                <CabinetCard
+                  key={cab.code}
+                  cab={cab}
+                  onGenerate={handleGenerate}
+                  onDownload={handleDownload}
+                  generating={generating}
+                />
+              ))}
             </div>
-          )}
-          
-          {loading ? (
-            <div className="flex justify-center py-10">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-            </div>
-          ) : filteredReports.length === 0 ? (
-            <div className="text-center py-10 text-gray-500 dark:text-gray-400">
-              <FiFileText className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
-              <p>{reports.length === 0 ? 'Aucun rapport généré pour le moment.' : 'Aucun rapport ne correspond aux filtres sélectionnés.'}</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-800">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Praticien</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Mois</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">CA</th>
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Date envoi</th>
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {filteredReports.map((r) => (
-                    <tr key={r._id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <td className="px-6 py-3 text-sm font-medium text-gray-900 dark:text-white">{r.praticien}</td>
-                      <td className="px-6 py-3 text-sm text-gray-700 dark:text-gray-300">{formatMonth(r.mois)}</td>
-                      <td className="px-6 py-3 text-sm text-right text-gray-700 dark:text-gray-300">
-                        {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(r.contenu?.caMensuel || 0)}
-                      </td>
-                      <td className="px-6 py-3 text-center">
-                        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                          r.emailEnvoye ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
-                        }`}>
-                          {r.emailEnvoye ? '✅ Envoyé' : '⏳ En attente'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-500 dark:text-gray-400">
-                        {r.dateEnvoi ? new Date(r.dateEnvoi).toLocaleDateString('fr-FR') : '-'}
-                      </td>
-                      <td className="px-6 py-3 text-center">
-                        <button
-                          onClick={() => handleDownload(r._id, r.praticien, r.mois)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-900/30 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-lg transition-colors text-sm font-medium"
-                          title="Télécharger le PDF"
-                        >
-                          <FiDownload className="w-4 h-4" />
-                          PDF
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
