@@ -679,26 +679,135 @@ router.get('/kpis/:mois', auth, async (req, res) => {
     const mois = normalizeMois(req.params.mois);
     if (!mois) return res.status(400).json({ message: 'Mois requis.' });
 
+    const mois6 = String(mois).substring(0, 6);
+
     const practitioners = await User.find({ role: 'practitioner', isActive: true }).lean();
 
-    const results = await Promise.all(practitioners.map(async (p) => {
-      try {
-        const kpi = await calculateKPI(p.practitionerCode, mois);
-        const existingReport = await Report.findOne({ praticien: p.practitionerCode, mois }).lean();
-        return {
-          code: p.practitionerCode,
-          name: p.name,
-          cabinetName: p.cabinetName || p.name,
-          hasData: kpi.caMensuel > 0 || kpi.nbRdv > 0 || kpi.nbDevis > 0,
-          reportGenerated: !!existingReport,
-          reportSent: existingReport?.emailEnvoye || false,
-          reportId: existingReport?._id || null,
-          kpi
-        };
-      } catch (err) {
-        return { code: p.practitionerCode, name: p.name, cabinetName: p.cabinetName || p.name, hasData: false, error: err.message };
-      }
-    }));
+    const [
+      realisationsAgg,
+      rdvAgg,
+      heuresAgg,
+      devisAgg,
+      existingReports
+    ] = await Promise.all([
+      AnalyseRealisation.aggregate([
+        { $match: { mois: { $regex: '^' + mois6 } } },
+        {
+          $group: {
+            _id: '$praticien',
+            totalFacture: { $sum: '$montantFacture' },
+            totalEncaisse: { $sum: '$montantEncaisse' },
+            totalPatients: { $sum: '$nbPatients' }
+          }
+        }
+      ]),
+      AnalyseRendezVous.aggregate([
+        { $match: { mois: { $regex: '^' + mois6 } } },
+        {
+          $group: {
+            _id: '$praticien',
+            nbRdv: { $sum: '$nbRdv' },
+            nbNouveauxPatients: { $sum: '$nbNouveauxPatients' },
+            rdvHonores: { $sum: '$rdvHonores' },
+            rdvManques: { $sum: '$rdvManques' },
+            annulations: { $sum: '$annulations' },
+            reportsRdv: { $sum: '$reports' },
+            rdvImportants: { $sum: '$rdvImportants' },
+            dureeTotaleRdv: { $sum: '$dureeTotaleRdv' }
+          }
+        }
+      ]),
+      AnalyseJoursOuverts.aggregate([
+        { $match: { mois: { $regex: '^' + mois6 } } },
+        {
+          $group: {
+            _id: '$praticien',
+            nbHeures: { $sum: '$nbHeures' },
+            joursOuverts: { $sum: '$joursOuverts' }
+          }
+        }
+      ]),
+      AnalyseDevis.aggregate([
+        { $match: { mois: { $regex: '^' + mois6 } } },
+        {
+          $group: {
+            _id: '$praticien',
+            nbDevis: { $sum: '$nbDevis' },
+            nbDevisAcceptes: { $sum: '$nbDevisAcceptes' },
+            montantPropositions: { $sum: '$montantPropositions' },
+            montantAccepte: { $sum: '$montantAccepte' },
+            montantTotalRealise: { $sum: '$montantTotalRealise' }
+          }
+        }
+      ]),
+      Report.find({ mois }, { praticien: 1, emailEnvoye: 1 }).lean()
+    ]);
+
+    const mapByCode = (arr) => new Map(arr.map((x) => [String(x._id), x]));
+    const realMap = mapByCode(realisationsAgg);
+    const rdvMap = mapByCode(rdvAgg);
+    const heuresMap = mapByCode(heuresAgg);
+    const devisMap = mapByCode(devisAgg);
+    const reportMap = new Map(existingReports.map((r) => [String(r.praticien), r]));
+
+    const results = practitioners.map((p) => {
+      const code = String(p.practitionerCode || '').toUpperCase();
+      const real = realMap.get(code) || {};
+      const rdv = rdvMap.get(code) || {};
+      const heures = heuresMap.get(code) || {};
+      const devis = devisMap.get(code) || {};
+      const report = reportMap.get(code);
+
+      const caMensuel = Number(real.totalFacture || 0);
+      const montantEncaisse = Number(real.totalEncaisse || 0);
+      const nbPatients = Number(real.totalPatients || 0);
+      const nbRdv = Number(rdv.nbRdv || 0);
+      const nbNouveauxPatients = Number(rdv.nbNouveauxPatients || 0);
+      const rdvManques = Number(rdv.rdvManques || 0);
+      const annulations = Number(rdv.annulations || 0);
+      const totalMinutes = Number(heures.nbHeures || 0);
+      const heuresTravaillees = totalMinutes / 60;
+      const nbDevis = Number(devis.nbDevis || 0);
+      const nbDevisAcceptes = Number(devis.nbDevisAcceptes || 0);
+
+      const kpi = {
+        caMensuel,
+        montantEncaisse,
+        tauxEncaissement: caMensuel > 0 ? Number(((montantEncaisse / caMensuel) * 100).toFixed(1)) : 0,
+        nbPatients,
+        nbNouveauxPatients,
+        nbRdv,
+        panierMoyen: nbPatients > 0 ? Number((caMensuel / nbPatients).toFixed(2)) : 0,
+        productionHoraire: heuresTravaillees > 0 ? Number((caMensuel / heuresTravaillees).toFixed(2)) : 0,
+        heuresTravaillees: Number(heuresTravaillees.toFixed(1)),
+        nbHeuresMin: totalMinutes,
+        joursOuverts: Number(heures.joursOuverts || 0),
+        rdvHonores: Number(rdv.rdvHonores || 0),
+        rdvManques,
+        annulations,
+        reportsRdv: Number(rdv.reportsRdv || 0),
+        rdvImportants: Number(rdv.rdvImportants || 0),
+        dureeMoyenneRdv: nbRdv > 0 ? Number((Number(rdv.dureeTotaleRdv || 0) / nbRdv).toFixed(1)) : 0,
+        tauxAbsence: nbRdv > 0 ? Number((((rdvManques + annulations) / nbRdv) * 100).toFixed(1)) : 0,
+        nbDevis,
+        nbDevisAcceptes,
+        montantDevisPropose: Number(devis.montantPropositions || 0),
+        montantDevisAccepte: Number(devis.montantAccepte || 0),
+        montantDevisRealise: Number(devis.montantTotalRealise || 0),
+        tauxAcceptationDevis: nbDevis > 0 ? Number(((nbDevisAcceptes / nbDevis) * 100).toFixed(1)) : 0
+      };
+
+      return {
+        code,
+        name: p.name,
+        cabinetName: p.cabinetName || p.name,
+        hasData: kpi.caMensuel > 0 || kpi.nbRdv > 0 || kpi.nbDevis > 0,
+        reportGenerated: !!report,
+        reportSent: report?.emailEnvoye || false,
+        reportId: report?._id || null,
+        kpi
+      };
+    });
 
     res.json({ mois, practitioners: results });
   } catch (error) {
