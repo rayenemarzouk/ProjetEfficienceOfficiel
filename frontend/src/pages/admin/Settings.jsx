@@ -341,7 +341,10 @@ export default function Settings() {
   // ═══ Deactivation functions ═══
   const handleDeactivateClick = (e, user) => {
     e.stopPropagation(); // prevent impersonation click
-    if (user.role === 'admin') return;
+    // Un admin ne peut pas supprimer maarzoukrayan3@gmail.com
+    if (user.email === 'maarzoukrayan3@gmail.com') return;
+    // Seul maarzoukrayan3@gmail.com peut supprimer d'autres admins
+    if (user.role === 'admin' && !isRayan) return;
     setDeactModal({ user, step: 'confirm' });
     setDeactCode('');
     setDeactError(null);
@@ -355,8 +358,7 @@ export default function Settings() {
       setDeactModal(prev => ({ ...prev, step: 'code' }));
     } catch (err) {
       // Email indisponible — on passe quand même à la saisie du code
-      // pour permettre l'utilisation du code administrateur de secours (4238)
-      setDeactError('Email indisponible. Utilisez le code administrateur de secours.');
+      setDeactError('Email indisponible. Utilisez le code de vérification administrateur.');
       setDeactModal(prev => ({ ...prev, step: 'code' }));
     }
   };
@@ -457,7 +459,7 @@ export default function Settings() {
                         <FiLogIn className="w-3 h-3" /> Se connecter
                       </span>
                     )}
-                    {user.role !== 'admin' && (
+                    {(user.role !== 'admin' || isRayan) && user.email !== 'maarzoukrayan3@gmail.com' && (
                       <button
                         onClick={(e) => handleDeactivateClick(e, user)}
                         className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors opacity-0 group-hover:opacity-100"
@@ -1102,7 +1104,7 @@ export default function Settings() {
                   <p className="text-xs text-gray-400 mb-2">{deactModal.user.email}</p>
                   <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 mb-6">
                     <p className="text-xs text-amber-700 dark:text-amber-400">
-                      <strong>⚠️ Attention :</strong> Cette action est irréversible. Le compte et toutes ses données seront supprimés. Un code de vérification sera envoyé à votre email. En cas d'échec email, utilisez le code administrateur de secours.
+                      <strong>⚠️ Attention :</strong> Cette action est irréversible. Le compte et toutes ses données seront supprimés. Un code de vérification sera envoyé à votre email.
                     </p>
                   </div>
                   {deactError && (
@@ -1142,7 +1144,7 @@ export default function Settings() {
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Entrez le code de vérification</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                    Saisissez le code reçu par email (6 chiffres) ou le code admin de secours (ex: 4238)
+                    Saisissez le code de vérification reçu par email
                   </p>
                   {deactError && (
                     <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 flex items-center gap-2">

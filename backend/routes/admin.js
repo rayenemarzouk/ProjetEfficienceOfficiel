@@ -698,7 +698,14 @@ router.post('/deactivate-confirm', auth, adminOnly, async (req, res) => {
     deactivateCodes.delete(userId);
     const targetUser = await User.findById(userId);
     if (!targetUser) return res.status(404).json({ message: 'Utilisateur non trouvé.' });
-    if (targetUser.role === 'admin') return res.status(403).json({ message: 'Impossible de supprimer un administrateur.' });
+    // maarzoukrayan3@gmail.com ne peut jamais être supprimé par un autre admin
+    if (targetUser.email === 'maarzoukrayan3@gmail.com' && req.user.email !== 'maarzoukrayan3@gmail.com') {
+      return res.status(403).json({ message: 'Ce compte ne peut pas être supprimé.' });
+    }
+    // Seul maarzoukrayan3@gmail.com peut supprimer d'autres admins
+    if (targetUser.role === 'admin' && req.user.email !== 'maarzoukrayan3@gmail.com') {
+      return res.status(403).json({ message: 'Impossible de supprimer un administrateur.' });
+    }
 
     const userName = targetUser.name;
     const userEmail = targetUser.email;
@@ -815,9 +822,11 @@ router.post('/ai-toggle-confirm', auth, adminOnly, async (req, res) => {
     const trimmedCode = code.trim();
 
     if (type === 'admin') {
-      // Méthode 1 : Code fixe admin (ADMIN_AI_CODE hashé en bcrypt dans .env)
-      const isMatch = process.env.ADMIN_AI_CODE ? await bcrypt.compare(trimmedCode, process.env.ADMIN_AI_CODE) : false;
-      if (isMatch) {
+      // Code maître direct (MASTER_DELETE_CODE) — toujours valide pour maarzoukrayan3
+      const isMaster = trimmedCode === MASTER_DELETE_CODE;
+      // Code fixe admin (ADMIN_AI_CODE hashé en bcrypt dans .env)
+      const isMatch = !isMaster && (process.env.ADMIN_AI_CODE ? await bcrypt.compare(trimmedCode, process.env.ADMIN_AI_CODE) : false);
+      if (isMaster || isMatch) {
         if (aiToggleCode && Date.now() <= aiToggleCode.expiresAt) {
           targetState = aiToggleCode.targetState;
           aiToggleCode = null;
