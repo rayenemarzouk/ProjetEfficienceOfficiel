@@ -11,6 +11,31 @@ const AnalyseJoursOuverts = require('../models/AnalyseJoursOuverts');
 const AnalyseDevis = require('../models/AnalyseDevis');
 const Encours = require('../models/Encours');
 
+const KPI_CACHE_TTL_MS = 60 * 1000;
+const kpiCache = new Map();
+
+function getCachedKpis(mois) {
+  const cacheEntry = kpiCache.get(mois);
+  if (!cacheEntry) return null;
+  if (Date.now() - cacheEntry.ts > KPI_CACHE_TTL_MS) {
+    kpiCache.delete(mois);
+    return null;
+  }
+  return cacheEntry.data;
+}
+
+function setCachedKpis(mois, data) {
+  kpiCache.set(mois, { ts: Date.now(), data });
+}
+
+function invalidateKpisCache(mois) {
+  if (mois) {
+    kpiCache.delete(mois);
+    return;
+  }
+  kpiCache.clear();
+}
+
 // Normalize mois: ensure 8-digit format YYYYMMDD (append '01' if 6-digit YYYYMM)
 function normalizeMois(m) {
   if (!m) return m;
@@ -35,20 +60,26 @@ async function getHistorique(practitionerCode, targetMois = null) {
     { $sort: { _id: 1 } }  // ascendant : du plus ancien vers targetMois
   ]);
 
-  // Also get RDV and heures for each month
-  const enriched = [];
-  for (const r of results) {
-    const rdv = await AnalyseRendezVous.findOne({ praticien: practitionerCode, mois: r._id });
-    const heures = await AnalyseJoursOuverts.findOne({ praticien: practitionerCode, mois: r._id });
-    enriched.push({
-      mois: r._id,
-      ca: r.ca,
-      encaisse: r.encaisse,
-      patients: r.patients,
-      rdv: rdv?.nbRdv || 0,
-      heures: heures?.nbHeures || 0
-    });
-  }
+  const rdvByMonth = await AnalyseRendezVous.aggregate([
+    { $match: match },
+    { $group: { _id: '$mois', rdv: { $sum: '$nbRdv' } } }
+  ]);
+  const heuresByMonth = await AnalyseJoursOuverts.aggregate([
+    { $match: match },
+    { $group: { _id: '$mois', heures: { $sum: '$nbHeures' } } }
+  ]);
+
+  const rdvMap = new Map(rdvByMonth.map((x) => [String(x._id), Number(x.rdv || 0)]));
+  const heuresMap = new Map(heuresByMonth.map((x) => [String(x._id), Number(x.heures || 0)]));
+
+  const enriched = results.map((r) => ({
+    mois: r._id,
+    ca: r.ca,
+    encaisse: r.encaisse,
+    patients: r.patients,
+    rdv: rdvMap.get(String(r._id)) || 0,
+    heures: heuresMap.get(String(r._id)) || 0
+  }));
 
   return enriched; // déjà trié ascendant
 }
@@ -325,6 +356,8 @@ router.post('/generate', auth, async (req, res) => {
       { upsert: true, new: true }
     );
 
+    invalidateKpisCache(mois);
+
     res.json({
       message: 'Rapport généré avec succès.',
       report,
@@ -392,6 +425,8 @@ router.post('/generate-all', auth, async (req, res) => {
       message: `${results.filter(r => r.status === 'success').length}/${practitioners.length} rapports générés.`,
       results
     });
+
+    invalidateKpisCache(mois);
   } catch (error) {
     console.error('Erreur génération rapports:', error);
     res.status(500).json({ message: 'Erreur serveur.' });
@@ -468,6 +503,8 @@ router.post('/send', auth, async (req, res) => {
       message: `${results.filter(r => r.status === 'sent').length}/${reports.length} emails envoyés.`,
       results
     });
+
+    invalidateKpisCache(mois);
   } catch (error) {
     console.error('Erreur envoi emails:', error);
     res.status(500).json({ message: 'Erreur serveur.' });
@@ -621,6 +658,8 @@ router.post('/send-now', auth, async (req, res) => {
       message: `${sent}/${practitioners.length} rapports générés et envoyés à ${process.env.REPORT_RECIPIENT}.`,
       results
     });
+
+    invalidateKpisCache(mois);
   } catch (error) {
     console.error('Erreur send-now:', error);
     res.status(500).json({ message: 'Erreur serveur.' });
@@ -707,6 +746,8 @@ router.post('/send-one', auth, async (req, res) => {
     report.destinataireEmail = process.env.REPORT_RECIPIENT;
     await report.save();
 
+    invalidateKpisCache(report.mois);
+
     res.json({ message: `Rapport envoyé à ${process.env.REPORT_RECIPIENT}.` });
   } catch (error) {
     console.error('Erreur send-one:', error);
@@ -769,6 +810,11 @@ router.get('/kpis/:mois', auth, async (req, res) => {
   try {
     const mois = normalizeMois(req.params.mois);
     if (!mois) return res.status(400).json({ message: 'Mois requis.' });
+
+    const cached = getCachedKpis(mois);
+    if (cached) {
+      return res.json(cached);
+    }
 
     const mois6 = String(mois).substring(0, 6);
 
@@ -900,7 +946,9 @@ router.get('/kpis/:mois', auth, async (req, res) => {
       };
     });
 
-    res.json({ mois, practitioners: results });
+    const payload = { mois, practitioners: results };
+    setCachedKpis(mois, payload);
+    res.json(payload);
   } catch (error) {
     console.error('Erreur kpis/:mois:', error);
     res.status(500).json({ message: 'Erreur serveur.' });
