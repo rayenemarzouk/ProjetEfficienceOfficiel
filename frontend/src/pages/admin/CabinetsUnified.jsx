@@ -668,6 +668,258 @@ export default function CabinetsUnified() {
     </div>
   );
 
+  const renderDashboardView = () => {
+    const panierMoyenGlobal = kpiPatientsTotal > 0 ? Math.round(kpiCATotal / kpiPatientsTotal) : 0;
+    const tauxEncGlobal = kpiCATotal > 0 ? Math.round((kpiEncaisseTotal / kpiCATotal) * 100) : 0;
+    const rankedPracs = [...pracData].sort((a, b) => b.totalCA - a.totalCA);
+    const fmtEur = (n) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n || 0);
+
+    const caBarData = {
+      labels: monthlyEvolution.map((m) => fmtMoisLabel(m.mois)),
+      datasets: [
+        { label: 'CA Facturé', data: monthlyEvolution.map((m) => m.facture), backgroundColor: '#6366f1', borderRadius: 6 },
+        { label: 'CA Encaissé', data: monthlyEvolution.map((m) => m.encaisse), backgroundColor: '#10b981', borderRadius: 6 },
+      ],
+    };
+
+    const hBarData = {
+      labels: pracData.map((p) => p.name),
+      datasets: [{ label: 'CA Facturé', data: pracData.map((p) => p.totalCA), backgroundColor: pracData.map((p) => p.color), borderRadius: 4 }],
+    };
+
+    const tauxEncDoughnut = {
+      labels: pracData.map((p) => p.code),
+      datasets: [{ data: pracData.map((p) => p.totalEncaisse), backgroundColor: DOC_COLORS, borderWidth: 0 }],
+    };
+
+    const hBarOptions = {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: '#1e293b', callbacks: { label: (c) => ` ${fmtEur(c.raw)}` } },
+      },
+      scales: {
+        x: { beginAtZero: true, grid: { color: chartGridColor }, ticks: { color: chartTextColor, font: { size: 10 }, callback: (v) => `${(v / 1000).toFixed(0)}k€` }, border: { display: false } },
+        y: { ticks: { color: chartTextColor, font: { size: 11 } }, grid: { display: false }, border: { display: false } },
+      },
+    };
+
+    const barCaOptions = {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: chartTextColor, usePointStyle: true, font: { size: 11 }, padding: 16 } },
+        tooltip: { backgroundColor: '#1e293b', callbacks: { label: (c) => ` ${c.dataset.label}: ${fmtEur(c.raw)}` } },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: chartTextColor, font: { size: 10 }, maxRotation: 45 }, border: { display: false } },
+        y: { beginAtZero: true, grid: { color: chartGridColor }, ticks: { color: chartTextColor, callback: (v) => `${(v / 1000).toFixed(0)}k€` }, border: { display: false } },
+      },
+    };
+
+    const doughnutSimpleOpts = {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { color: chartTextColor, font: { size: 10 }, padding: 10, usePointStyle: true } } },
+    };
+
+    const totalAbsRate = (totalPresents + totalAbsents) > 0 ? Math.round((totalAbsents / (totalPresents + totalAbsents)) * 100) : 0;
+    const presenceRate = 100 - totalAbsRate;
+
+    const insights = [];
+    const topCA = rankedPracs[0];
+    if (topCA) insights.push(`🏆 ${topCA.name} (${topCA.code}) génère le CA le plus élevé sur la période sélectionnée (${fmtEur(topCA.totalCA)}).`);
+    insights.push(tauxEncGlobal >= 85
+      ? `✅ Le taux d'encaissement global (${tauxEncGlobal}%) est excellent — au-dessus du seuil optimal de 85%.`
+      : `⚠️ Le taux d'encaissement global (${tauxEncGlobal}%) est en dessous du seuil optimal de 85% — un suivi des impayés est recommandé.`);
+    insights.push(totalAbsRate > 15
+      ? `⚠️ Le taux d'absence (${totalAbsRate}%) dépasse 15% — renforcer la confirmation des RDV.`
+      : `✅ Le taux de présence (${presenceRate}%) est maîtrisé et conforme aux standards du secteur.`);
+    insights.push(panierMoyenGlobal >= 400
+      ? `📈 Panier moyen de ${fmtEur(panierMoyenGlobal)} — au-dessus du seuil de 400 €, signe d'une bonne conversion des plans de traitement.`
+      : `📉 Panier moyen de ${fmtEur(panierMoyenGlobal)} — en dessous du seuil de 400 €, potentiel d'amélioration sur la présentation des devis.`);
+    if (rankedPracs.length > 1) {
+      const lowest = rankedPracs[rankedPracs.length - 1];
+      insights.push(`📊 Écart de performance entre cabinets: ${fmtEur(topCA.totalCA - lowest.totalCA)} entre le 1er (${topCA.code}) et le dernier (${lowest.code}).`);
+    }
+
+    return (
+      <div className="space-y-5">
+        {/* ── Top 5 KPIs ─────────────────────────────── */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="bg-indigo-600 rounded-2xl p-5 text-white">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold opacity-80 uppercase tracking-wider">CA Total</p>
+              <FiDollarSign className="w-5 h-5 opacity-60" />
+            </div>
+            <p className="text-2xl font-bold tabular-nums">{fmtEur(kpiCATotal)}</p>
+            <p className="text-xs opacity-70 mt-1">{practitioners.length} cabinets actifs</p>
+          </div>
+          <div className="bg-violet-600 rounded-2xl p-5 text-white">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold opacity-80 uppercase tracking-wider">Consultations</p>
+              <FiCalendar className="w-5 h-5 opacity-60" />
+            </div>
+            <p className="text-2xl font-bold tabular-nums">{totalConsultations.toLocaleString('fr-FR')}</p>
+            <p className="text-xs opacity-70 mt-1">{Math.round(totalConsultations / Math.max(practitioners.length, 1))} / cabinet</p>
+          </div>
+          <div className="bg-cyan-600 rounded-2xl p-5 text-white">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold opacity-80 uppercase tracking-wider">Panier Moyen</p>
+              <FiTrendingUp className="w-5 h-5 opacity-60" />
+            </div>
+            <p className="text-2xl font-bold tabular-nums">{fmtEur(panierMoyenGlobal)}</p>
+            <p className="text-xs opacity-70 mt-1">{panierMoyenGlobal >= 400 ? '✓ Objectif atteint' : '↗ Objectif: 400 €'}</p>
+          </div>
+          <div className="bg-emerald-600 rounded-2xl p-5 text-white">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold opacity-80 uppercase tracking-wider">Patients</p>
+              <FiUsers className="w-5 h-5 opacity-60" />
+            </div>
+            <p className="text-2xl font-bold tabular-nums">{kpiPatientsTotal.toLocaleString('fr-FR')}</p>
+            <p className="text-xs opacity-70 mt-1">traités (période)</p>
+          </div>
+          <div className={`rounded-2xl p-5 text-white ${tauxEncGlobal >= 85 ? 'bg-green-600' : tauxEncGlobal >= 70 ? 'bg-amber-500' : 'bg-red-500'}`}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold opacity-80 uppercase tracking-wider">Taux Enc.</p>
+              <FiBarChart2 className="w-5 h-5 opacity-60" />
+            </div>
+            <p className="text-2xl font-bold tabular-nums">{tauxEncGlobal}%</p>
+            <p className="text-xs opacity-70 mt-1">{tauxEncGlobal >= 85 ? 'Excellent' : tauxEncGlobal >= 70 ? 'Correct' : 'À améliorer'}</p>
+          </div>
+        </div>
+
+        {/* ── Évolution CA + CA par Praticien ─────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className={`${cardCls} rounded-2xl p-5 lg:col-span-2`}>
+            <div className="mb-4">
+              <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Évolution CA — Facturé vs Encaissé</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Période sélectionnée</p>
+            </div>
+            <div className="h-64">
+              <Bar data={caBarData} options={barCaOptions} />
+            </div>
+          </div>
+          <div className={`${cardCls} rounded-2xl p-5`}>
+            <div className="mb-4">
+              <h3 className="font-semibold text-gray-900 dark:text-white text-sm">CA par Praticien</h3>
+              <p className="text-xs text-gray-400 mt-0.5">CA facturé, toutes périodes</p>
+            </div>
+            <div style={{ height: `${Math.max(160, pracData.length * 54)}px` }}>
+              <Bar data={hBarData} options={hBarOptions} />
+            </div>
+          </div>
+        </div>
+
+        {/* ── Donuts + Classement ─────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className={`${cardCls} rounded-2xl p-5`}>
+            <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-1">Répartition CA Encaissé</h3>
+            <p className="text-xs text-gray-400 mb-3">Part d'encaissement par cabinet</p>
+            <div className="h-52">
+              <Doughnut data={tauxEncDoughnut} options={doughnutSimpleOpts} />
+            </div>
+          </div>
+          <div className={`${cardCls} rounded-2xl p-5`}>
+            <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-1">Présence vs Absence (RDV)</h3>
+            <p className="text-xs text-gray-400 mb-3">Répartition globale des rendez-vous</p>
+            <div className="h-44">
+              <Doughnut data={doughnutData} options={doughnutSimpleOpts} />
+            </div>
+            <div className="mt-3 flex justify-around text-center">
+              <div>
+                <p className="text-lg font-bold text-emerald-600">{presenceRate}%</p>
+                <p className="text-xs text-gray-400">Présents</p>
+              </div>
+              <div>
+                <p className="text-lg font-bold text-red-500">{totalAbsRate}%</p>
+                <p className="text-xs text-gray-400">Absents</p>
+              </div>
+            </div>
+          </div>
+          <div className={`${cardCls} rounded-2xl p-5`}>
+            <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-1">Top Praticiens par CA</h3>
+            <p className="text-xs text-gray-400 mb-4">Classement sur la période</p>
+            <div className="space-y-3">
+              {rankedPracs.map((p, i) => (
+                <div key={p.code} className="flex items-center gap-3">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 ${i === 0 ? 'bg-amber-400' : i === 1 ? 'bg-slate-400' : i === 2 ? 'bg-amber-700' : 'bg-gray-300 text-gray-600'}`}>
+                    {i + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{p.name}</p>
+                    <div className="mt-1 bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+                      <div className="h-1.5 rounded-full transition-all" style={{ width: `${rankedPracs[0]?.totalCA > 0 ? (p.totalCA / rankedPracs[0].totalCA) * 100 : 0}%`, backgroundColor: p.color }} />
+                    </div>
+                  </div>
+                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">{fmtEur(p.totalCA)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Insights IA + Synthèse ───────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="bg-slate-800 rounded-2xl p-6 text-white">
+            <div className="flex items-center gap-2.5 mb-5">
+              <FiCpu className="w-5 h-5 text-indigo-400" />
+              <h3 className="font-semibold text-sm">Insights Clés</h3>
+              <span className="ml-auto text-[10px] bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30">IA</span>
+            </div>
+            <ul className="space-y-3.5">
+              {insights.map((ins, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 flex-shrink-0" />
+                  <p className="text-sm text-slate-300 leading-relaxed">{ins}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className={`${cardCls} rounded-2xl overflow-hidden`}>
+            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+              <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Synthèse par Cabinet</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-800/50">
+                  <tr>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500 uppercase">Cabinet</th>
+                    <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-500 uppercase">CA</th>
+                    <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-500 uppercase">Patients</th>
+                    <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-500 uppercase">Taux Enc.</th>
+                    <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-500 uppercase">Score</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {rankedPracs.map((p) => {
+                    const tEnc = p.totalCA > 0 ? Math.round((p.totalEncaisse / p.totalCA) * 100) : 0;
+                    return (
+                      <tr key={p.code} className="hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+                            <span className="text-xs font-medium text-gray-800 dark:text-gray-200">{p.code}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-right text-xs text-gray-700 dark:text-gray-300">{fmtEur(p.totalCA)}</td>
+                        <td className="px-3 py-3 text-right text-xs text-gray-700 dark:text-gray-300">{p.patientsTraites}</td>
+                        <td className="px-3 py-3 text-right">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${tEnc >= 85 ? 'bg-green-100 text-green-700' : tEnc >= 70 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>{tEnc}%</span>
+                        </td>
+                        <td className="px-3 py-3 text-right">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${p.health.score >= 80 ? 'bg-blue-100 text-blue-700' : p.health.score >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{p.health.score}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={`min-h-screen ${isRayan ? 'bg-gray-50' : 'bg-gray-50 dark:bg-[#0f172a]'}`}>
       <Header title="Analyse & Comparaison des Cabinets" />
@@ -782,13 +1034,29 @@ export default function CabinetsUnified() {
         {/* Tabs + Filters */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           {/* Tabs */}
-          <div className="flex bg-white dark:bg-gray-800 rounded-xl p-1 shadow-sm border border-gray-200 dark:border-gray-700">
-            <div
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white"
+          <div className="flex bg-white dark:bg-gray-800 rounded-xl p-1 shadow-sm border border-gray-200 dark:border-gray-700 gap-1">
+            <button
+              onClick={() => setActiveTab('analysis')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === 'analysis'
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
             >
               <FiGrid className="w-4 h-4" />
-              Analyse et Comparaison
-            </div>
+              Analyse & Comparaison
+            </button>
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === 'dashboard'
+                  ? 'bg-indigo-600 text-white shadow'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <FiBarChart2 className="w-4 h-4" />
+              Tableau Exécutif
+            </button>
           </div>
 
           {/* Period Filter */}
@@ -796,7 +1064,7 @@ export default function CabinetsUnified() {
         </div>
 
         {/* Évolution du CA — graphe déplacé depuis le Dashboard */}
-        {showAI && monthlyEvolution.length > 0 && (
+        {activeTab === 'analysis' && showAI && monthlyEvolution.length > 0 && (
           <div className={`rounded-2xl p-6 shadow-sm mb-6 ${cardCls}`}>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -810,9 +1078,14 @@ export default function CabinetsUnified() {
           </div>
         )}
 
-        {/* Content — Analyse + Comparaison fusionnés */}
-        {renderAnalysisView()}
-        {renderComparisonView()}
+        {/* Content conditionnel selon onglet actif */}
+        {activeTab === 'analysis' && (
+          <>
+            {renderAnalysisView()}
+            {renderComparisonView()}
+          </>
+        )}
+        {activeTab === 'dashboard' && renderDashboardView()}
       </div>
     </div>
   );
