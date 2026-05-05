@@ -354,8 +354,10 @@ export default function Settings() {
       await deactivateSendCode(deactModal.user._id);
       setDeactModal(prev => ({ ...prev, step: 'code' }));
     } catch (err) {
-      setDeactError(err.response?.data?.message || 'Erreur lors de l\'envoi du code');
-      setDeactModal(prev => ({ ...prev, step: 'confirm' }));
+      // Email indisponible — on passe quand même à la saisie du code
+      // pour permettre l'utilisation du code administrateur de secours (4238)
+      setDeactError('Email indisponible. Utilisez le code administrateur de secours.');
+      setDeactModal(prev => ({ ...prev, step: 'code' }));
     }
   };
 
