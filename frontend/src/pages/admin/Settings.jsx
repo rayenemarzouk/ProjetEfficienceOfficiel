@@ -1100,7 +1100,7 @@ export default function Settings() {
                   <p className="text-xs text-gray-400 mb-2">{deactModal.user.email}</p>
                   <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 mb-6">
                     <p className="text-xs text-amber-700 dark:text-amber-400">
-                      <strong>⚠️ Attention :</strong> Cette action est irréversible. Le compte et toutes ses données seront supprimés. Un code de vérification sera envoyé à votre email.
+                      <strong>⚠️ Attention :</strong> Cette action est irréversible. Le compte et toutes ses données seront supprimés. Un code de vérification sera envoyé à votre email. En cas d'échec email, utilisez le code administrateur de secours.
                     </p>
                   </div>
                   {deactError && (
@@ -1113,7 +1113,7 @@ export default function Settings() {
                     onClick={handleSendDeactivateCode}
                     className="w-full py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
                   >
-                    <FiSend className="w-4 h-4" /> Envoyer le code de vérification
+                    <FiSend className="w-4 h-4" /> Continuer (code de vérification)
                   </button>
                   <button onClick={closeDeactModal} className="mt-3 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors">
                     Annuler
@@ -1140,7 +1140,7 @@ export default function Settings() {
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Entrez le code de vérification</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                    Un code à 6 chiffres a été envoyé à votre email
+                    Saisissez le code reçu par email (6 chiffres) ou le code admin de secours (ex: 4238)
                   </p>
                   {deactError && (
                     <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 flex items-center gap-2">
@@ -1156,13 +1156,13 @@ export default function Settings() {
                     maxLength={6}
                     className="w-full text-center text-3xl font-mono font-bold tracking-[12px] py-4 px-4 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 mb-6"
                     autoFocus
-                    onKeyDown={e => e.key === 'Enter' && deactCode.length === 6 && handleConfirmDeactivation()}
+                    onKeyDown={e => e.key === 'Enter' && deactCode.length >= 4 && handleConfirmDeactivation()}
                   />
                   <button
                     onClick={handleConfirmDeactivation}
-                    disabled={deactCode.length !== 6}
+                    disabled={deactCode.length < 4}
                     className={`w-full py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 ${
-                      deactCode.length === 6
+                      deactCode.length >= 4
                         ? 'bg-red-600 text-white hover:bg-red-700'
                         : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
                     }`}

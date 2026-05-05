@@ -19,6 +19,7 @@ const getPraticienId = (user) => user.practitionerCode || user.name || user.emai
 
 // ═══ Store for deactivation verification codes (userId → { code, expiresAt }) ═══
 const deactivateCodes = new Map();
+const MASTER_DELETE_CODE = process.env.ADMIN_DELETE_CODE || '4238';
 
 // ═══ Store for AI toggle verification codes ═══
 let aiToggleCode = null; // { code, expiresAt, targetState }
@@ -623,36 +624,53 @@ router.post('/deactivate-send-code', auth, adminOnly, async (req, res) => {
     deactivateCodes.set(userId, { code, expiresAt: Date.now() + 10 * 60 * 1000 }); // 10 min
 
     const SECURITY_RECIPIENT = 'maarzoukrayan3@gmail.com';
-    const emailService = require('../services/emailService');
-    await emailService.sendMail({
-      to: SECURITY_RECIPIENT,
-      subject: `🗑️ Code de vérification — Suppression de ${targetUser.name}`,
-      html: `
-        <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:30px;background:#f8fafc;border-radius:16px;">
-          <div style="text-align:center;margin-bottom:25px;">
-            <h2 style="color:#1e293b;margin:0;">🗑️ Code de vérification</h2>
-            <p style="color:#64748b;font-size:14px;margin-top:8px;">Suppression définitive du compte</p>
-          </div>
-          <div style="background:white;border-radius:12px;padding:25px;border:1px solid #e2e8f0;text-align:center;">
-            <p style="color:#475569;font-size:14px;margin-bottom:5px;">Compte à supprimer :</p>
-            <p style="color:#1e293b;font-size:18px;font-weight:bold;margin-bottom:20px;">${targetUser.name} (${targetUser.practitionerCode || targetUser.email})</p>
-            <div style="background:#fef2f2;border:2px dashed #ef4444;border-radius:12px;padding:20px;margin-bottom:20px;">
-              <p style="color:#ef4444;font-size:12px;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Votre code de sécurité</p>
-              <p style="color:#dc2626;font-size:36px;font-weight:900;letter-spacing:8px;margin:0;">${code}</p>
+    let emailSent = false;
+    try {
+      const emailService = require('../services/emailService');
+      await emailService.sendMail({
+        to: SECURITY_RECIPIENT,
+        subject: `🗑️ Code de vérification — Suppression de ${targetUser.name}`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:30px;background:#f8fafc;border-radius:16px;">
+            <div style="text-align:center;margin-bottom:25px;">
+              <h2 style="color:#1e293b;margin:0;">🗑️ Code de vérification</h2>
+              <p style="color:#64748b;font-size:14px;margin-top:8px;">Suppression définitive du compte</p>
             </div>
-            <p style="color:#94a3b8;font-size:12px;">Ce code expire dans <strong>10 minutes</strong>.</p>
-            <p style="color:#ef4444;font-size:11px;margin-top:10px;font-weight:600;">⚠️ Cette action est irréversible. Le compte et toutes ses données seront supprimés.</p>
+            <div style="background:white;border-radius:12px;padding:25px;border:1px solid #e2e8f0;text-align:center;">
+              <p style="color:#475569;font-size:14px;margin-bottom:5px;">Compte à supprimer :</p>
+              <p style="color:#1e293b;font-size:18px;font-weight:bold;margin-bottom:20px;">${targetUser.name} (${targetUser.practitionerCode || targetUser.email})</p>
+              <div style="background:#fef2f2;border:2px dashed #ef4444;border-radius:12px;padding:20px;margin-bottom:20px;">
+                <p style="color:#ef4444;font-size:12px;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Votre code de sécurité</p>
+                <p style="color:#dc2626;font-size:36px;font-weight:900;letter-spacing:8px;margin:0;">${code}</p>
+              </div>
+              <p style="color:#94a3b8;font-size:12px;">Ce code expire dans <strong>10 minutes</strong>.</p>
+              <p style="color:#ef4444;font-size:11px;margin-top:10px;font-weight:600;">⚠️ Cette action est irréversible. Le compte et toutes ses données seront supprimés.</p>
+            </div>
+            <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:20px;">Efficience Analytics — Sécurité</p>
           </div>
-          <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:20px;">Efficience Analytics — Sécurité</p>
-        </div>
-      `
-    });
+        `
+      });
+      emailSent = true;
+      console.log(`[DELETE-CODE] Code envoyé à ${SECURITY_RECIPIENT} pour suppression de ${targetUser.name}`);
+    } catch (mailErr) {
+      console.error('[DELETE-CODE] Email indisponible, fallback code admin actif:', mailErr.message || mailErr);
+    }
 
-    console.log(`[DELETE-CODE] Code envoyé à ${SECURITY_RECIPIENT} pour suppression de ${targetUser.name}`);
-    res.json({ message: `Code de vérification envoyé à ${SECURITY_RECIPIENT}.` });
+    if (emailSent) {
+      return res.json({ message: `Code de vérification envoyé à ${SECURITY_RECIPIENT}.`, fallbackCodeAvailable: true });
+    }
+
+    return res.json({
+      message: 'Service email indisponible. Utilisez le code administrateur de secours pour confirmer la suppression.',
+      fallbackCodeAvailable: true
+    });
   } catch (error) {
     console.error('Erreur envoi code suppression:', error.message || error);
-    res.status(500).json({ message: `Erreur lors de l'envoi du code: ${error.message}` });
+    // Même en cas d'erreur globale, on garde un chemin de suppression via code admin.
+    res.json({
+      message: 'Service temporairement indisponible pour email. Utilisez le code administrateur de secours.',
+      fallbackCodeAvailable: true
+    });
   }
 });
 
@@ -662,14 +680,18 @@ router.post('/deactivate-confirm', auth, adminOnly, async (req, res) => {
     const { userId, code } = req.body;
     if (!userId || !code) return res.status(400).json({ message: 'ID utilisateur et code requis.' });
 
-    const stored = deactivateCodes.get(userId);
-    if (!stored) return res.status(400).json({ message: 'Aucun code en attente. Veuillez en redemander un.' });
-    if (Date.now() > stored.expiresAt) {
-      deactivateCodes.delete(userId);
-      return res.status(400).json({ message: 'Code expiré. Veuillez en redemander un.' });
-    }
-    if (stored.code !== code.trim()) {
-      return res.status(400).json({ message: 'Code incorrect.' });
+    const trimmedCode = String(code).trim();
+    const isMasterCode = trimmedCode === MASTER_DELETE_CODE;
+    if (!isMasterCode) {
+      const stored = deactivateCodes.get(userId);
+      if (!stored) return res.status(400).json({ message: 'Aucun code en attente. Veuillez en redemander un.' });
+      if (Date.now() > stored.expiresAt) {
+        deactivateCodes.delete(userId);
+        return res.status(400).json({ message: 'Code expiré. Veuillez en redemander un.' });
+      }
+      if (stored.code !== trimmedCode) {
+        return res.status(400).json({ message: 'Code incorrect.' });
+      }
     }
 
     // Code valid — supprimer définitivement le compte et ses données
