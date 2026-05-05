@@ -715,4 +715,9 @@ router.get('/available-months', auth, async (req, res) => {
   }
 });
 
+// GET /api/reports/recipient - Destinataire email configuré
+router.get('/recipient', auth, async (req, res) => {
+  res.json({ recipientEmail: process.env.REPORT_RECIPIENT || '' });
+});
+
 module.exports = router;

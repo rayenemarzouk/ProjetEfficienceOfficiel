@@ -90,6 +90,7 @@ export const getReportsList = (mois, praticien) => {
   const qs = params.toString();
   return api.get(`/reports/list${qs ? `?${qs}` : ''}`);
 };
+export const getReportsRecipient = () => api.get('/reports/recipient');
 export const getAvailableMonths = (timeout = 15000) => api.get('/reports/available-months', { timeout });
 export const getReportKPIs = (mois, timeout = 20000) => api.get(`/reports/kpis/${mois}`, { timeout });
 export const downloadReport = (id) => api.get(`/reports/download/${id}`, { responseType: 'blob' });

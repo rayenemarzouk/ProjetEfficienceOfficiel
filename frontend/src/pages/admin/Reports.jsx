@@ -4,7 +4,7 @@ import {
   getAvailableMonths, getReportKPIs,
   generateReport, generateAllReports,
   sendReportsNow, downloadReport,
-  getReportsList, getAdminPractitioners, sendSingleReport
+  getReportsList, getAdminPractitioners, sendSingleReport, getReportsRecipient
 } from '../../services/api';
 import {
   FiFileText, FiDownload, FiRefreshCw,
@@ -132,6 +132,7 @@ export default function Reports() {
   const [selectedPractitioner, setSelectedPractitioner] = useState('all');
   const [kpisData, setKpisData] = useState(null);
   const [historyReports, setHistoryReports] = useState([]);
+  const [recipientEmail, setRecipientEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadingKpis, setLoadingKpis] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -143,13 +144,15 @@ export default function Reports() {
   useEffect(() => {
     const init = async () => {
       try {
-        const [monthsRes, practitionersRes] = await Promise.all([
+        const [monthsRes, practitionersRes, recipientRes] = await Promise.all([
           getAvailableMonths(),
-          getAdminPractitioners()
+          getAdminPractitioners(),
+          getReportsRecipient()
         ]);
         const months = monthsRes.data || [];
         setAvailableMonths(months);
         setPractitionersList(practitionersRes.data?.practitioners || []);
+        setRecipientEmail(recipientRes.data?.recipientEmail || '');
         if (months.length > 0) {
           setSelectedMonth(months[0].value);
         } else {
@@ -403,7 +406,12 @@ export default function Reports() {
             <div className="mt-8 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-200">
                 <h3 className="text-sm font-semibold text-gray-800">Historique des rapports</h3>
-                <p className="text-xs text-gray-500 mt-1">Téléchargement PDF et envoi email au destinataire configuré.</p>
+                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                  <p className="text-xs text-gray-500">Téléchargement PDF et envoi email au destinataire configuré.</p>
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                    Destinataire: {recipientEmail || 'Non configuré'}
+                  </span>
+                </div>
               </div>
 
               <div className="overflow-x-auto">
