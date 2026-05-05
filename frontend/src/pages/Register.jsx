@@ -6,6 +6,7 @@ import { FiUser, FiMail, FiLock, FiArrowRight, FiShield, FiCheckCircle, FiAlertC
 
 export default function Register() {
   const [form, setForm] = useState({
+    role: 'practitioner',
     name: '',
     email: '',
     password: '',
@@ -19,16 +20,12 @@ export default function Register() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user, loginUser } = useAuth();
+  const { user } = useAuth();
 
   // Si déjà connecté, rediriger (empêche le retour arrière vers register)
   if (user) {
     return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
   }
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,17 +45,18 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const res = await registerAPI({
+      await registerAPI({
+        role: form.role,
         name: form.name,
         email: form.email,
         password: form.password,
         cabinetName: form.cabinetName,
-        practitionerCode: form.practitionerCode || undefined
+        practitionerCode: form.role === 'practitioner' ? (form.practitionerCode || undefined) : undefined
       });
       
       // Afficher message de succès
       setSuccess('Inscription enregistrée. Votre compte est en attente de validation par un administrateur. Vous recevrez un accès une fois validé.');
-      setForm({ name: '', email: '', password: '', confirmPassword: '', cabinetName: '', practitionerCode: '' });
+      setForm({ role: form.role, name: '', email: '', password: '', confirmPassword: '', cabinetName: '', practitionerCode: '' });
       
       // Rediriger vers la page de connexion après 3 secondes
       setTimeout(() => {
@@ -112,7 +110,7 @@ export default function Register() {
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <FiUser className="w-4 h-4 text-gray-400" />
-              <span className="text-xs font-semibold tracking-[0.2em] text-gray-400 uppercase">Nouveau praticien</span>
+              <span className="text-xs font-semibold tracking-[0.2em] text-gray-400 uppercase">Nouveau {form.role === 'consultant' ? 'consultant' : 'praticien'}</span>
             </div>
             <h2 className="text-4xl font-black text-gray-900 tracking-tight">
               INSCRIPTION<span className="text-blue-500"> .</span>
@@ -145,6 +143,29 @@ export default function Register() {
           {/* Form - autocomplete désactivé pour sécurité */}
           {!success && (
             <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+              {/* Type de compte */}
+              <div>
+                <label className="block text-[10px] font-bold tracking-[0.15em] text-gray-400 uppercase mb-2">
+                  Type d'inscription
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, role: 'practitioner' })}
+                    className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${form.role === 'practitioner' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'}`}
+                  >
+                    Inscription praticien
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, role: 'consultant', practitionerCode: '' })}
+                    className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${form.role === 'consultant' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'}`}
+                  >
+                    Inscription consultant
+                  </button>
+                </div>
+              </div>
+
               {/* Nom complet */}
               <div>
                 <label className="block text-[10px] font-bold tracking-[0.15em] text-gray-400 uppercase mb-2">
@@ -205,6 +226,7 @@ export default function Register() {
               </div>
 
               {/* Code praticien */}
+              {form.role === 'practitioner' && (
               <div>
                 <label className="block text-[10px] font-bold tracking-[0.15em] text-gray-400 uppercase mb-2">
                   Code praticien <span className="text-gray-300 normal-case">(ex: JC, DV — votre identifiant LogosW)</span>
@@ -223,6 +245,7 @@ export default function Register() {
                   />
                 </div>
               </div>
+              )}
 
               {/* Row: Password + Confirm */}
               <div className="grid grid-cols-2 gap-3">

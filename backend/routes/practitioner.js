@@ -12,6 +12,105 @@ const Patient = require('../models/Patient');
 // Helper: get practitioner identifier (code if set, otherwise use name or email)
 const getPraticienId = (user) => user.practitionerCode || user.name || user.email;
 
+// GET /api/practitioner/profile - Informations consolidées du praticien
+router.get('/profile', auth, practitionerOnly, async (req, res) => {
+  try {
+    const code = getPraticienId(req.user);
+
+    const [
+      realisations,
+      rendezVous,
+      joursOuverts,
+      devis,
+      encours,
+      patientStats
+    ] = await Promise.all([
+      AnalyseRealisation.find({ praticien: code }).sort({ mois: 1 }),
+      AnalyseRendezVous.find({ praticien: code }).sort({ mois: 1 }),
+      AnalyseJoursOuverts.find({ praticien: code }).sort({ mois: 1 }),
+      AnalyseDevis.find({ praticien: code }).sort({ mois: 1 }),
+      Encours.findOne({ praticien: code }),
+      Patient.aggregate([
+        { $match: { praticien: code } },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            actifs: { $sum: { $cond: [{ $eq: ['$statut', 'actif'] }, 1, 0] } },
+            nouveaux: { $sum: { $cond: [{ $eq: ['$statut', 'nouveau'] }, 1, 0] } }
+          }
+        }
+      ])
+    ]);
+
+    const totalCAFacture = realisations.reduce((sum, item) => sum + (item.montantFacture || 0), 0);
+    const totalCAEncaisse = realisations.reduce((sum, item) => sum + (item.montantEncaisse || 0), 0);
+    const totalPatientsAnalyse = realisations.reduce((sum, item) => sum + (item.nbPatients || 0), 0);
+    const totalRdv = rendezVous.reduce((sum, item) => sum + (item.nbRdv || 0), 0);
+    const totalNouveauxPatients = rendezVous.reduce((sum, item) => sum + (item.nbNouveauxPatients || 0), 0);
+    const totalHeuresTravaillees = joursOuverts.reduce((sum, item) => sum + (item.nbHeures || 0), 0) / 60;
+    const totalMontantDevis = devis.reduce((sum, item) => sum + (item.montantPropositions || 0), 0);
+    const totalMontantDevisAcceptes = devis.reduce((sum, item) => sum + (item.montantAccepte || 0), 0);
+
+    const months = [
+      ...new Set([
+        ...realisations.map((r) => r.mois),
+        ...rendezVous.map((r) => r.mois),
+        ...joursOuverts.map((r) => r.mois),
+        ...devis.map((r) => r.mois)
+      ])
+    ].sort();
+
+    const hasImportedData = months.length > 0 || !!encours;
+    const patients = patientStats[0] || { total: 0, actifs: 0, nouveaux: 0 };
+
+    res.json({
+      practitioner: {
+        id: req.user._id,
+        name: req.user.name,
+        email: req.user.email,
+        role: req.user.role,
+        practitionerCode: req.user.practitionerCode,
+        cabinetName: req.user.cabinetName,
+        hasImportedData
+      },
+      totals: {
+        totalCAFacture,
+        totalCAEncaisse,
+        totalPatientsAnalyse,
+        totalRdv,
+        totalNouveauxPatients,
+        totalHeuresTravaillees,
+        totalMontantDevis,
+        totalMontantDevisAcceptes,
+        tauxEncaissement: totalCAFacture > 0 ? (totalCAEncaisse / totalCAFacture) * 100 : 0,
+        patientsFichier: {
+          total: patients.total || 0,
+          actifs: patients.actifs || 0,
+          nouveaux: patients.nouveaux || 0
+        },
+        encours: {
+          dureeTotaleARealiser: encours?.dureeTotaleARealiser || 0,
+          montantTotalAFacturer: encours?.montantTotalAFacturer || 0,
+          rentabiliteHoraire: encours?.rentabiliteHoraire || 0,
+          rentabiliteJoursTravailles: encours?.rentabiliteJoursTravailles || 0,
+          patientsEnCours: encours?.patientsEnCours || 0
+        }
+      },
+      dataCoverage: {
+        months,
+        realisationsCount: realisations.length,
+        rendezVousCount: rendezVous.length,
+        joursOuvertsCount: joursOuverts.length,
+        devisCount: devis.length
+      }
+    });
+  } catch (error) {
+    console.error('Erreur profil praticien:', error);
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
 // GET /api/practitioner/dashboard - Dashboard praticien
 router.get('/dashboard', auth, practitionerOnly, async (req, res) => {
   try {
@@ -20,7 +119,7 @@ router.get('/dashboard', auth, practitionerOnly, async (req, res) => {
     const realisations = await AnalyseRealisation.find({ praticien: code }).sort({ mois: 1 });
     const rendezVous = await AnalyseRendezVous.find({ praticien: code }).sort({ mois: 1 });
     const joursOuverts = await AnalyseJoursOuverts.find({ praticien: code }).sort({ mois: 1 });
-    const encours = await Encours.findOne({ praticien: code }) || await Encours.findOne({ praticien: 'GLOBAL' });
+    const encours = await Encours.findOne({ praticien: code });
     const reports = await Report.find({ praticien: code }).sort({ createdAt: -1 }).limit(5);
     const totalPatientsInscrits = await Patient.countDocuments({ praticien: code });
     const patientsActifs = await Patient.countDocuments({ praticien: code, statut: 'actif' });

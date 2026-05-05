@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   FiHome, FiBarChart2, FiGitMerge, FiFileText, FiPieChart, 
-  FiSettings, FiLogOut, FiActivity, FiDatabase, FiCpu, FiBriefcase, FiEdit3, FiUsers
+  FiSettings, FiLogOut, FiActivity, FiDatabase, FiCpu, FiBriefcase, FiEdit3, FiUsers, FiUser
 } from 'react-icons/fi';
 
 export default function Sidebar() {
@@ -39,6 +39,7 @@ export default function Sidebar() {
     { to: '/dashboard/stats', icon: FiBarChart2, label: 'MES STATISTIQUES' },
     { to: '/dashboard/saisie', icon: FiEdit3, label: 'SAISIE MANUELLE' },
     { to: '/dashboard/patients', icon: FiUsers, label: 'MES PATIENTS' },
+    { to: '/dashboard/profile', icon: FiUser, label: 'MON PROFIL PRATICIEN' },
     { to: '/dashboard/data', icon: FiDatabase, label: 'GESTION DONNÉES' },
     { to: '/dashboard/ai', icon: FiCpu, label: 'BILAN DU CABINET' },
     { to: '/dashboard/reports', icon: FiFileText, label: 'MES RAPPORTS' },

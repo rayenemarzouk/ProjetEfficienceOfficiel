@@ -24,6 +24,7 @@ const adminPages = [
 const practitionerPages = [
   { path: '/dashboard', label: 'Mon Tableau de Bord', Icon: FiHome, desc: "Vue d'ensemble", keywords: ['dashboard', 'tableau de bord', 'accueil'] },
   { path: '/dashboard/stats', label: 'Mes Statistiques', Icon: FiBarChart2, desc: 'Performances', keywords: ['statistiques', 'stats', 'graphiques', 'performance'] },
+  { path: '/dashboard/profile', label: 'Mon Profil Praticien', Icon: FiBriefcase, desc: 'Informations complètes praticien', keywords: ['profil', 'praticien', 'compte', 'infos', 'donnees'] },
   { path: '/dashboard/data', label: 'Gestion Données', Icon: FiDatabase, desc: 'Import de données', keywords: ['donnees', 'data', 'import', 'fichier', 'csv'] },
   { path: '/dashboard/ai', label: 'Bilan du Cabinet', Icon: FiCpu, desc: 'Analyse et prévisions', keywords: ['bilan', 'cabinet', 'analyse', 'prevision', 'tendance', 'sante'] },
   { path: '/dashboard/patients', label: 'Mes Patients', Icon: FiHome, desc: 'Gestion des patients', keywords: ['patients', 'patientele', 'ajouter', 'patient', 'fiche', 'contact'] },

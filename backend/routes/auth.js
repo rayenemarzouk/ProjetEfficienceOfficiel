@@ -117,10 +117,17 @@ router.post('/login', async (req, res) => {
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, cabinetName, practitionerCode } = req.body;
+    const { name, email, password, cabinetName, practitionerCode, role } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Nom, email et mot de passe sont requis.' });
+    }
+
+    const normalizedRole = role === 'consultant' ? 'consultant' : 'practitioner';
+    const normalizedPractitionerCode = practitionerCode?.trim()?.toUpperCase() || '';
+
+    if (normalizedRole === 'practitioner' && !normalizedPractitionerCode) {
+      return res.status(400).json({ message: 'Le code praticien est obligatoire pour une inscription praticien.' });
     }
 
     // Check if user already exists
@@ -135,15 +142,15 @@ router.post('/register', async (req, res) => {
       email: email.toLowerCase(),
       password,
       cabinetName: cabinetName || 'Cabinet Dentaire',
-      practitionerCode: practitionerCode || null,
-      role: 'practitioner',
+      practitionerCode: normalizedRole === 'practitioner' ? normalizedPractitionerCode : null,
+      role: normalizedRole,
       isActive: false,
       isVerified: false
     });
 
     // Aucun token retourné — le compte doit être activé par un admin avant connexion
     res.status(201).json({
-      message: 'Inscription enregistrée. Votre compte est en attente de validation par un administrateur.'
+      message: `Inscription ${normalizedRole === 'consultant' ? 'consultant' : 'praticien'} enregistrée. Votre compte est en attente de validation par un administrateur.`
     });
   } catch (error) {
     console.error('Erreur inscription:', error);

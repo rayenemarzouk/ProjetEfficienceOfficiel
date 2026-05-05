@@ -28,6 +28,7 @@ import AIAnalysis from './pages/practitioner/AIAnalysis';
 import MyReports from './pages/practitioner/MyReports';
 import ManualEntry from './pages/practitioner/ManualEntry';
 import PatientManagement from './pages/practitioner/PatientManagement';
+import PractitionerProfile from './pages/practitioner/Profile';
 
 // Consultant pages
 import ConsultantDashboard from './pages/consultant/Dashboard';
@@ -71,6 +72,7 @@ export default function App() {
               <Route path="/dashboard/reports" element={<MyReports />} />
               <Route path="/dashboard/saisie" element={<ManualEntry />} />
               <Route path="/dashboard/patients" element={<PatientManagement />} />
+              <Route path="/dashboard/profile" element={<PractitionerProfile />} />
             </Route>
           </Route>
 

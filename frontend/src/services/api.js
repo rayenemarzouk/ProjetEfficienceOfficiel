@@ -58,6 +58,7 @@ export const updateProfile = (data) => api.put('/auth/profile', data);
 // Practitioner
 export const getPractitionerDashboard = () => api.get('/practitioner/dashboard');
 export const getPractitionerStatistics = () => api.get('/practitioner/statistics');
+export const getPractitionerProfile = () => api.get('/practitioner/profile');
 export const submitManualEntry = (type, mois, data) => api.post('/practitioner/manual-entry', { type, mois, data });
 export const getManualEntry = (type, mois) => api.get(`/practitioner/manual-entry/${type}/${mois}`);
 
@@ -84,6 +85,7 @@ export const sendReports = (mois) => api.post('/reports/send', { mois, force: tr
 export const sendReportsNow = (mois) => api.post('/reports/send-now', { mois });
 export const getReportsList = (mois) => api.get(`/reports/list${mois ? `?mois=${mois}` : ''}`);
 export const getAvailableMonths = () => api.get('/reports/available-months');
+export const getReportKPIs = (mois) => api.get(`/reports/kpis/${mois}`);
 export const downloadReport = (id) => api.get(`/reports/download/${id}`, { responseType: 'blob' });
 
 // Consultant
