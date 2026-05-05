@@ -10,6 +10,8 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [savedAccounts, setSavedAccounts] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -17,7 +19,49 @@ export default function Login() {
   const appSettings = useAppSettings();
   const isMaintenance = appSettings?.maintenanceMode;
 
-  // Les champs sont toujours vides à l'ouverture - l'utilisateur doit taper ses identifiants manuellement
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('efficience_saved_accounts') || '[]');
+      const valid = Array.isArray(saved)
+        ? saved.filter((item) => item && typeof item.email === 'string')
+        : [];
+      setSavedAccounts(valid.slice(0, 6));
+    } catch {
+      setSavedAccounts([]);
+    }
+  }, []);
+
+  const saveAccountHistory = (nextEmail, nextPassword, shouldRememberPassword) => {
+    const normalizedEmail = String(nextEmail || '').trim().toLowerCase();
+    if (!normalizedEmail) return;
+
+    const now = new Date().toISOString();
+    const nextEntry = {
+      email: normalizedEmail,
+      password: shouldRememberPassword ? nextPassword : '',
+      hasPassword: !!shouldRememberPassword,
+      lastLoginAt: now
+    };
+
+    const nextList = [
+      nextEntry,
+      ...savedAccounts.filter((acc) => String(acc.email).toLowerCase() !== normalizedEmail)
+    ].slice(0, 6);
+
+    setSavedAccounts(nextList);
+    localStorage.setItem('efficience_saved_accounts', JSON.stringify(nextList));
+  };
+
+  const filteredAccounts = savedAccounts.filter((acc) =>
+    !email || String(acc.email).toLowerCase().includes(String(email).toLowerCase())
+  );
+
+  const handleQuickSelect = (acc) => {
+    setEmail(acc.email || '');
+    setPassword(acc.hasPassword ? (acc.password || '') : '');
+    setRememberMe(!!acc.hasPassword);
+    setShowHistory(false);
+  };
 
   // Plus de redirection automatique — l'utilisateur reste sur la page login
   // La navigation vers le dashboard se fait uniquement après soumission du formulaire
@@ -30,6 +74,7 @@ export default function Login() {
     try {
       const res = await loginAPI(email, password);
       loginUser(res.data.user, res.data.token);
+      saveAccountHistory(email, password, rememberMe);
       
       // Mémoriser l'email si "Se souvenir de moi" est coché
       if (rememberMe) {
@@ -127,8 +172,8 @@ export default function Login() {
 
 
 
-          {/* Form - autocomplete désactivé pour sécurité */}
-          <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
             <div>
               <label className="block text-[10px] font-bold tracking-[0.15em] text-gray-400 uppercase mb-2">
                 Email professionnel
@@ -139,12 +184,35 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onFocus={() => setShowHistory(true)}
+                  onBlur={() => setTimeout(() => setShowHistory(false), 150)}
                   placeholder="votre@adresse-email.fr"
                   required
-                  autoComplete="off"
+                  autoComplete="username"
                   name="login-email-field"
                   className="w-full pl-12 pr-4 py-4 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
                 />
+
+                {showHistory && filteredAccounts.length > 0 && (
+                  <div className="absolute z-20 left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                    <div className="px-3 py-2 bg-gray-50 border-b border-gray-100 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                      Comptes récents
+                    </div>
+                    {filteredAccounts.map((acc) => (
+                      <button
+                        key={acc.email}
+                        type="button"
+                        onMouseDown={() => handleQuickSelect(acc)}
+                        className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-b-0"
+                      >
+                        <p className="text-sm font-medium text-gray-800">{acc.email}</p>
+                        <p className="text-xs text-gray-500">
+                          {acc.hasPassword ? 'Mot de passe mémorisé - connexion rapide' : 'Email mémorisé'}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -160,7 +228,7 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  autoComplete="new-password"
+                  autoComplete="current-password"
                   name="login-password-field"
                   className="w-full pl-12 pr-12 py-4 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200"
                 />
