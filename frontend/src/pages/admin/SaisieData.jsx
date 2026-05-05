@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAdminPractitioners, adminManualEntry, addPractitioner, deletePractitioner } from '../../services/api';
+import { getAdminPractitioners, adminManualEntry, addPractitioner, deletePractitioner, deactivateConfirm } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import {
   CheckCircleIcon, ExclamationCircleIcon, PencilSquareIcon,
@@ -159,6 +159,11 @@ export default function AdminSaisieData() {
   const [deletingPrat, setDeletingPrat] = useState(false);
   const [delStatus, setDelStatus] = useState(null);
 
+  // Modal confirmation code suppression
+  const [delCodeModal, setDelCodeModal] = useState(null); // { userId, practitionerName }
+  const [delVerifCode, setDelVerifCode] = useState('');
+  const [confirmingDel, setConfirmingDel] = useState(false);
+
   const monthOptions = generateMonthOptions();
 
   const loadPractitioners = async () => {
@@ -256,19 +261,49 @@ export default function AdminSaisieData() {
     try {
       setDeletingPrat(true);
       const res = await deletePractitioner(delCode);
-      const updatedList = await loadPractitioners();
-      if (form.praticien === delCode) {
-        setForm(f => ({ ...f, praticien: updatedList[0]?.practitionerCode || '' }));
+      if (res.data?.requiresCode) {
+        // Un code a été envoyé à maarzoukrayan3@gmail.com — afficher le modal
+        setDelCodeModal({ userId: res.data.userId, practitionerName: practitioners.find(p => p.practitionerCode === delCode)?.practitionerName || delCode });
+        setDelVerifCode('');
+        setDelStatus({ type: 'success', message: res.data.message });
+      } else {
+        const updatedList = await loadPractitioners();
+        if (form.praticien === delCode) {
+          setForm(f => ({ ...f, praticien: updatedList[0]?.practitionerCode || '' }));
+        }
+        setDelStatus({ type: 'success', message: res.data.message });
+        setDelCode('');
+        setDelConfirm(false);
+        setTimeout(() => { setShowDelPrat(false); setDelStatus(null); }, 2500);
       }
-      setDelStatus({ type: 'success', message: res.data.message });
-      setDelCode('');
-      setDelConfirm(false);
-      setTimeout(() => { setShowDelPrat(false); setDelStatus(null); }, 2500);
     } catch (err) {
       const msg = err.response?.data?.message || 'Erreur lors de la suppression.';
       setDelStatus({ type: 'error', message: msg });
     } finally {
       setDeletingPrat(false);
+    }
+  };
+
+  const handleConfirmDelCode = async (e) => {
+    e.preventDefault();
+    if (!delCodeModal || !delVerifCode.trim()) return;
+    try {
+      setConfirmingDel(true);
+      const res = await deactivateConfirm(delCodeModal.userId, delVerifCode.trim());
+      const updatedList = await loadPractitioners();
+      if (form.praticien === delCode) {
+        setForm(f => ({ ...f, praticien: updatedList[0]?.practitionerCode || '' }));
+      }
+      setDelCodeModal(null);
+      setDelCode('');
+      setDelConfirm(false);
+      setDelStatus({ type: 'success', message: res.data?.message || 'Praticien supprimé avec succès.' });
+      setTimeout(() => { setShowDelPrat(false); setDelStatus(null); }, 3000);
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Code incorrect ou expiré.';
+      setDelStatus({ type: 'error', message: msg });
+    } finally {
+      setConfirmingDel(false);
     }
   };
 
@@ -405,7 +440,7 @@ export default function AdminSaisieData() {
                       className="mt-0.5 accent-rose-600"
                     />
                     <span className="text-sm text-rose-700">
-                      Je confirme vouloir désactiver le praticien <strong>{practitioners.find(p => p.practitionerCode === delCode)?.practitionerName || delCode}</strong>. Cette action est réversible par un admin.
+                          Je confirme vouloir <strong>supprimer définitivement</strong> le praticien <strong>{practitioners.find(p => p.practitionerCode === delCode)?.practitionerName || delCode}</strong>. Un code de sécurité sera envoyé à maarzoukrayan3@gmail.com.
                     </span>
                   </label>
                 )}
@@ -419,7 +454,7 @@ export default function AdminSaisieData() {
                     {deletingPrat ? (
                       <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Suppression...</>
                     ) : (
-                      <><TrashIcon className="w-4 h-4" />Désactiver le praticien</>
+                      <><TrashIcon className="w-4 h-4" />Supprimer le praticien</>
                     )}
                   </button>
                   <button
@@ -433,6 +468,54 @@ export default function AdminSaisieData() {
               </form>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Modal confirmation code suppression ──────────────────── */}
+      {delCodeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-sm w-full p-7">
+            <div className="text-center mb-5">
+              <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <TrashIcon className="w-7 h-7 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Confirmer la suppression</h3>
+              <p className="text-sm text-gray-500 mt-1">Un code a été envoyé à <strong>maarzoukrayan3@gmail.com</strong></p>
+              <p className="text-xs text-gray-400 mt-1">Praticien : <strong>{delCodeModal.practitionerName}</strong></p>
+            </div>
+            {delStatus && <div className="mb-4"><Alert type={delStatus.type} message={delStatus.message} /></div>}
+            <form onSubmit={handleConfirmDelCode} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Code de sécurité (6 chiffres)</label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={delVerifCode}
+                  onChange={e => setDelVerifCode(e.target.value.replace(/\D/g, ''))}
+                  className="w-full text-center text-2xl font-bold tracking-widest px-4 py-3 border-2 border-red-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={confirmingDel || delVerifCode.length < 6}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-semibold rounded-xl text-sm transition"
+                >
+                  {confirmingDel ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <TrashIcon className="w-4 h-4" />}
+                  Confirmer la suppression
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setDelCodeModal(null); setDelVerifCode(''); setDelStatus(null); }}
+                  className="px-4 py-2.5 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-xl text-sm transition"
+                >
+                  Annuler
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

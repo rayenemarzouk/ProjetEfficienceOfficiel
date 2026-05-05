@@ -622,31 +622,10 @@ router.post('/deactivate-send-code', auth, adminOnly, async (req, res) => {
     const code = crypto.randomInt(100000, 999999).toString();
     deactivateCodes.set(userId, { code, expiresAt: Date.now() + 10 * 60 * 1000 }); // 10 min
 
-    // Send email to the admin who is requesting the deletion
-    const adminEmail = req.user.email;
-    console.log(`[DELETE-CODE] Tentative d'envoi du code à ${adminEmail} pour supprimer ${targetUser.name}`);
-    console.log(`[DELETE-CODE] SMTP: host=${process.env.EMAIL_HOST}, port=${process.env.EMAIL_PORT}, user=${process.env.EMAIL_USER}`);
-    
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.EMAIL_PORT || '587'),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      },
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 20000
-    });
-
-    // Vérifier la connexion SMTP avant d'envoyer
-    await transporter.verify();
-    console.log(`[DELETE-CODE] Connexion SMTP vérifiée OK`);
-
-    await transporter.sendMail({
-      from: `"Efficience Analytics" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
+    const SECURITY_RECIPIENT = 'maarzoukrayan3@gmail.com';
+    const emailService = require('../services/emailService');
+    await emailService.sendMail({
+      to: SECURITY_RECIPIENT,
       subject: `🗑️ Code de vérification — Suppression de ${targetUser.name}`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:30px;background:#f8fafc;border-radius:16px;">
@@ -658,7 +637,7 @@ router.post('/deactivate-send-code', auth, adminOnly, async (req, res) => {
             <p style="color:#475569;font-size:14px;margin-bottom:5px;">Compte à supprimer :</p>
             <p style="color:#1e293b;font-size:18px;font-weight:bold;margin-bottom:20px;">${targetUser.name} (${targetUser.practitionerCode || targetUser.email})</p>
             <div style="background:#fef2f2;border:2px dashed #ef4444;border-radius:12px;padding:20px;margin-bottom:20px;">
-              <p style="color:#ef4444;font-size:12px;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Votre code</p>
+              <p style="color:#ef4444;font-size:12px;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Votre code de sécurité</p>
               <p style="color:#dc2626;font-size:36px;font-weight:900;letter-spacing:8px;margin:0;">${code}</p>
             </div>
             <p style="color:#94a3b8;font-size:12px;">Ce code expire dans <strong>10 minutes</strong>.</p>
@@ -669,11 +648,10 @@ router.post('/deactivate-send-code', auth, adminOnly, async (req, res) => {
       `
     });
 
-    console.log(`Code de suppression envoyé pour ${targetUser.name} (${targetUser.email}) → email envoyé à ${process.env.EMAIL_USER}`);
-    res.json({ message: `Code de vérification envoyé à ${process.env.EMAIL_USER}.` });
+    console.log(`[DELETE-CODE] Code envoyé à ${SECURITY_RECIPIENT} pour suppression de ${targetUser.name}`);
+    res.json({ message: `Code de vérification envoyé à ${SECURITY_RECIPIENT}.` });
   } catch (error) {
     console.error('Erreur envoi code suppression:', error.message || error);
-    console.error('Stack:', error.stack);
     res.status(500).json({ message: `Erreur lors de l'envoi du code: ${error.message}` });
   }
 });
@@ -1158,10 +1136,40 @@ router.delete('/delete-practitioner/:code', auth, adminOnly, async (req, res) =>
       return res.status(404).json({ message: 'Praticien introuvable.' });
     }
 
-    // Règle métier: les praticiens ne peuvent pas être désactivés.
-    user.isActive = true;
-    await user.save();
-    res.json({ message: `Praticien "${user.name}" conservé actif (désactivation interdite).` });
+    // Envoyer un code de confirmation à maarzoukrayan3@gmail.com avant toute suppression
+    const verifCode = crypto.randomInt(100000, 999999).toString();
+    deactivateCodes.set(String(user._id), { code: verifCode, expiresAt: Date.now() + 10 * 60 * 1000 });
+
+    const SECURITY_RECIPIENT = 'maarzoukrayan3@gmail.com';
+    const emailService = require('../services/emailService');
+    await emailService.sendMail({
+      to: SECURITY_RECIPIENT,
+      subject: `🗑️ Code de confirmation — Suppression praticien ${user.name}`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:30px;background:#f8fafc;border-radius:16px;">
+          <div style="text-align:center;margin-bottom:25px;">
+            <h2 style="color:#1e293b;margin:0;">🗑️ Confirmation de suppression</h2>
+            <p style="color:#64748b;font-size:14px;margin-top:8px;">Praticien : <strong>${user.name}</strong> (${user.practitionerCode})</p>
+          </div>
+          <div style="background:white;border-radius:12px;padding:25px;border:1px solid #e2e8f0;text-align:center;">
+            <div style="background:#fef2f2;border:2px dashed #ef4444;border-radius:12px;padding:20px;margin-bottom:20px;">
+              <p style="color:#ef4444;font-size:12px;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Code de sécurité</p>
+              <p style="color:#dc2626;font-size:36px;font-weight:900;letter-spacing:8px;margin:0;">${verifCode}</p>
+            </div>
+            <p style="color:#94a3b8;font-size:12px;">Utilisez ce code dans la boîte de confirmation. Il expire dans <strong>10 minutes</strong>.</p>
+            <p style="color:#ef4444;font-size:11px;margin-top:10px;font-weight:600;">⚠️ La suppression est irréversible — toutes les données du praticien seront effacées.</p>
+          </div>
+          <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:20px;">Efficience Analytics — Sécurité</p>
+        </div>
+      `
+    });
+
+    console.log(`[DELETE-PRACTITIONER] Code de suppression envoyé à ${SECURITY_RECIPIENT} pour ${user.name} (${user.practitionerCode})`);
+    res.json({
+      message: `Code de vérification envoyé à ${SECURITY_RECIPIENT}. Entrez le code pour confirmer la suppression.`,
+      userId: String(user._id),
+      requiresCode: true
+    });
   } catch (error) {
     console.error('Erreur suppression praticien:', error);
     res.status(500).json({ message: 'Erreur serveur.' });
