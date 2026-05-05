@@ -275,7 +275,7 @@ export default function Reports() {
             <div className="flex items-center gap-3 md:ml-auto">
               <button
                 onClick={handleGenerateAll}
-                disabled={!!generating || loadingKpis}
+                disabled={!!generating || !selectedMonth}
                 className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-medium hover:bg-primary-700 disabled:opacity-50 transition-colors"
               >
                 {generating === '__all__' ? <FiRefreshCw className="animate-spin w-4 h-4" /> : <FiFileText className="w-4 h-4" />}
@@ -283,7 +283,7 @@ export default function Reports() {
               </button>
               <button
                 onClick={handleSendAll}
-                disabled={sendingAll || loadingKpis}
+                disabled={sendingAll || !selectedMonth}
                 className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors whitespace-nowrap"
               >
                 {sendingAll ? <FiRefreshCw className="animate-spin w-4 h-4" /> : <FiZap className="w-4 h-4" />}
