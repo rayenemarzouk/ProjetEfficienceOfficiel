@@ -10,11 +10,23 @@ const auth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
-    
-    if (!user || !user.isActive) {
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
       return res.status(401).json({ message: 'Token invalide ou compte désactivé.' });
     }
+
+    // Règle métier: les comptes praticiens doivent toujours rester actifs.
+    if (user.role === 'practitioner' && !user.isActive) {
+      user.isActive = true;
+      await user.save();
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({ message: 'Token invalide ou compte désactivé.' });
+    }
+
+    user.password = undefined;
 
     req.user = user;
     next();

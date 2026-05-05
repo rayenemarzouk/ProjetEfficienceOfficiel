@@ -19,6 +19,12 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Identifiants incorrects.' });
     }
 
+    // Règle métier: les comptes praticiens doivent toujours rester actifs.
+    if (user.role === 'practitioner' && !user.isActive) {
+      user.isActive = true;
+      await user.save();
+    }
+
     if (!user.isActive) {
       return res.status(401).json({ message: 'Compte désactivé. Contactez l\'administrateur.' });
     }

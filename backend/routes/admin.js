@@ -1099,6 +1099,19 @@ router.put('/toggle-user-access/:email', auth, adminOnly, async (req, res) => {
     }
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: 'Utilisateur introuvable.' });
+
+    // Règle métier: un praticien doit rester actif.
+    if (user.role === 'practitioner') {
+      if (!user.isActive) {
+        user.isActive = true;
+        await user.save();
+      }
+      return res.json({
+        message: `Compte praticien "${user.name}" maintenu actif.`,
+        isActive: true
+      });
+    }
+
     user.isActive = !user.isActive;
     await user.save();
     const action = user.isActive ? 'réactivé' : 'bloqué';
@@ -1144,10 +1157,11 @@ router.delete('/delete-practitioner/:code', auth, adminOnly, async (req, res) =>
     if (!user) {
       return res.status(404).json({ message: 'Praticien introuvable.' });
     }
-    // Soft delete — on désactive le compte
-    user.isActive = false;
+
+    // Règle métier: les praticiens ne peuvent pas être désactivés.
+    user.isActive = true;
     await user.save();
-    res.json({ message: `Praticien "${user.name}" désactivé avec succès.` });
+    res.json({ message: `Praticien "${user.name}" conservé actif (désactivation interdite).` });
   } catch (error) {
     console.error('Erreur suppression praticien:', error);
     res.status(500).json({ message: 'Erreur serveur.' });
