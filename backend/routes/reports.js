@@ -277,6 +277,18 @@ function generateFinancialCommentary(kpi, practitionerCode, mois, style = 'consu
   return `${ouverture} ${productivite} ${devis}`;
 }
 
+function ensureFinancialCommentary(kpi, practitionerCode, mois, role = 'consultant') {
+  const safeKpi = kpi || {};
+  if (safeKpi.financialCommentary && String(safeKpi.financialCommentary).trim()) {
+    return safeKpi;
+  }
+  const commentaryStyle = getCommentaryStyleByRole(role);
+  return {
+    ...safeKpi,
+    financialCommentary: generateFinancialCommentary(safeKpi, practitionerCode, mois, commentaryStyle)
+  };
+}
+
 // Générer des recommandations basées sur les KPI
 function generateRecommendations(kpi) {
   const recs = [];
@@ -457,7 +469,7 @@ router.post('/send', auth, async (req, res) => {
     for (const report of reports) {
       try {
         const practitioner = await User.findOne({ practitionerCode: report.praticien });
-        const kpi = report.contenu;
+        const kpi = ensureFinancialCommentary(report.contenu, report.praticien, mois, req.user.role);
         const moisFormate = mois.substring(0, 4) + '-' + mois.substring(4, 6);
         const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
         const moisLabel = `${months[parseInt(mois.substring(4, 6)) - 1]} ${mois.substring(0, 4)}`;
@@ -706,11 +718,8 @@ router.post('/send-one', auth, async (req, res) => {
 
     const practitioner = await User.findOne({ practitionerCode: report.praticien });
     const kpiDoc = report.contenu || {};
-    const kpi = typeof kpiDoc.toObject === 'function' ? kpiDoc.toObject() : kpiDoc;
-    if (!kpi.financialCommentary) {
-      const commentaryStyle = getCommentaryStyleByRole(req.user.role);
-      kpi.financialCommentary = generateFinancialCommentary(kpi, report.praticien, report.mois, commentaryStyle);
-    }
+    const kpiRaw = typeof kpiDoc.toObject === 'function' ? kpiDoc.toObject() : kpiDoc;
+    const kpi = ensureFinancialCommentary(kpiRaw, report.praticien, report.mois, req.user.role);
     const mois = report.mois;
     const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
     const moisLabel = mois ? `${months[parseInt(mois.substring(4, 6)) - 1]} ${mois.substring(0, 4)}` : '';
@@ -780,7 +789,7 @@ router.get('/download/:id', auth, async (req, res) => {
       mois: report.mois,
       moisFormate: moisLabel,
       cabinetName: practitioner?.cabinetName || 'Cabinet',
-      ...report.contenu.toObject(),
+      ...ensureFinancialCommentary(report.contenu.toObject(), report.praticien, report.mois, req.user.role),
       recommandations: report.contenu.recommandations || [],
       historique
     };
