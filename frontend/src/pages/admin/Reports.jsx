@@ -140,9 +140,15 @@ export default function Reports() {
         const res = await getAvailableMonths();
         const months = res.data || [];
         setAvailableMonths(months);
-        if (months.length > 0) setSelectedMonth(months[0].value);
+        if (months.length > 0) {
+          setSelectedMonth(months[0].value);
+        } else {
+          setKpisData({ practitioners: [] });
+        }
       } catch (err) {
-        console.error(err);
+        console.error('Erreur initialisation rapports:', err);
+        setKpisData({ practitioners: [] });
+        showMessage('error', 'Le chargement des mois a pris trop de temps. Veuillez réessayer.');
       } finally {
         setLoading(false);
       }
@@ -158,6 +164,8 @@ export default function Reports() {
       setKpisData(res.data);
     } catch (err) {
       console.error('Erreur chargement KPIs:', err);
+      setKpisData({ mois, practitioners: [] });
+      showMessage('error', 'Le chargement des rapports est trop lent ou indisponible pour le moment.');
     } finally {
       setLoadingKpis(false);
     }
@@ -295,7 +303,7 @@ export default function Reports() {
         </div>
 
         {/* Cabinet cards */}
-        {loading || loadingKpis ? (
+        {loading ? (
           <div className="flex justify-center py-20">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600" />
           </div>
@@ -310,6 +318,7 @@ export default function Reports() {
             <p className="text-sm text-gray-500 mb-4 font-medium">
               Rapport du mois de <span className="text-gray-800 font-semibold">{formatMonth(selectedMonth)}</span>
               {' · '}{practitioners.length} cabinet{practitioners.length > 1 ? 's' : ''}
+              {loadingKpis && <span className="ml-2 text-primary-600">(mise à jour...)</span>}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {practitioners.map((cab) => (

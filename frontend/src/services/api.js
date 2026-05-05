@@ -84,8 +84,8 @@ export const generateAllReports = (mois) => api.post('/reports/generate-all', { 
 export const sendReports = (mois) => api.post('/reports/send', { mois, force: true });
 export const sendReportsNow = (mois) => api.post('/reports/send-now', { mois });
 export const getReportsList = (mois) => api.get(`/reports/list${mois ? `?mois=${mois}` : ''}`);
-export const getAvailableMonths = () => api.get('/reports/available-months');
-export const getReportKPIs = (mois) => api.get(`/reports/kpis/${mois}`);
+export const getAvailableMonths = (timeout = 15000) => api.get('/reports/available-months', { timeout });
+export const getReportKPIs = (mois, timeout = 20000) => api.get(`/reports/kpis/${mois}`, { timeout });
 export const downloadReport = (id) => api.get(`/reports/download/${id}`, { responseType: 'blob' });
 
 // Consultant
