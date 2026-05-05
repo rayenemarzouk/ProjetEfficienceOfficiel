@@ -59,6 +59,7 @@ const ScoreBadge = ({ score }) => {
 export default function ConsultantAnalyses() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
+  const [loadError, setLoadError] = useState('');
   const [period, setPeriod] = useState({ period: 'this_year' });
   const [selectedCabinets, setSelectedCabinets] = useState([]);
   const [cabinets, setCabinets] = useState([]);
@@ -68,6 +69,7 @@ export default function ConsultantAnalyses() {
   const fetchAnalyses = async () => {
     try {
       setLoading(true);
+      setLoadError('');
       const params = {
         period: period.period,
         ...(period.startDate && { startDate: period.startDate }),
@@ -87,6 +89,12 @@ export default function ConsultantAnalyses() {
       }
     } catch (error) {
       console.error('Erreur chargement analyses:', error);
+      const status = error?.response?.status;
+      if (status === 502) {
+        setLoadError('Le serveur est temporairement indisponible (502). Réessayez dans quelques secondes.');
+      } else {
+        setLoadError('Impossible de charger les analyses pour le moment.');
+      }
     } finally {
       setLoading(false);
     }
@@ -186,6 +194,12 @@ export default function ConsultantAnalyses() {
           />
         </div>
       </div>
+
+      {loadError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
+          {loadError}
+        </div>
+      )}
 
       {/* Global Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

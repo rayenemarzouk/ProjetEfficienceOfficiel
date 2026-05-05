@@ -290,126 +290,246 @@ router.get('/dashboard', auth, consultantOnly, async (req, res) => {
 // GET /api/consultant/analyses - Analyses globales comparatives
 router.get('/analyses', auth, consultantOnly, async (req, res) => {
   try {
-    const { period, startDate, endDate } = req.query;
+    const { period, startDate, endDate, cabinets } = req.query;
     const dateRange = getDateRangeFilter(period || 'this_month', startDate, endDate);
-    
-    const practitioners = await User.find({ role: 'practitioner', isActive: true });
-    const codes = practitioners.map(p => getPraticienId(p));
+    const practitioners = await User.find(
+      { role: 'practitioner', isActive: true },
+      { practitionerCode: 1, name: 1, cabinetName: 1 }
+    ).lean();
 
-    // CA par mois par praticien
-    const caParMoisParPraticien = await AnalyseRealisation.aggregate([
-      { 
-        $match: { 
-          praticien: { $in: codes },
-          mois: { $gte: dateRange.startMois, $lte: dateRange.endMois }
-        } 
-      },
-      { $group: {
-        _id: { mois: '$mois', praticien: '$praticien' },
-        totalFacture: { $sum: '$montantFacture' },
-        totalEncaisse: { $sum: '$montantEncaisse' },
-        totalPatients: { $sum: '$nbPatients' }
-      }},
-      { $sort: { '_id.mois': 1 } }
-    ]);
+    const selectedCodes = String(cabinets || '')
+      .split(',')
+      .map(v => v.trim())
+      .filter(Boolean);
 
-    // Heures par mois par praticien
-    const heuresParMoisParPraticien = await AnalyseJoursOuverts.aggregate([
-      { 
-        $match: { 
-          praticien: { $in: codes },
-          mois: { $gte: dateRange.startMois, $lte: dateRange.endMois }
-        } 
-      },
-      { $group: {
-        _id: { mois: '$mois', praticien: '$praticien' },
-        totalMinutes: { $sum: '$nbHeures' }
-      }},
-      { $sort: { '_id.mois': 1 } }
-    ]);
+    const filteredPractitioners = selectedCodes.length > 0
+      ? practitioners.filter(p => selectedCodes.includes(getPraticienId(p)))
+      : practitioners;
 
-    // RDV par mois par praticien
-    const rdvParMoisParPraticien = await AnalyseRendezVous.aggregate([
-      { 
-        $match: { 
-          praticien: { $in: codes },
-          mois: { $gte: dateRange.startMois, $lte: dateRange.endMois }
-        } 
-      },
-      { $group: {
-        _id: { mois: '$mois', praticien: '$praticien' },
-        totalRdv: { $sum: '$nbRdv' },
-        totalPatients: { $sum: '$nbPatients' },
-        totalNouveaux: { $sum: '$nbNouveauxPatients' }
-      }},
-      { $sort: { '_id.mois': 1 } }
-    ]);
+    const codes = filteredPractitioners.map(p => getPraticienId(p));
 
-    // Devis par mois par praticien
-    const devisParMoisParPraticien = await AnalyseDevis.aggregate([
-      { 
-        $match: { 
-          praticien: { $in: codes },
-          mois: { $gte: dateRange.startMois, $lte: dateRange.endMois }
-        } 
-      },
-      { $group: {
-        _id: { mois: '$mois', praticien: '$praticien' },
-        nbDevis: { $sum: '$nbDevis' },
-        montantPropose: { $sum: '$montantPropositions' },
-        nbAcceptes: { $sum: '$nbDevisAcceptes' },
-        montantAccepte: { $sum: '$montantAccepte' }
-      }},
-      { $sort: { '_id.mois': 1 } }
-    ]);
+    if (codes.length === 0) {
+      return res.json({
+        periode: { debut: dateRange.start, fin: dateRange.end },
+        globalStats: {
+          averageTauxRealisation: 0,
+          bestCabinet: { name: '-', taux: 0 },
+          toWatch: { name: '-', taux: 0 }
+        },
+        cabinetAnalyses: [],
+        monthlyComparison: { months: [], data: {} }
+      });
+    }
 
-    // Encours
-    const encours = await Encours.find({}).sort({ createdAt: -1 });
+    const match = {
+      praticien: { $in: codes },
+      mois: { $gte: dateRange.startMois, $lte: dateRange.endMois }
+    };
 
-    // Calculer scores par praticien
-    const scoresParPraticien = codes.map(code => {
-      const practitioner = practitioners.find(p => getPraticienId(p) === code);
-      const ca = caParMoisParPraticien.filter(c => c._id.praticien === code);
-      const heures = heuresParMoisParPraticien.filter(h => h._id.praticien === code);
-      const rdv = rdvParMoisParPraticien.filter(r => r._id.praticien === code);
-      const devis = devisParMoisParPraticien.filter(d => d._id.praticien === code);
-      
-      const totalCA = ca.reduce((s, c) => s + c.totalFacture, 0);
-      const totalEnc = ca.reduce((s, c) => s + c.totalEncaisse, 0);
-      const totalH = heures.reduce((s, h) => s + h.totalMinutes, 0) / 60;
-      const totalDevis = devis.reduce((s, d) => s + d.nbDevis, 0);
-      const totalAcceptes = devis.reduce((s, d) => s + d.nbAcceptes, 0);
-      
-      const tauxEnc = totalCA > 0 ? (totalEnc / totalCA) * 100 : 0;
-      const prodH = totalH > 0 ? totalCA / totalH : 0;
-      const tauxDevis = totalDevis > 0 ? (totalAcceptes / totalDevis) * 100 : 0;
-      const baseScore = Math.round((tauxEnc * 0.3 + Math.min(100, prodH / 4) * 0.4 + tauxDevis * 0.3));
-      const score = Math.min(baseScore + 10, 100);
-      
-      return {
-        code,
-        name: practitioner?.name || code,
-        cabinetName: practitioner?.cabinetName || 'Cabinet',
-        score,
-        totalCA,
-        prodHoraire: Math.round(prodH),
-        tauxDevis: Math.round(tauxDevis)
-      };
-    });
-
-    res.json({
-      periode: { debut: dateRange.start, fin: dateRange.end },
-      practitioners: practitioners.map(p => ({ 
-        code: getPraticienId(p), 
-        name: p.name, 
-        cabinetName: p.cabinetName 
-      })),
-      scoresParPraticien: scoresParPraticien.sort((a, b) => b.score - a.score),
+    // Lancer les agrégations en parallèle pour réduire le temps de réponse.
+    const [
       caParMoisParPraticien,
       heuresParMoisParPraticien,
       rdvParMoisParPraticien,
-      devisParMoisParPraticien,
-      encours
+      devisParMoisParPraticien
+    ] = await Promise.all([
+      AnalyseRealisation.aggregate([
+        { $match: match },
+        { $group: {
+          _id: { mois: '$mois', praticien: '$praticien' },
+          totalFacture: { $sum: '$montantFacture' },
+          totalEncaisse: { $sum: '$montantEncaisse' },
+          totalPatients: { $sum: '$nbPatients' }
+        }},
+        { $sort: { '_id.mois': 1 } }
+      ]),
+      AnalyseJoursOuverts.aggregate([
+        { $match: match },
+        { $group: {
+          _id: { mois: '$mois', praticien: '$praticien' },
+          totalMinutes: { $sum: '$nbHeures' }
+        }},
+        { $sort: { '_id.mois': 1 } }
+      ]),
+      AnalyseRendezVous.aggregate([
+        { $match: match },
+        { $group: {
+          _id: { mois: '$mois', praticien: '$praticien' },
+          totalRdv: { $sum: '$nbRdv' },
+          totalPatients: { $sum: '$nbPatients' },
+          totalNouveaux: { $sum: '$nbNouveauxPatients' }
+        }},
+        { $sort: { '_id.mois': 1 } }
+      ]),
+      AnalyseDevis.aggregate([
+        { $match: match },
+        { $group: {
+          _id: { mois: '$mois', praticien: '$praticien' },
+          nbDevis: { $sum: '$nbDevis' },
+          montantPropose: { $sum: '$montantPropositions' },
+          nbAcceptes: { $sum: '$nbDevisAcceptes' },
+          montantAccepte: { $sum: '$montantAccepte' }
+        }},
+        { $sort: { '_id.mois': 1 } }
+      ])
+    ]);
+
+    const byPraticien = new Map();
+    const monthlyByCode = new Map();
+
+    const ensurePraticien = (code) => {
+      if (!byPraticien.has(code)) {
+        byPraticien.set(code, {
+          totalCA: 0,
+          totalEncaisse: 0,
+          totalRdv: 0,
+          totalNouveaux: 0,
+          totalMinutes: 0,
+          totalDevis: 0,
+          totalAcceptes: 0
+        });
+      }
+      return byPraticien.get(code);
+    };
+
+    const ensureMonthly = (code, mois) => {
+      if (!monthlyByCode.has(code)) monthlyByCode.set(code, new Map());
+      const map = monthlyByCode.get(code);
+      if (!map.has(mois)) map.set(mois, { mois, totalFacture: 0, totalEncaisse: 0 });
+      return map.get(mois);
+    };
+
+    caParMoisParPraticien.forEach((row) => {
+      const code = row._id.praticien;
+      const mois = row._id.mois;
+      const acc = ensurePraticien(code);
+      acc.totalCA += row.totalFacture || 0;
+      acc.totalEncaisse += row.totalEncaisse || 0;
+      const monthly = ensureMonthly(code, mois);
+      monthly.totalFacture += row.totalFacture || 0;
+      monthly.totalEncaisse += row.totalEncaisse || 0;
+    });
+
+    heuresParMoisParPraticien.forEach((row) => {
+      const code = row._id.praticien;
+      const acc = ensurePraticien(code);
+      acc.totalMinutes += row.totalMinutes || 0;
+    });
+
+    rdvParMoisParPraticien.forEach((row) => {
+      const code = row._id.praticien;
+      const acc = ensurePraticien(code);
+      acc.totalRdv += row.totalRdv || 0;
+      acc.totalNouveaux += row.totalNouveaux || 0;
+    });
+
+    devisParMoisParPraticien.forEach((row) => {
+      const code = row._id.praticien;
+      const acc = ensurePraticien(code);
+      acc.totalDevis += row.nbDevis || 0;
+      acc.totalAcceptes += row.nbAcceptes || 0;
+    });
+
+    const allMonthsSet = new Set();
+    const monthlyComparisonData = {};
+
+    const cabinetAnalyses = codes.map((code) => {
+      const practitioner = filteredPractitioners.find(p => getPraticienId(p) === code);
+      const totals = ensurePraticien(code);
+      const totalHours = (totals.totalMinutes || 0) / 60;
+
+      const tauxRealisation = totals.totalCA > 0
+        ? (totals.totalEncaisse / totals.totalCA) * 100
+        : 0;
+      const prodHoraire = totalHours > 0 ? totals.totalCA / totalHours : 0;
+      const tauxDevis = totals.totalDevis > 0
+        ? (totals.totalAcceptes / totals.totalDevis) * 100
+        : 0;
+
+      const baseScore = Math.round((tauxRealisation * 0.3 + Math.min(100, prodHoraire / 4) * 0.4 + tauxDevis * 0.3));
+      const scoreGlobal = Math.min(baseScore + 10, 100);
+
+      const monthlyMap = monthlyByCode.get(code) || new Map();
+      const monthlyRows = Array.from(monthlyMap.values())
+        .sort((a, b) => String(a.mois).localeCompare(String(b.mois)))
+        .map((m) => {
+          allMonthsSet.add(m.mois);
+          return {
+            mois: m.mois,
+            tauxRealisation: m.totalFacture > 0 ? Number(((m.totalEncaisse / m.totalFacture) * 100).toFixed(1)) : 0
+          };
+        });
+
+      monthlyComparisonData[code] = monthlyRows;
+      const prev = monthlyRows.length > 1 ? monthlyRows[monthlyRows.length - 2].tauxRealisation : null;
+      const curr = monthlyRows.length > 0 ? monthlyRows[monthlyRows.length - 1].tauxRealisation : null;
+      const trend = prev === null || curr === null
+        ? 'flat'
+        : (curr > prev ? 'up' : (curr < prev ? 'down' : 'flat'));
+
+      return {
+        practitionerCode: code,
+        practitionerName: practitioner?.name || code,
+        cabinetName: practitioner?.cabinetName || 'Cabinet',
+        scoreGlobal,
+        trend,
+        metrics: {
+          caRealise: totals.totalCA || 0,
+          tauxRealisation,
+          nouveauxPatients: totals.totalNouveaux || 0,
+          rdv: totals.totalRdv || 0,
+          joursOuverts: totalHours / 8,
+          tauxAcceptationDevis: tauxDevis
+        }
+      };
+    }).sort((a, b) => (b.scoreGlobal || 0) - (a.scoreGlobal || 0));
+
+    const avgTaux = cabinetAnalyses.length > 0
+      ? cabinetAnalyses.reduce((s, c) => s + (c.metrics?.tauxRealisation || 0), 0) / cabinetAnalyses.length
+      : 0;
+
+    const best = cabinetAnalyses[0];
+    const worst = cabinetAnalyses[cabinetAnalyses.length - 1];
+
+    const monthlyComparison = {
+      months: Array.from(allMonthsSet).sort((a, b) => String(a).localeCompare(String(b))),
+      data: monthlyComparisonData
+    };
+
+    res.json({
+      periode: { debut: dateRange.start, fin: dateRange.end },
+      globalStats: {
+        averageTauxRealisation: Number(avgTaux.toFixed(1)),
+        bestCabinet: {
+          name: best?.practitionerName || '-',
+          taux: Number((best?.metrics?.tauxRealisation || 0).toFixed(1))
+        },
+        toWatch: {
+          name: worst?.practitionerName || '-',
+          taux: Number((worst?.metrics?.tauxRealisation || 0).toFixed(1))
+        }
+      },
+      cabinetAnalyses,
+      monthlyComparison,
+      // Champs legacy conservés pour compatibilité d'autres écrans
+      practitioners: filteredPractitioners.map(p => ({
+        code: getPraticienId(p),
+        name: p.name,
+        cabinetName: p.cabinetName
+      })),
+      scoresParPraticien: cabinetAnalyses.map(c => ({
+        code: c.practitionerCode,
+        name: c.practitionerName,
+        cabinetName: c.cabinetName,
+        score: c.scoreGlobal,
+        totalCA: c.metrics.caRealise,
+        prodHoraire: Math.round((c.metrics.caRealise || 0) / Math.max(1, (c.metrics.joursOuverts || 0) * 8)),
+        tauxDevis: Math.round(c.metrics.tauxAcceptationDevis || 0)
+      })),
+      caParMoisParPraticien,
+      heuresParMoisParPraticien,
+      rdvParMoisParPraticien,
+      devisParMoisParPraticien
     });
   } catch (error) {
     console.error('Erreur analyses consultant:', error);
