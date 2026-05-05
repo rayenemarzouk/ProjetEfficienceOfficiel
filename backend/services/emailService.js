@@ -22,18 +22,26 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
   const now = new Date();
   const dateGeneration = now.toLocaleDateString('fr-FR') + ' ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
+  const hist = Array.isArray(historique) ? historique : [];
+  const prevHist = hist.length > 1 ? hist[hist.length - 2] : null;
+
   const ca = Number(kpi?.caMensuel || 0);
-  const objectif = Number(kpi?.objectif || Math.round(ca * 1.0));
+  const prevCa = Number(prevHist?.ca || 0);
+  const objectif = Number(kpi?.objectif || (prevCa > 0 ? Math.round(prevCa) : Math.round(ca * 1.1)));
   const encaisse = Number(kpi?.montantEncaisse || ca);
   const progression = objectif > 0 ? Math.round((ca / objectif) * 100) : 100;
   const nbPatients = kpi?.nbPatients || 0;
   const nbNouveauxPatients = kpi?.nbNouveauxPatients || 0;
   const nbRdv = kpi?.nbRdv || 0;
   const productionHoraire = parseFloat(kpi?.productionHoraire || 0);
+  const prevHeuresMinutes = Number(prevHist?.heures || 0);
+  const prevHeures = prevHeuresMinutes > 0 ? prevHeuresMinutes / 60 : 0;
+  const prevProdHoraire = prevHeures > 0 ? (prevCa / prevHeures) : 0;
+  const objectifHoraire = Number(kpi?.objectifHoraire || (prevProdHoraire > 0 ? Math.round(prevProdHoraire) : 300));
   const panierMoyen = parseFloat(kpi?.panierMoyen || 0);
   const heuresTravaillees = parseFloat(kpi?.heuresTravaillees || 0);
   const tauxAcceptationDevis = parseFloat(kpi?.tauxAcceptationDevis || 0);
-  const tauxAbsence = nbRdv > 0 ? Math.round((nbRdv * 0.05 / nbRdv) * 100) : 5;
+  const tauxAbsence = Number.isFinite(Number(kpi?.tauxAbsence)) ? Number(kpi?.tauxAbsence) : 0;
   const rdvHonores = Math.round(nbRdv * 0.95);
   const patientsTraites = Math.round(nbPatients * 0.85);
   const tauxConversion = nbPatients > 0 ? Math.min(95, Math.round((patientsTraites / nbPatients) * 100)) : 85;
@@ -60,7 +68,6 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
 
   // Build Comportement du Cabinet section dynamically
   function buildComportementCabinet() {
-    const hist = Array.isArray(historique) ? historique : [];
     if (hist.length === 0) {
       return '<p style="margin:10px 0;font-size:13px;color:#94a3b8;text-align:center;">Aucune donnée historique disponible.</p>';
     }
@@ -225,7 +232,7 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
               </tr>
             </table>
 
-            <p style="margin:0 0 6px;font-size:12px;color:#64748b;">Chiffre d'Affaires \u2192 +${fmtMoney(ca - objectif)} \u20AC</p>
+            <p style="margin:0 0 6px;font-size:12px;color:#64748b;">Chiffre d'Affaires \u2192 ${ca - objectif >= 0 ? '+' : ''}${fmtMoney(ca - objectif)} \u20AC</p>
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#e2e8f0;border-radius:6px;overflow:hidden;">
               <tr>
                 <td style="width:${Math.min(progression, 100)}%;background:linear-gradient(90deg,#2563eb,#3b82f6);padding:8px 12px;border-radius:6px;color:#fff;font-size:12px;font-weight:700;">
@@ -245,13 +252,13 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
                 <td style="padding:12px 14px;font-size:13px;color:#334155;">CA Total</td>
                 <td style="padding:12px 14px;font-size:13px;font-weight:700;color:#1e293b;text-align:center;">${fmtMoney(ca)} \u20AC</td>
                 <td style="padding:12px 14px;font-size:13px;color:#94a3b8;text-align:center;">${fmtMoney(objectif)} \u20AC</td>
-                <td style="padding:12px 14px;font-size:13px;font-weight:600;color:${ca >= objectif ? '#10b981' : '#ef4444'};text-align:right;">+${fmtMoney(ca - objectif)} \u20AC</td>
+                <td style="padding:12px 14px;font-size:13px;font-weight:600;color:${ca >= objectif ? '#10b981' : '#ef4444'};text-align:right;">${ca - objectif >= 0 ? '+' : ''}${fmtMoney(ca - objectif)} \u20AC</td>
               </tr>
               <tr style="border-bottom:1px solid #f1f5f9;">
                 <td style="padding:12px 14px;font-size:13px;color:#334155;">CA Horaire</td>
                 <td style="padding:12px 14px;font-size:13px;font-weight:700;color:#1e293b;text-align:center;">${Math.round(productionHoraire)} \u20AC/h</td>
-                <td style="padding:12px 14px;font-size:13px;color:#94a3b8;text-align:center;">${Math.round(productionHoraire)} \u20AC/h</td>
-                <td style="padding:12px 14px;font-size:13px;font-weight:600;color:#10b981;text-align:right;">+0 \u20AC/h</td>
+                <td style="padding:12px 14px;font-size:13px;color:#94a3b8;text-align:center;">${Math.round(objectifHoraire)} \u20AC/h</td>
+                <td style="padding:12px 14px;font-size:13px;font-weight:600;color:${productionHoraire >= objectifHoraire ? '#10b981' : '#ef4444'};text-align:right;">${Math.round(productionHoraire - objectifHoraire) >= 0 ? '+' : ''}${Math.round(productionHoraire - objectifHoraire)} \u20AC/h</td>
               </tr>
               <tr>
                 <td style="padding:12px 14px;font-size:13px;color:#334155;">Taux de r\u00E9alisation</td>
