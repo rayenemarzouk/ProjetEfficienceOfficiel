@@ -166,7 +166,11 @@ function buildStoredReportContent(kpi, recommandations, resumeIA) {
   };
 }
 
-function generateFinancialCommentary(kpi, practitionerCode, mois) {
+function getCommentaryStyleByRole(role) {
+  return role === 'practitioner' ? 'practitioner' : 'consultant';
+}
+
+function generateFinancialCommentary(kpi, practitionerCode, mois, style = 'consultant') {
   const ca = Number(kpi.caMensuel || 0);
   const objectif = Number(kpi.objectif || 0);
   const encaisse = Number(kpi.montantEncaisse || 0);
@@ -177,40 +181,67 @@ function generateFinancialCommentary(kpi, practitionerCode, mois) {
   const ecartCA = ca - objectif;
   const ecartProd = prod - objProd;
 
-  const key = `${practitionerCode || ''}${mois || ''}`;
+  const key = `${practitionerCode || ''}${mois || ''}${style}`;
   const variant = key.split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 3;
 
   let ouverture;
+  const isConsultantStyle = style === 'consultant';
   if (ecartCA >= 0 && tauxEnc >= 90) {
-    const opts = [
-      `Le cabinet surperforme ce mois-ci: le CA est au-dessus de l'objectif de ${Math.abs(Math.round(ecartCA)).toLocaleString('fr-FR')} EUR avec un excellent taux d'encaissement.`,
-      `La trajectoire financière est solide: l'objectif est dépassé et l'encaissement reste très maîtrisé.`,
-      `Les indicateurs confirment une performance robuste, avec un CA supérieur à la cible et une conversion en encaissement élevée.`
-    ];
+    const opts = isConsultantStyle
+      ? [
+        `Le cabinet surperforme ce mois-ci: le CA dépasse la cible de ${Math.abs(Math.round(ecartCA)).toLocaleString('fr-FR')} EUR avec une conversion en trésorerie élevée.`,
+        `La trajectoire business est robuste: objectif dépassé et encaissement sécurisé, ce qui améliore la visibilité financière.`,
+        `Les indicateurs valident un mois très performant, avec un CA au-dessus du plan et un excellent niveau d'encaissement.`
+      ]
+      : [
+        `Très bon mois: vous êtes au-dessus de l'objectif de ${Math.abs(Math.round(ecartCA)).toLocaleString('fr-FR')} EUR et l'encaissement suit bien.`,
+        `La dynamique est positive sur le terrain: objectif atteint puis dépassé, avec des règlements bien récupérés.`,
+        `Vos résultats sont solides: bonne production clinique et encaissement efficace sur la période.`
+      ];
     ouverture = opts[variant];
   } else if (ecartCA >= 0) {
-    const opts = [
-      `Le CA atteint la cible mensuelle, mais l'encaissement peut encore progresser pour sécuriser la trésorerie.`,
-      `Le cabinet est dans le vert côté production, avec un point d'attention sur la vitesse d'encaissement.`,
-      `La production est au rendez-vous ce mois-ci; la priorité suivante est de convertir plus vite en encaissement.`
-    ];
+    const opts = isConsultantStyle
+      ? [
+        `Le CA est conforme au plan, avec un levier de marge immédiat sur l'accélération de l'encaissement.`,
+        `Le mois est dans la cible côté production; la priorité business reste la vitesse de conversion en cash.`,
+        `La performance est stable et alignée avec l'objectif, mais la trésorerie peut être sécurisée plus tôt.`
+      ]
+      : [
+        `Objectif atteint, bravo. Le point à travailler est surtout de transformer plus vite en encaissement.`,
+        `Vous êtes dans le bon rythme de production; l'étape suivante est de réduire le délai de règlement.`,
+        `Le niveau d'activité est bon ce mois-ci, avec encore du potentiel sur la partie encaissement.`
+      ];
     ouverture = opts[variant];
   } else {
-    const opts = [
-      `Le CA reste sous l'objectif de ${Math.abs(Math.round(ecartCA)).toLocaleString('fr-FR')} EUR, ce qui appelle un ajustement du pilotage commercial.`,
-      `Le mois est en retrait par rapport à la cible; une action rapide sur la conversion des devis est recommandée.`,
-      `La performance financière est en dessous du plan prévu, avec un écart négatif à combler sur les prochaines semaines.`
-    ];
+    const opts = isConsultantStyle
+      ? [
+        `Le CA reste sous la cible de ${Math.abs(Math.round(ecartCA)).toLocaleString('fr-FR')} EUR; un recentrage commercial est nécessaire à court terme.`,
+        `Le mois est en retrait par rapport au plan et nécessite une action immédiate sur le pipeline devis et les relances.`,
+        `La performance financière est inférieure à l'attendu, avec un gap à corriger sur les prochaines semaines.`
+      ]
+      : [
+        `Le CA est en dessous de l'objectif de ${Math.abs(Math.round(ecartCA)).toLocaleString('fr-FR')} EUR; il faut reprendre de l'avance rapidement.`,
+        `Le mois est plus difficile que prévu: priorisez les devis à fort potentiel et le suivi des patients hésitants.`,
+        `La période est en retrait par rapport à l'objectif, mais un plan d'action simple peut corriger la trajectoire.`
+      ];
     ouverture = opts[variant];
   }
 
   const productivite = ecartProd >= 0
-    ? `La productivité horaire est supérieure à la référence (${Math.round(prod)} EUR/h vs ${Math.round(objProd)} EUR/h).`
-    : `La productivité horaire est en dessous de la référence (${Math.round(prod)} EUR/h vs ${Math.round(objProd)} EUR/h), avec une marge d'optimisation sur l'agenda.`;
+    ? (isConsultantStyle
+      ? `La productivité horaire est au-dessus de la référence (${Math.round(prod)} EUR/h vs ${Math.round(objProd)} EUR/h), ce qui soutient la rentabilité.`
+      : `Votre productivité horaire est au-dessus de la référence (${Math.round(prod)} EUR/h vs ${Math.round(objProd)} EUR/h), continuez ce rythme.`)
+    : (isConsultantStyle
+      ? `La productivité horaire reste sous la référence (${Math.round(prod)} EUR/h vs ${Math.round(objProd)} EUR/h) et pèse sur l'efficacité opérationnelle.`
+      : `La productivité horaire est sous la référence (${Math.round(prod)} EUR/h vs ${Math.round(objProd)} EUR/h): ajustez la planification des actes pour remonter.`);
 
   const devis = tauxDevis >= 65
-    ? `Le taux d'acceptation des devis (${tauxDevis.toFixed(1)}%) soutient correctement la croissance.`
-    : `Le taux d'acceptation des devis (${tauxDevis.toFixed(1)}%) freine la progression et doit être renforcé.`;
+    ? (isConsultantStyle
+      ? `Le taux d'acceptation des devis (${tauxDevis.toFixed(1)}%) soutient correctement la croissance du chiffre d'affaires.`
+      : `Le taux d'acceptation des devis (${tauxDevis.toFixed(1)}%) est bon et soutient votre activité.`)
+    : (isConsultantStyle
+      ? `Le taux d'acceptation des devis (${tauxDevis.toFixed(1)}%) limite la progression et nécessite une stratégie de conversion plus active.`
+      : `Le taux d'acceptation des devis (${tauxDevis.toFixed(1)}%) freine la progression: renforcez l'explication des plans de traitement.`);
 
   return `${ouverture} ${productivite} ${devis}`;
 }
@@ -254,8 +285,9 @@ router.post('/generate', auth, async (req, res) => {
       return res.status(404).json({ message: 'Praticien non trouvé.' });
     }
 
+    const commentaryStyle = getCommentaryStyleByRole(req.user.role);
     const kpi = await calculateKPI(practitionerCode, mois);
-    kpi.financialCommentary = generateFinancialCommentary(kpi, practitionerCode, mois);
+    kpi.financialCommentary = generateFinancialCommentary(kpi, practitionerCode, mois, commentaryStyle);
     const recommandations = generateRecommendations(kpi);
     const historique = await getHistorique(practitionerCode, mois);
 
@@ -313,12 +345,13 @@ router.post('/generate-all', auth, async (req, res) => {
     }
 
     const practitioners = await User.find({ role: 'practitioner', isActive: true });
+    const commentaryStyle = getCommentaryStyleByRole(req.user.role);
     const results = [];
 
     for (const p of practitioners) {
       try {
         const kpi = await calculateKPI(p.practitionerCode, mois);
-        kpi.financialCommentary = generateFinancialCommentary(kpi, p.practitionerCode, mois);
+        kpi.financialCommentary = generateFinancialCommentary(kpi, p.practitionerCode, mois, commentaryStyle);
         const recommandations = generateRecommendations(kpi);
         const historique = await getHistorique(p.practitionerCode, mois);
         const moisFormate = mois.substring(0, 4) + '-' + mois.substring(4, 6);
@@ -450,6 +483,7 @@ router.post('/send-now', auth, async (req, res) => {
     }
 
     const practitioners = await User.find({ role: 'practitioner', isActive: true });
+    const commentaryStyle = getCommentaryStyleByRole(req.user.role);
     const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
     const moisFormate = mois.substring(0, 4) + '-' + mois.substring(4, 6);
     const moisLabel = `${months[parseInt(mois.substring(4, 6)) - 1]} ${mois.substring(0, 4)}`;
@@ -459,7 +493,7 @@ router.post('/send-now', auth, async (req, res) => {
     for (const p of practitioners) {
       try {
         const kpi = await calculateKPI(p.practitionerCode, mois);
-        kpi.financialCommentary = generateFinancialCommentary(kpi, p.practitionerCode, mois);
+        kpi.financialCommentary = generateFinancialCommentary(kpi, p.practitionerCode, mois, commentaryStyle);
         const recommandations = generateRecommendations(kpi);
         const historique = await getHistorique(p.practitionerCode, mois);
 
@@ -634,6 +668,10 @@ router.post('/send-one', auth, async (req, res) => {
     const practitioner = await User.findOne({ practitionerCode: report.praticien });
     const kpiDoc = report.contenu || {};
     const kpi = typeof kpiDoc.toObject === 'function' ? kpiDoc.toObject() : kpiDoc;
+    if (!kpi.financialCommentary) {
+      const commentaryStyle = getCommentaryStyleByRole(req.user.role);
+      kpi.financialCommentary = generateFinancialCommentary(kpi, report.praticien, report.mois, commentaryStyle);
+    }
     const mois = report.mois;
     const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
     const moisLabel = mois ? `${months[parseInt(mois.substring(4, 6)) - 1]} ${mois.substring(0, 4)}` : '';
