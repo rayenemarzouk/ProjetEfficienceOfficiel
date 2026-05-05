@@ -19,7 +19,7 @@ async function generatePDFReport(data) {
     praticienNom, moisFormate, cabinetName,
     caMensuel, montantEncaisse, nbPatients, nbNouveauxPatients,
     nbRdv, panierMoyen, productionHoraire, heuresTravaillees,
-    nbDevis, tauxAcceptationDevis, recommandations, historique
+    nbDevis, tauxAcceptationDevis, recommandations, historique, financialCommentary
   } = data;
 
   const html = buildEmailHTML({
@@ -35,7 +35,8 @@ async function generatePDFReport(data) {
       productionHoraire: productionHoraire || 0,
       heuresTravaillees: heuresTravaillees || 0,
       nbDevis: nbDevis || 0,
-      tauxAcceptationDevis: tauxAcceptationDevis || 0
+      tauxAcceptationDevis: tauxAcceptationDevis || 0,
+      financialCommentary: financialCommentary || ''
     },
     recommandations: recommandations || [],
     cabinetName: cabinetName || 'Cabinet',
@@ -98,7 +99,7 @@ function generateHTMLReport(data) {
     praticienNom, moisFormate, cabinetName,
     caMensuel, montantEncaisse, nbPatients, nbNouveauxPatients,
     nbRdv, panierMoyen, productionHoraire, heuresTravaillees,
-    nbDevis, tauxAcceptationDevis, recommandations, historique
+    nbDevis, tauxAcceptationDevis, recommandations, historique, financialCommentary
   } = data;
 
   return buildEmailHTML({
@@ -114,7 +115,8 @@ function generateHTMLReport(data) {
       productionHoraire: productionHoraire || 0,
       heuresTravaillees: heuresTravaillees || 0,
       nbDevis: nbDevis || 0,
-      tauxAcceptationDevis: tauxAcceptationDevis || 0
+      tauxAcceptationDevis: tauxAcceptationDevis || 0,
+      financialCommentary: financialCommentary || ''
     },
     recommandations: recommandations || [],
     cabinetName: cabinetName || 'Cabinet',

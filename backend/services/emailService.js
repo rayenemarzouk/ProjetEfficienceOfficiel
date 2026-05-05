@@ -42,6 +42,7 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
   const heuresTravaillees = parseFloat(kpi?.heuresTravaillees || 0);
   const tauxAcceptationDevis = parseFloat(kpi?.tauxAcceptationDevis || 0);
   const tauxAbsence = Number.isFinite(Number(kpi?.tauxAbsence)) ? Number(kpi?.tauxAbsence) : 0;
+  const financialCommentary = String(kpi?.financialCommentary || 'Analyse financière indisponible pour ce rapport.');
   const rdvHonores = Math.round(nbRdv * 0.95);
   const patientsTraites = Math.round(nbPatients * 0.85);
   const tauxConversion = nbPatients > 0 ? Math.min(95, Math.round((patientsTraites / nbPatients) * 100)) : 85;
@@ -265,6 +266,15 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
                 <td style="padding:12px 14px;font-size:13px;font-weight:700;color:#1e293b;text-align:center;">${progression}%</td>
                 <td style="padding:12px 14px;font-size:13px;color:#94a3b8;text-align:center;">100%</td>
                 <td style="padding:12px 14px;font-size:13px;font-weight:600;color:${progression >= 100 ? '#10b981' : '#ef4444'};text-align:right;">${progression >= 100 ? '+' : ''}${progression - 100}%</td>
+              </tr>
+            </table>
+
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px;border-left:4px solid #2563eb;background:#eff6ff;border-radius:0 10px 10px 0;overflow:hidden;">
+              <tr>
+                <td style="padding:14px 16px;">
+                  <p style="margin:0;font-size:11px;font-weight:700;color:#1d4ed8;letter-spacing:0.3px;text-transform:uppercase;">Commentaire IA financier</p>
+                  <p style="margin:6px 0 0;font-size:13px;line-height:1.6;color:#1e293b;">${financialCommentary}</p>
+                </td>
               </tr>
             </table>
           </td>
