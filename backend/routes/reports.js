@@ -74,22 +74,47 @@ async function calculateKPI(practitionerCode, mois) {
   const patients = realisation[0]?.totalPatients || 0;
   const heuresTravaillees = heures ? heures.nbHeures / 60 : 0;
 
+  const nbRdv = rdv?.nbRdv || 0;
+  const rdvHonores = rdv?.rdvHonores || 0;
+  const rdvManques = rdv?.rdvManques || 0;
+  const annulations = rdv?.annulations || 0;
+  const reportsRdv = rdv?.reports || 0;
+  const rdvImportants = rdv?.rdvImportants || 0;
+  const tauxAbsence = nbRdv > 0 ? (((rdvManques + annulations) / nbRdv) * 100).toFixed(1) : 0;
+
   return {
     caMensuel: ca,
     montantEncaisse: realisation[0]?.totalEncaisse || 0,
+    tauxEncaissement: ca > 0 ? ((( realisation[0]?.totalEncaisse || 0) / ca) * 100).toFixed(1) : 0,
     nbPatients: patients,
     nbNouveauxPatients: rdv?.nbNouveauxPatients || 0,
-    nbRdv: rdv?.nbRdv || 0,
-    dureeMoyenneRdv: rdv && rdv.nbRdv > 0 ? (rdv.dureeTotaleRdv / rdv.nbRdv).toFixed(1) : 0,
     panierMoyen: patients > 0 ? (ca / patients).toFixed(2) : 0,
     productionHoraire: heuresTravaillees > 0 ? (ca / heuresTravaillees).toFixed(2) : 0,
     heuresTravaillees: heuresTravaillees.toFixed(1),
+    nbHeuresMin: heures?.nbHeures || 0,
+    joursOuverts: heures?.joursOuverts || 0,
+    // RDV enrichis
+    nbRdv,
+    rdvHonores,
+    rdvManques,
+    annulations,
+    reportsRdv,
+    rdvImportants,
+    rdvParJour: rdv?.rdvParJour || 0,
+    dureeMoyenneRdv: rdv && nbRdv > 0 ? (rdv.dureeTotaleRdv / nbRdv).toFixed(1) : 0,
+    dureeMoyennePrevue: rdv?.dureeMoyennePrevue || 0,
+    tauxAbsence,
+    // Devis enrichis
     nbDevis: devis?.nbDevis || 0,
     montantDevisPropose: devis?.montantPropositions || 0,
     nbDevisAcceptes: devis?.nbDevisAcceptes || 0,
-    tauxAcceptationDevis: devis && devis.nbDevis > 0 
-      ? ((devis.nbDevisAcceptes / devis.nbDevis) * 100).toFixed(1) 
-      : 0
+    montantDevisAccepte: devis?.montantAccepte || 0,
+    montantDevisRealise: devis?.montantTotalRealise || 0,
+    tauxAcceptationDevis: devis && devis.nbDevis > 0
+      ? ((devis.nbDevisAcceptes / devis.nbDevis) * 100).toFixed(1)
+      : (devis?.tauxAcceptationNombre || 0),
+    tauxAcceptationMontant: devis?.tauxAcceptationMontant || 0,
+    delaiMoyenAcceptation: devis?.delaiMoyenAcceptation || 0
   };
 }
 
@@ -509,6 +534,9 @@ router.get('/list', auth, async (req, res) => {
     if (req.user.role === 'practitioner') {
       filter.praticien = req.user.practitionerCode;
     }
+    if (req.user.role !== 'practitioner' && req.query.praticien) {
+      filter.praticien = String(req.query.praticien).toUpperCase();
+    }
     if (req.query.mois) {
       filter.mois = normalizeMois(req.query.mois);
     }
@@ -517,6 +545,68 @@ router.get('/list', auth, async (req, res) => {
     res.json(reports);
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
+// POST /api/reports/send-one - Envoyer un rapport unique au destinataire configuré
+router.post('/send-one', auth, async (req, res) => {
+  try {
+    const { reportId } = req.body;
+    if (!reportId) {
+      return res.status(400).json({ message: 'ID rapport requis.' });
+    }
+
+    const report = await Report.findById(reportId);
+    if (!report) {
+      return res.status(404).json({ message: 'Rapport introuvable.' });
+    }
+
+    if (req.user.role === 'practitioner' && report.praticien !== req.user.practitionerCode) {
+      return res.status(403).json({ message: 'Accès refusé.' });
+    }
+
+    const practitioner = await User.findOne({ practitionerCode: report.praticien });
+    const kpiDoc = report.contenu || {};
+    const kpi = typeof kpiDoc.toObject === 'function' ? kpiDoc.toObject() : kpiDoc;
+    const mois = report.mois;
+    const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+    const moisLabel = mois ? `${months[parseInt(mois.substring(4, 6)) - 1]} ${mois.substring(0, 4)}` : '';
+
+    const historique = await getHistorique(report.praticien, mois);
+    const reportData = {
+      praticien: report.praticien,
+      praticienNom: practitioner?.name || report.praticien,
+      mois,
+      moisFormate: moisLabel,
+      cabinetName: practitioner?.cabinetName || 'Cabinet',
+      ...kpi,
+      recommandations: kpi.recommandations || [],
+      historique
+    };
+
+    const pdfBuffer = await generatePDFReport(reportData);
+
+    await sendReportEmail({
+      to: process.env.REPORT_RECIPIENT,
+      subject: `RAPPORT DE PERFORMANCE - ${practitioner?.name || report.praticien} | ${moisLabel}`,
+      practitionerName: practitioner?.name || report.praticien,
+      mois: moisLabel,
+      kpi,
+      pdfBuffer,
+      recommandations: kpi.recommandations || [],
+      cabinetName: practitioner?.cabinetName || 'Cabinet',
+      historique
+    });
+
+    report.emailEnvoye = true;
+    report.dateEnvoi = new Date();
+    report.destinataireEmail = process.env.REPORT_RECIPIENT;
+    await report.save();
+
+    res.json({ message: `Rapport envoyé à ${process.env.REPORT_RECIPIENT}.` });
+  } catch (error) {
+    console.error('Erreur send-one:', error);
+    res.status(500).json({ message: 'Erreur lors de l\'envoi du rapport.' });
   }
 });
 
@@ -566,6 +656,40 @@ router.get('/download/:id', auth, async (req, res) => {
     res.send(pdfBuffer);
   } catch (error) {
     console.error('Erreur download rapport:', error);
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
+// GET /api/reports/kpis/:mois - KPIs live de tous les praticiens pour un mois donné
+router.get('/kpis/:mois', auth, async (req, res) => {
+  try {
+    const mois = normalizeMois(req.params.mois);
+    if (!mois) return res.status(400).json({ message: 'Mois requis.' });
+
+    const practitioners = await User.find({ role: 'practitioner', isActive: true }).lean();
+
+    const results = await Promise.all(practitioners.map(async (p) => {
+      try {
+        const kpi = await calculateKPI(p.practitionerCode, mois);
+        const existingReport = await Report.findOne({ praticien: p.practitionerCode, mois }).lean();
+        return {
+          code: p.practitionerCode,
+          name: p.name,
+          cabinetName: p.cabinetName || p.name,
+          hasData: kpi.caMensuel > 0 || kpi.nbRdv > 0 || kpi.nbDevis > 0,
+          reportGenerated: !!existingReport,
+          reportSent: existingReport?.emailEnvoye || false,
+          reportId: existingReport?._id || null,
+          kpi
+        };
+      } catch (err) {
+        return { code: p.practitionerCode, name: p.name, cabinetName: p.cabinetName || p.name, hasData: false, error: err.message };
+      }
+    }));
+
+    res.json({ mois, practitioners: results });
+  } catch (error) {
+    console.error('Erreur kpis/:mois:', error);
     res.status(500).json({ message: 'Erreur serveur.' });
   }
 });

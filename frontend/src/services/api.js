@@ -83,10 +83,17 @@ export const generateReport = (practitionerCode, mois) => api.post('/reports/gen
 export const generateAllReports = (mois) => api.post('/reports/generate-all', { mois });
 export const sendReports = (mois) => api.post('/reports/send', { mois, force: true });
 export const sendReportsNow = (mois) => api.post('/reports/send-now', { mois });
-export const getReportsList = (mois) => api.get(`/reports/list${mois ? `?mois=${mois}` : ''}`);
+export const getReportsList = (mois, praticien) => {
+  const params = new URLSearchParams();
+  if (mois) params.set('mois', mois);
+  if (praticien) params.set('praticien', praticien);
+  const qs = params.toString();
+  return api.get(`/reports/list${qs ? `?${qs}` : ''}`);
+};
 export const getAvailableMonths = (timeout = 15000) => api.get('/reports/available-months', { timeout });
 export const getReportKPIs = (mois, timeout = 20000) => api.get(`/reports/kpis/${mois}`, { timeout });
 export const downloadReport = (id) => api.get(`/reports/download/${id}`, { responseType: 'blob' });
+export const sendSingleReport = (reportId) => api.post('/reports/send-one', { reportId });
 
 // Consultant
 export const getConsultantDashboard = (params) => api.get('/consultant/dashboard', { params });

@@ -3,7 +3,8 @@ import Header from '../../components/Header';
 import {
   getAvailableMonths, getReportKPIs,
   generateReport, generateAllReports,
-  sendReportsNow, downloadReport
+  sendReportsNow, downloadReport,
+  getReportsList, getAdminPractitioners, sendSingleReport
 } from '../../services/api';
 import {
   FiFileText, FiDownload, FiRefreshCw,
@@ -126,20 +127,29 @@ const periodOptions = [
 export default function Reports() {
   const { user: _user } = useAuth();
   const [availableMonths, setAvailableMonths] = useState([]);
+  const [practitionersList, setPractitionersList] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedPractitioner, setSelectedPractitioner] = useState('all');
   const [kpisData, setKpisData] = useState(null);
+  const [historyReports, setHistoryReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingKpis, setLoadingKpis] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const [generating, setGenerating] = useState(null);
   const [sendingAll, setSendingAll] = useState(false);
+  const [sendingOne, setSendingOne] = useState(null);
   const [message, setMessage] = useState(null);
 
   useEffect(() => {
     const init = async () => {
       try {
-        const res = await getAvailableMonths();
-        const months = res.data || [];
+        const [monthsRes, practitionersRes] = await Promise.all([
+          getAvailableMonths(),
+          getAdminPractitioners()
+        ]);
+        const months = monthsRes.data || [];
         setAvailableMonths(months);
+        setPractitionersList(practitionersRes.data?.practitioners || []);
         if (months.length > 0) {
           setSelectedMonth(months[0].value);
         } else {
@@ -154,6 +164,24 @@ export default function Reports() {
       }
     };
     init();
+  }, []);
+
+  const loadHistory = useCallback(async (mois, praticien) => {
+    if (!mois) {
+      setHistoryReports([]);
+      return;
+    }
+    setLoadingHistory(true);
+    try {
+      const res = await getReportsList(mois, praticien === 'all' ? '' : praticien);
+      setHistoryReports(res.data || []);
+    } catch (err) {
+      console.error('Erreur historique rapports:', err);
+      setHistoryReports([]);
+      showMessage('error', 'Impossible de charger l\'historique des rapports.');
+    } finally {
+      setLoadingHistory(false);
+    }
   }, []);
 
   const loadKPIs = useCallback(async (mois) => {
@@ -175,6 +203,10 @@ export default function Reports() {
     if (selectedMonth) loadKPIs(selectedMonth);
   }, [selectedMonth, loadKPIs]);
 
+  useEffect(() => {
+    if (selectedMonth) loadHistory(selectedMonth, selectedPractitioner);
+  }, [selectedMonth, selectedPractitioner, loadHistory]);
+
   const showMessage = (type, text) => {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 5000);
@@ -186,6 +218,7 @@ export default function Reports() {
       await generateReport(code, selectedMonth);
       showMessage('success', `Rapport généré pour ${code}`);
       await loadKPIs(selectedMonth);
+      await loadHistory(selectedMonth, selectedPractitioner);
     } catch (err) {
       showMessage('error', err.response?.data?.message || 'Erreur génération');
     } finally {
@@ -199,6 +232,7 @@ export default function Reports() {
       const res = await generateAllReports(selectedMonth);
       showMessage('success', res.data.message);
       await loadKPIs(selectedMonth);
+      await loadHistory(selectedMonth, selectedPractitioner);
     } catch (err) {
       showMessage('error', err.response?.data?.message || 'Erreur génération');
     } finally {
@@ -212,10 +246,25 @@ export default function Reports() {
       const res = await sendReportsNow(selectedMonth);
       showMessage('success', res.data.message);
       await loadKPIs(selectedMonth);
+      await loadHistory(selectedMonth, selectedPractitioner);
     } catch (err) {
       showMessage('error', err.response?.data?.message || err.message || 'Erreur envoi');
     } finally {
       setSendingAll(false);
+    }
+  };
+
+  const handleSendSingle = async (reportId) => {
+    setSendingOne(reportId);
+    try {
+      const res = await sendSingleReport(reportId);
+      showMessage('success', res.data.message || 'Rapport envoyé.');
+      await loadKPIs(selectedMonth);
+      await loadHistory(selectedMonth, selectedPractitioner);
+    } catch (err) {
+      showMessage('error', err.response?.data?.message || 'Erreur envoi rapport.');
+    } finally {
+      setSendingOne(null);
     }
   };
 
@@ -236,9 +285,12 @@ export default function Reports() {
   };
 
   const practitioners = kpisData?.practitioners || [];
-  const withData = practitioners.filter(p => p.hasData);
-  const generated = practitioners.filter(p => p.reportGenerated).length;
-  const sent = practitioners.filter(p => p.reportSent).length;
+  const filteredPractitioners = selectedPractitioner === 'all'
+    ? practitioners
+    : practitioners.filter((p) => p.code === selectedPractitioner);
+  const withData = filteredPractitioners.filter(p => p.hasData);
+  const generated = filteredPractitioners.filter(p => p.reportGenerated).length;
+  const sent = filteredPractitioners.filter(p => p.reportSent).length;
 
   return (
     <div>
@@ -260,6 +312,22 @@ export default function Reports() {
               >
                 {availableMonths.map(m => (
                   <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Praticien inscrit</label>
+              <select
+                value={selectedPractitioner}
+                onChange={(e) => setSelectedPractitioner(e.target.value)}
+                className="w-full md:w-72 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 bg-white"
+              >
+                <option value="all">Tous les praticiens</option>
+                {practitionersList.map((p) => (
+                  <option key={p.practitionerCode} value={p.practitionerCode}>
+                    {p.practitionerName} ({p.practitionerCode})
+                  </option>
                 ))}
               </select>
             </div>
@@ -307,21 +375,21 @@ export default function Reports() {
           <div className="flex justify-center py-20">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600" />
           </div>
-        ) : practitioners.length === 0 ? (
+        ) : filteredPractitioners.length === 0 ? (
           <div className="text-center py-20 text-gray-400">
             <FiCalendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p className="font-medium">Aucune donnée disponible</p>
-            <p className="text-sm mt-1">Sélectionnez un mois avec des données saisies</p>
+            <p className="font-medium">Aucun praticien correspondant</p>
+            <p className="text-sm mt-1">Ajustez le filtre praticien ou le mois sélectionné</p>
           </div>
         ) : (
           <>
             <p className="text-sm text-gray-500 mb-4 font-medium">
               Rapport du mois de <span className="text-gray-800 font-semibold">{formatMonth(selectedMonth)}</span>
-              {' · '}{practitioners.length} cabinet{practitioners.length > 1 ? 's' : ''}
+              {' · '}{filteredPractitioners.length} cabinet{filteredPractitioners.length > 1 ? 's' : ''}
               {loadingKpis && <span className="ml-2 text-primary-600">(mise à jour...)</span>}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {practitioners.map((cab) => (
+              {filteredPractitioners.map((cab) => (
                 <CabinetCard
                   key={cab.code}
                   cab={cab}
@@ -330,6 +398,66 @@ export default function Reports() {
                   generating={generating}
                 />
               ))}
+            </div>
+
+            <div className="mt-8 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-800">Historique des rapports</h3>
+                <p className="text-xs text-gray-500 mt-1">Téléchargement PDF et envoi email au destinataire configuré.</p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-semibold">Praticien</th>
+                      <th className="text-left px-4 py-3 font-semibold">Mois</th>
+                      <th className="text-left px-4 py-3 font-semibold">Statut</th>
+                      <th className="text-left px-4 py-3 font-semibold">Dernière mise à jour</th>
+                      <th className="text-right px-4 py-3 font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loadingHistory ? (
+                      <tr>
+                        <td colSpan="5" className="px-4 py-8 text-center text-gray-500">Chargement de l'historique...</td>
+                      </tr>
+                    ) : historyReports.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="px-4 py-8 text-center text-gray-500">Aucun rapport trouvé pour les filtres sélectionnés.</td>
+                      </tr>
+                    ) : historyReports.map((r) => (
+                      <tr key={r._id} className="border-t border-gray-100">
+                        <td className="px-4 py-3 text-gray-800 font-medium">{r.praticien}</td>
+                        <td className="px-4 py-3 text-gray-600">{formatMonth(r.mois)}</td>
+                        <td className="px-4 py-3">
+                          {r.emailEnvoye
+                            ? <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">Envoyé</span>
+                            : <span className="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700">Généré</span>}
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 text-xs">{new Date(r.updatedAt).toLocaleString('fr-FR')}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleDownload(r._id, r.praticien)}
+                              className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-medium"
+                            >
+                              Télécharger
+                            </button>
+                            <button
+                              onClick={() => handleSendSingle(r._id)}
+                              disabled={sendingOne === r._id}
+                              className="px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 text-xs font-medium"
+                            >
+                              {sendingOne === r._id ? 'Envoi...' : 'Envoyer mail'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </>
         )}
