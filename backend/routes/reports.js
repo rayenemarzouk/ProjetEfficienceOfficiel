@@ -70,6 +70,12 @@ async function calculateKPI(practitionerCode, mois) {
   const heures = await AnalyseJoursOuverts.findOne({ praticien: practitionerCode, mois: { $regex: '^' + mois6 } });
   const devis = await AnalyseDevis.findOne({ praticien: practitionerCode, mois: { $regex: '^' + mois6 } });
 
+  const hist = await AnalyseRealisation.aggregate([
+    { $match: { praticien: practitionerCode, mois: { $lte: mois6 } } },
+    { $group: { _id: '$mois', ca: { $sum: '$montantFacture' } } },
+    { $sort: { _id: 1 } }
+  ]);
+
   const ca = realisation[0]?.totalFacture || 0;
   const patients = realisation[0]?.totalPatients || 0;
   const heuresTravaillees = heures ? heures.nbHeures / 60 : 0;
@@ -81,6 +87,23 @@ async function calculateKPI(practitionerCode, mois) {
   const reportsRdv = rdv?.reports || 0;
   const rdvImportants = rdv?.rdvImportants || 0;
   const tauxAbsence = nbRdv > 0 ? (((rdvManques + annulations) / nbRdv) * 100).toFixed(1) : 0;
+
+  let objectif = Math.round(ca * 1.1);
+  let objectifHoraire = 300;
+  if (hist.length > 1) {
+    const prev = hist[hist.length - 2];
+    const prevMois6 = String(prev?._id || '').substring(0, 6);
+    const prevCa = Number(prev?.ca || 0);
+    objectif = prevCa > 0 ? Math.round(prevCa) : objectif;
+
+    const prevHeuresDoc = await AnalyseJoursOuverts.findOne({
+      praticien: practitionerCode,
+      mois: { $regex: '^' + prevMois6 }
+    });
+    const prevHeures = Number(prevHeuresDoc?.nbHeures || 0) / 60;
+    const prevProdHoraire = prevHeures > 0 ? (prevCa / prevHeures) : 0;
+    objectifHoraire = prevProdHoraire > 0 ? Math.round(prevProdHoraire) : 300;
+  }
 
   return {
     caMensuel: ca,
@@ -114,7 +137,31 @@ async function calculateKPI(practitionerCode, mois) {
       ? ((devis.nbDevisAcceptes / devis.nbDevis) * 100).toFixed(1)
       : (devis?.tauxAcceptationNombre || 0),
     tauxAcceptationMontant: devis?.tauxAcceptationMontant || 0,
-    delaiMoyenAcceptation: devis?.delaiMoyenAcceptation || 0
+    delaiMoyenAcceptation: devis?.delaiMoyenAcceptation || 0,
+    objectif,
+    objectifHoraire
+  };
+}
+
+function buildStoredReportContent(kpi, recommandations, resumeIA) {
+  return {
+    caMensuel: Number(kpi.caMensuel || 0),
+    montantEncaisse: Number(kpi.montantEncaisse || 0),
+    tauxEncaissement: Number(kpi.tauxEncaissement || 0),
+    nbPatients: Number(kpi.nbPatients || 0),
+    nbNouveauxPatients: Number(kpi.nbNouveauxPatients || 0),
+    nbRdv: Number(kpi.nbRdv || 0),
+    panierMoyen: Number(kpi.panierMoyen || 0),
+    productionHoraire: Number(kpi.productionHoraire || 0),
+    heuresTravaillees: Number(kpi.heuresTravaillees || 0),
+    nbDevis: Number(kpi.nbDevis || 0),
+    nbDevisAcceptes: Number(kpi.nbDevisAcceptes || 0),
+    tauxAcceptationDevis: Number(kpi.tauxAcceptationDevis || 0),
+    tauxAbsence: Number(kpi.tauxAbsence || 0),
+    objectif: Number(kpi.objectif || 0),
+    objectifHoraire: Number(kpi.objectifHoraire || 0),
+    recommandations,
+    resumeIA
   };
 }
 
@@ -189,18 +236,7 @@ router.post('/generate', auth, async (req, res) => {
         praticien: practitionerCode,
         mois,
         type: 'mensuel',
-        contenu: {
-          caMensuel: kpi.caMensuel,
-          nbPatients: kpi.nbPatients,
-          nbNouveauxPatients: kpi.nbNouveauxPatients,
-          nbRdv: kpi.nbRdv,
-          panierMoyen: parseFloat(kpi.panierMoyen),
-          productionHoraire: parseFloat(kpi.productionHoraire),
-          tauxAcceptationDevis: parseFloat(kpi.tauxAcceptationDevis),
-          heuresTravaillees: parseFloat(kpi.heuresTravaillees),
-          recommandations,
-          resumeIA: reportData.resumeIA
-        },
+        contenu: buildStoredReportContent(kpi, recommandations, reportData.resumeIA),
         pdfPath
       },
       { upsert: true, new: true }
@@ -255,18 +291,7 @@ router.post('/generate-all', auth, async (req, res) => {
             praticien: p.practitionerCode,
             mois,
             type: 'mensuel',
-            contenu: {
-              caMensuel: kpi.caMensuel,
-              nbPatients: kpi.nbPatients,
-              nbNouveauxPatients: kpi.nbNouveauxPatients,
-              nbRdv: kpi.nbRdv,
-              panierMoyen: parseFloat(kpi.panierMoyen),
-              productionHoraire: parseFloat(kpi.productionHoraire),
-              tauxAcceptationDevis: parseFloat(kpi.tauxAcceptationDevis),
-              heuresTravaillees: parseFloat(kpi.heuresTravaillees),
-              recommandations,
-              resumeIA: reportData.resumeIA
-            },
+            contenu: buildStoredReportContent(kpi, recommandations, reportData.resumeIA),
             pdfPath: `reports/${p.practitionerCode}_${mois}.pdf`
           },
           { upsert: true, new: true }
@@ -406,19 +431,7 @@ router.post('/send-now', auth, async (req, res) => {
             praticien: p.practitionerCode,
             mois,
             type: 'mensuel',
-            contenu: {
-              caMensuel: kpi.caMensuel,
-              montantEncaisse: kpi.montantEncaisse,
-              nbPatients: kpi.nbPatients,
-              nbNouveauxPatients: kpi.nbNouveauxPatients,
-              nbRdv: kpi.nbRdv,
-              panierMoyen: parseFloat(kpi.panierMoyen),
-              productionHoraire: parseFloat(kpi.productionHoraire),
-              tauxAcceptationDevis: parseFloat(kpi.tauxAcceptationDevis),
-              heuresTravaillees: parseFloat(kpi.heuresTravaillees),
-              recommandations,
-              resumeIA: reportData.resumeIA
-            },
+            contenu: buildStoredReportContent(kpi, recommandations, reportData.resumeIA),
             pdfPath: `reports/${p.practitionerCode}_${mois}.pdf`,
             emailEnvoye: true,
             dateEnvoi: new Date(),
