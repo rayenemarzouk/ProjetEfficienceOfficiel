@@ -136,7 +136,7 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Un compte avec cet email existe déjà.' });
     }
 
-    // Create user — inactif par défaut, validation admin requise
+    // Create user — actif par défaut pour permettre la connexion immédiate
     const user = await User.create({
       name,
       email: email.toLowerCase(),
@@ -144,13 +144,13 @@ router.post('/register', async (req, res) => {
       cabinetName: cabinetName || 'Cabinet Dentaire',
       practitionerCode: normalizedRole === 'practitioner' ? normalizedPractitionerCode : null,
       role: normalizedRole,
-      isActive: false,
-      isVerified: false
+      isActive: true,
+      isVerified: true
     });
 
-    // Aucun token retourné — le compte doit être activé par un admin avant connexion
+    // Aucun token retourné — l'utilisateur se connecte via la page de login
     res.status(201).json({
-      message: `Inscription ${normalizedRole === 'consultant' ? 'consultant' : 'praticien'} enregistrée. Votre compte est en attente de validation par un administrateur.`
+      message: `Inscription ${normalizedRole === 'consultant' ? 'consultant' : 'praticien'} enregistrée. Vous pouvez maintenant vous connecter.`
     });
   } catch (error) {
     console.error('Erreur inscription:', error);
