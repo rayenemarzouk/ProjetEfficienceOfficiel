@@ -3,7 +3,7 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { TrendingUpIcon, UsersIcon, CreditCardIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { ArrowTrendingUpIcon, UserGroupIcon, CreditCardIcon, ClockIcon } from '@heroicons/react/24/outline';
 
 export default function ExecutiveDashboard({ data }) {
   if (!data) return <div className="p-6 text-center text-gray-500">Chargement des données...</div>;
@@ -59,7 +59,7 @@ export default function ExecutiveDashboard({ data }) {
     {
       title: 'Total Patients',
       value: totalPatients.toLocaleString(),
-      icon: UsersIcon,
+      icon: UserGroupIcon,
       bgColor: 'bg-blue-100',
       textColor: 'text-blue-700',
       borderColor: 'border-blue-500'
@@ -75,7 +75,7 @@ export default function ExecutiveDashboard({ data }) {
     {
       title: 'Total RDV',
       value: totalRdv.toLocaleString(),
-      icon: CalendarIcon,
+      icon: ClockIcon,
       bgColor: 'bg-purple-100',
       textColor: 'text-purple-700',
       borderColor: 'border-purple-500'
@@ -83,7 +83,7 @@ export default function ExecutiveDashboard({ data }) {
     {
       title: 'Heures Travaillées',
       value: totalHeures.toFixed(1),
-      icon: TrendingUpIcon,
+      icon: ArrowTrendingUpIcon,
       bgColor: 'bg-amber-100',
       textColor: 'text-amber-700',
       borderColor: 'border-amber-500'
@@ -91,7 +91,7 @@ export default function ExecutiveDashboard({ data }) {
     {
       title: 'Nouveaux Patients',
       value: totalNouveauxPatients.toLocaleString(),
-      icon: UsersIcon,
+      icon: UserGroupIcon,
       bgColor: 'bg-pink-100',
       textColor: 'text-pink-700',
       borderColor: 'border-pink-500'
