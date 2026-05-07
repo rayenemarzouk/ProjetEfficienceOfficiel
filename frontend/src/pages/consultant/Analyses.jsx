@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getConsultantAnalyses } from '../../services/api';
 import PeriodFilter from '../../components/PeriodFilter';
 import CabinetFilter from '../../components/CabinetFilter';
+import ExecutiveDashboard from '../../components/ExecutiveDashboard';
 import {
   ChartBarIcon,
   ArrowTrendingUpIcon,
@@ -200,6 +201,9 @@ export default function ConsultantAnalyses() {
           {loadError}
         </div>
       )}
+
+      {/* Executive Dashboard */}
+      {!loading && data && <ExecutiveDashboard data={data} />}
 
       {/* Global Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
