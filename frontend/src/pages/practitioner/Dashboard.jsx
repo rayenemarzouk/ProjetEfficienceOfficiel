@@ -93,6 +93,11 @@ export default function PractitionerDashboard() {
   const caInsight = generateSimpleInsight(caValues, 'chiffre d\'affaires');
   const caTrend = analyzeTrend(caValues);
   const caForecastVals = aiForecast(caValues, 2);
+  const dynamicForecast = aiForecast(caValues, 3);
+  const dynamicModelAvgRecent = caValues.length > 0 ? caValues.slice(-3).reduce((sum, v) => sum + v, 0) / Math.min(3, caValues.length) : 0;
+  const dynamicNextMonth = dynamicForecast[0] || 0;
+  const dynamicPctChange = dynamicModelAvgRecent > 0 ? Math.round(((dynamicNextMonth - dynamicModelAvgRecent) / dynamicModelAvgRecent) * 100) : 0;
+  const dynamicConfidence = caTrend.confidence || 0;
   const healthScore = cabinetHealthScore({
     tauxEncaissement: totalCA > 0 ? (totalEncaisse / totalCA) * 100 : 0,
     evolutionCA: regCA.slope,
@@ -372,6 +377,36 @@ export default function PractitionerDashboard() {
                 <p className="text-sm text-amber-700 dark:text-amber-400">Patients en cours</p>
                 <p className="text-2xl font-bold text-amber-900 dark:text-white tabular-nums">{animEncoursPatients}</p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {showAI && caValues.length > 0 && (
+          <div className={`bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 mt-8 transition-colors ${isDynamic ? 'animate-fade-in-up hover-lift' : ''}`} style={isDynamic ? { animationDelay: '0.75s' } : {}}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Modèle dynamique</p>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Prévision réactive du cabinet</h2>
+              </div>
+              <span className="text-xs text-slate-500 dark:text-slate-400">Calcul JS natif</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-slate-900">
+                <p className="text-xs text-slate-500 dark:text-slate-400 uppercase mb-2">Prévision M+1</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-white">{fmt(dynamicNextMonth)}</p>
+              </div>
+              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-slate-900">
+                <p className="text-xs text-slate-500 dark:text-slate-400 uppercase mb-2">Écart vs moyenne 3 mois</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-white">{dynamicPctChange >= 0 ? '+' : ''}{dynamicPctChange}%</p>
+              </div>
+              <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-slate-900">
+                <p className="text-xs text-slate-500 dark:text-slate-400 uppercase mb-2">Confiance de tendance</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-white">{dynamicConfidence}%</p>
+              </div>
+            </div>
+            <div className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+              <p className="mb-1">Ce modèle est calculé dynamiquement dans le navigateur à partir des données clients et de la tendance CA.</p>
+              <p className="text-xs">Il se met à jour automatiquement à chaque affichage et complète la prédiction Python existante.</p>
             </div>
           </div>
         )}
