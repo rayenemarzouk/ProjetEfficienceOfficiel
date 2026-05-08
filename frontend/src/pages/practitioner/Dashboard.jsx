@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Header from '../../components/Header';
-import { getPractitionerDashboard } from '../../services/api';
+import { getPractitionerDashboard, getPractitionerMLPrediction } from '../../services/api';
 import { Line, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, LineElement, PointElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { FiDollarSign, FiUsers, FiClock, FiTrendingUp, FiCalendar, FiCpu, FiUserPlus, FiTrendingDown, FiMinus } from 'react-icons/fi';
@@ -18,6 +18,7 @@ const fmt = (v) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency:
 export default function PractitionerDashboard() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
+  const [mlPrediction, setMlPrediction] = useState(null);
   const [loading, setLoading] = useState(true);
   const barChartRef = useRef(null);
   const doughnutChartRef = useRef(null);
@@ -37,8 +38,14 @@ export default function PractitionerDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await getPractitionerDashboard();
-        setData(res.data);
+        const [dashboardRes, mlRes] = await Promise.all([
+          getPractitionerDashboard(),
+          getPractitionerMLPrediction().catch(() => null)
+        ]);
+        setData(dashboardRes.data);
+        if (mlRes?.data) {
+          setMlPrediction(mlRes.data);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -228,6 +235,40 @@ export default function PractitionerDashboard() {
             );
           })}
         </div>
+
+        {/* Python ML Prediction Card */}
+        {mlPrediction && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="lg:col-span-3 bg-white dark:bg-[#1e293b] rounded-2xl border border-gray-200 dark:border-gray-700 p-6 transition-colors shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Prédiction Python ML</p>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Rappel du dernier mois analysé</h2>
+                </div>
+                <span className="text-xs text-slate-500 dark:text-slate-400">Modèle entraîné Python</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 uppercase mb-2">Praticien</p>
+                  <p className="text-lg font-semibold text-slate-900 dark:text-white">{mlPrediction.summary.sample_prediction?.praticien || 'N/A'}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Mois {mlPrediction.summary.sample_prediction?.mois || 'N/A'}</p>
+                </div>
+                <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 uppercase mb-2">Montant facturé prédit</p>
+                  <p className="text-2xl font-semibold text-slate-900 dark:text-white">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(mlPrediction.summary.sample_prediction?.predicted_linear || 0)}</p>
+                </div>
+                <div className="rounded-2xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 uppercase mb-2">Écart vs réel</p>
+                  <p className="text-2xl font-semibold text-slate-900 dark:text-white">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(mlPrediction.summary.sample_prediction?.delta_linear || 0)}</p>
+                </div>
+              </div>
+              <div className="mt-5 text-sm text-slate-500 dark:text-slate-400">
+                <p>R² linéaire : {mlPrediction.summary.metrics?.r2_linear_regression ?? 'N/A'}</p>
+                <p>MAE linéaire : {mlPrediction.summary.metrics?.mae_linear_regression ?? 'N/A'} | R² RF CV : {mlPrediction.summary.metrics?.r2_random_forest_mean ?? 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Charts */}
         {!showAI && (
