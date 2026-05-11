@@ -57,7 +57,6 @@ export const updateProfile = (data) => api.put('/auth/profile', data);
 
 // Practitioner
 export const getPractitionerDashboard = () => api.get('/practitioner/dashboard');
-export const getPractitionerMLPrediction = () => api.get('/practitioner/ml-prediction');
 export const getPractitionerStatistics = () => api.get('/practitioner/statistics');
 export const getPractitionerProfile = () => api.get('/practitioner/profile');
 export const submitManualEntry = (type, mois, data) => api.post('/practitioner/manual-entry', { type, mois, data });

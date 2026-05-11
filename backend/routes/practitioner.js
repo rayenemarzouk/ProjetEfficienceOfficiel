@@ -1,6 +1,4 @@
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
 const router = express.Router();
 const { auth, practitionerOnly } = require('../middleware/auth');
 const AnalyseRealisation = require('../models/AnalyseRealisation');
@@ -142,21 +140,6 @@ router.get('/dashboard', auth, practitionerOnly, async (req, res) => {
   } catch (error) {
     console.error('Erreur dashboard praticien:', error);
     res.status(500).json({ message: 'Erreur serveur.' });
-  }
-});
-
-// GET /api/practitioner/ml-prediction - Prédiction ML générée par le script Python
-router.get('/ml-prediction', auth, practitionerOnly, async (req, res) => {
-  try {
-    const filePath = path.join(__dirname, '..', 'python_ml_prediction.json');
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ message: 'Aucune prédiction Python disponible. Lancez python_ml_test.py pour générer le fichier.' });
-    }
-    const json = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-    res.json(json);
-  } catch (error) {
-    console.error('Erreur lecture prédiction ML:', error);
-    res.status(500).json({ message: 'Erreur serveur lors de la lecture de la prédiction ML.' });
   }
 });
 
