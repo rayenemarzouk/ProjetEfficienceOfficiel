@@ -805,7 +805,7 @@ export default function CabinetsUnified() {
           <span className="text-xs text-gray-400">Tableau de bord exécutif — toutes les données sont filtrées selon la période et les cabinets actifs</span>
         </div>
 
-        {/* ── Top 5 KPIs ─────────────────────────────── */}}
+        {/* ── Top 5 KPIs ─────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-indigo-600 rounded-2xl p-5 text-white">
             <div className="flex items-center justify-between mb-2">
