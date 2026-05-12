@@ -24,6 +24,24 @@ const MASTER_DELETE_CODE = process.env.ADMIN_DELETE_CODE || '4238';
 // ═══ Store for AI toggle verification codes ═══
 let aiToggleCode = null; // { code, expiresAt, targetState }
 
+// ═══ Inférence RDV par document (par mois) : ratio 60% manqués / 40% annulations ═══
+// Si rdvHonores/rdvManques/annulations sont tous à 0 en base, on estime l'écart
+// nbRdv - nbPatients et on le répartit 60% no-show / 40% annulations
+const RDV_INFER_STAGES = [
+  { $addFields: {
+    _needsInfer: { $and: [
+      { $eq: ['$rdvHonores', 0] }, { $eq: ['$rdvManques', 0] },
+      { $eq: ['$annulations', 0] }, { $gt: ['$nbRdv', 0] }
+    ]},
+    _ecart: { $max: [{ $subtract: ['$nbRdv', '$nbPatients'] }, 0] },
+  }},
+  { $addFields: {
+    _inferHonores:     { $cond: ['$_needsInfer', { $min: ['$nbPatients', '$nbRdv'] }, '$rdvHonores'] },
+    _inferManques:     { $cond: ['$_needsInfer', { $toInt: { $round: [{ $multiply: ['$_ecart', 0.6] }, 0] } }, '$rdvManques'] },
+    _inferAnnulations: { $cond: ['$_needsInfer', { $toInt: { $round: [{ $multiply: ['$_ecart', 0.4] }, 0] } }, '$annulations'] },
+  }},
+];
+
 // GET /api/admin/dashboard - Dashboard global admin
 router.get('/dashboard', auth, adminOnly, async (req, res) => {
   try {
@@ -44,18 +62,19 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
       }}
     ]);
 
-    // RDV par praticien
-    const rdvByPractitioner = await AnalyseRendezVous.aggregate([
+    // RDV par praticien — inférence 60/40 appliquée par document avant agrégation
+    const rdvByPractitionerFixed = await AnalyseRendezVous.aggregate([
       { $match: { praticien: { $in: practitionerCodes } } },
+      ...RDV_INFER_STAGES,
       { $group: {
         _id: '$praticien',
         totalRdv: { $sum: '$nbRdv' },
         totalPatients: { $sum: '$nbPatients' },
         totalNouveaux: { $sum: '$nbNouveauxPatients' },
         totalDuree: { $sum: '$dureeTotaleRdv' },
-        totalRdvHonores: { $sum: '$rdvHonores' },
-        totalRdvManques: { $sum: '$rdvManques' },
-        totalAnnulations: { $sum: '$annulations' },
+        totalRdvHonores: { $sum: '$_inferHonores' },
+        totalRdvManques: { $sum: '$_inferManques' },
+        totalAnnulations: { $sum: '$_inferAnnulations' },
         totalReports: { $sum: '$reports' },
         totalRdvImportants: { $sum: '$rdvImportants' },
         avgDureeMoyennePrevue: { $avg: '$dureeMoyennePrevue' },
@@ -177,50 +196,23 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
       }}
     ]);
 
-    // RDV mensuel (pour graphiques mensuels)
-    const rdvMensuel = await AnalyseRendezVous.aggregate([
+    // RDV mensuel (pour graphiques mensuels) — inférence 60/40 par document
+    const rdvMensuelFixed = await AnalyseRendezVous.aggregate([
       { $match: { praticien: { $in: practitionerCodes } } },
+      ...RDV_INFER_STAGES,
       { $group: {
         _id: { mois: '$mois', praticien: '$praticien' },
         totalRdv: { $sum: '$nbRdv' },
         totalPatients: { $sum: '$nbPatients' },
         totalNouveaux: { $sum: '$nbNouveauxPatients' },
-        totalRdvHonores: { $sum: '$rdvHonores' },
-        totalRdvManques: { $sum: '$rdvManques' },
-        totalAnnulations: { $sum: '$annulations' },
+        totalRdvHonores: { $sum: '$_inferHonores' },
+        totalRdvManques: { $sum: '$_inferManques' },
+        totalAnnulations: { $sum: '$_inferAnnulations' },
         totalReports: { $sum: '$reports' },
         totalRdvImportants: { $sum: '$rdvImportants' }
       }},
       { $sort: { '_id.mois': 1 } }
     ]);
-
-    // Inférer rdvHonores/Manques dans rdvByPractitioner si champs non renseignés
-    const rdvByPractitionerFixed = rdvByPractitioner.map(rdv => {
-      const totalRdv = rdv.totalRdv || 0;
-      const totalPatients = rdv.totalPatients || 0;
-      let totalRdvHonores = rdv.totalRdvHonores || 0;
-      let totalRdvManques = rdv.totalRdvManques || 0;
-      const totalAnnulations = rdv.totalAnnulations || 0;
-      if (totalRdvHonores === 0 && totalRdvManques === 0 && totalAnnulations === 0 && totalRdv > 0) {
-        totalRdvHonores = Math.min(totalPatients, totalRdv);
-        totalRdvManques = Math.max(0, totalRdv - totalPatients);
-      }
-      return { ...rdv, totalRdvHonores, totalRdvManques };
-    });
-
-    // Inférer rdvHonores/Manques dans rdvMensuel (graphiques mensuels)
-    const rdvMensuelFixed = rdvMensuel.map(rdv => {
-      const totalRdv = rdv.totalRdv || 0;
-      const totalPatients = rdv.totalPatients || 0;
-      let totalRdvHonores = rdv.totalRdvHonores || 0;
-      let totalRdvManques = rdv.totalRdvManques || 0;
-      const totalAnnulations = rdv.totalAnnulations || 0;
-      if (totalRdvHonores === 0 && totalRdvManques === 0 && totalAnnulations === 0 && totalRdv > 0) {
-        totalRdvHonores = Math.min(totalPatients, totalRdv);
-        totalRdvManques = Math.max(0, totalRdv - totalPatients);
-      }
-      return { ...rdv, totalRdvHonores, totalRdvManques };
-    });
 
     // Compute real trends: compare last 2 months of CA
     const allMois = [...new Set(caMensuel.map(c => c._id.mois))].sort();
@@ -294,14 +286,18 @@ router.get('/comparison', auth, adminOnly, async (req, res) => {
       { $sort: { '_id.mois': 1 } }
     ]);
 
-    // RDV comparés
+    // RDV comparés — inférence 60/40 par document
     const rdvComparison = await AnalyseRendezVous.aggregate([
       { $match: { praticien: { $in: codes } } },
+      ...RDV_INFER_STAGES,
       { $group: {
         _id: { praticien: '$praticien', mois: '$mois' },
         totalRdv: { $sum: '$nbRdv' },
         totalPatients: { $sum: '$nbPatients' },
-        totalNouveaux: { $sum: '$nbNouveauxPatients' }
+        totalNouveaux: { $sum: '$nbNouveauxPatients' },
+        totalRdvHonores: { $sum: '$_inferHonores' },
+        totalRdvManques: { $sum: '$_inferManques' },
+        totalAnnulations: { $sum: '$_inferAnnulations' }
       }},
       { $sort: { '_id.mois': 1 } }
     ]);
@@ -466,25 +462,8 @@ router.get('/statistics', auth, adminOnly, async (req, res) => {
       { $sort: { _id: 1 } }
     ]);
 
-    // RDV detail breakdown — inférence appliquée par document (par mois) avant agrégation
-    // Inférence par document (par mois) : si rdvHonores/rdvManques/annulations tous à 0
-    // → honorés = nbPatients, écart = nbRdv - nbPatients réparti 60% manqués / 40% annulations
-    const rdvInferStages = [
-      { $addFields: {
-        _needsInfer: { $and: [
-          { $eq: ['$rdvHonores', 0] }, { $eq: ['$rdvManques', 0] },
-          { $eq: ['$annulations', 0] }, { $gt: ['$nbRdv', 0] }
-        ]},
-        _ecart: { $max: [{ $subtract: ['$nbRdv', '$nbPatients'] }, 0] },
-      }},
-      { $addFields: {
-        _inferHonores:    { $cond: ['$_needsInfer', { $min: ['$nbPatients', '$nbRdv'] }, '$rdvHonores'] },
-        // 60% de l'écart → manqués (arrondi entier)
-        _inferManques:    { $cond: ['$_needsInfer', { $toInt: { $round: [{ $multiply: ['$_ecart', 0.6] }, 0] } }, '$rdvManques'] },
-        // 40% de l'écart → annulations (arrondi entier)
-        _inferAnnulations:{ $cond: ['$_needsInfer', { $toInt: { $round: [{ $multiply: ['$_ecart', 0.4] }, 0] } }, '$annulations'] },
-      }},
-    ];
+    // RDV detail breakdown — inférence 60/40 via RDV_INFER_STAGES (scope module)
+    const rdvInferStages = RDV_INFER_STAGES;
 
     const globalRdvDetail = await AnalyseRendezVous.aggregate([
       { $match: { praticien: { $in: codes } } },
