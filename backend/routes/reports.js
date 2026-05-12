@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const { auth } = require('../middleware/auth');
 const { generatePDFReport, generateHTMLReport } = require('../services/pdfGenerator');
 const { sendReportEmail } = require('../services/emailService');
@@ -1022,6 +1023,89 @@ router.get('/available-months', auth, async (req, res) => {
 // GET /api/reports/recipient - Destinataire email configuré
 router.get('/recipient', auth, async (req, res) => {
   res.json({ recipientEmail: process.env.REPORT_RECIPIENT || '' });
+});
+
+// ── Suppression de rapport avec code 4 chiffres ───────────────────────────────
+
+const reportDeleteCodes = new Map(); // reportId -> { code, expiresAt }
+
+// POST /api/reports/:id/request-delete — Génère un code 4 chiffres et l'envoie par email
+router.post('/:id/request-delete', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const report = await Report.findById(id);
+    if (!report) return res.status(404).json({ message: 'Rapport introuvable.' });
+
+    const code = crypto.randomInt(1000, 9999).toString();
+    reportDeleteCodes.set(id, { code, expiresAt: Date.now() + 10 * 60 * 1000 }); // 10 min
+
+    const SECURITY_RECIPIENT = 'maarzoukrayan3@gmail.com';
+    const moisLabel = report.mois ? String(report.mois).substring(0, 6) : '';
+    try {
+      const emailService = require('../services/emailService');
+      await emailService.sendMail({
+        to: SECURITY_RECIPIENT,
+        subject: `🗑️ Code de suppression — Rapport ${report.praticien} ${moisLabel}`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:30px;background:#f8fafc;border-radius:16px;">
+            <div style="text-align:center;margin-bottom:25px;">
+              <h2 style="color:#1e293b;margin:0;">🗑️ Code de vérification</h2>
+              <p style="color:#64748b;font-size:14px;margin-top:8px;">Suppression d'un rapport mensuel</p>
+            </div>
+            <div style="background:white;border-radius:12px;padding:25px;border:1px solid #e2e8f0;text-align:center;">
+              <p style="color:#475569;font-size:14px;margin-bottom:5px;">Rapport à supprimer :</p>
+              <p style="color:#1e293b;font-size:18px;font-weight:bold;margin-bottom:20px;">${report.praticien} — ${moisLabel}</p>
+              <div style="background:#fef2f2;border:2px dashed #ef4444;border-radius:12px;padding:20px;margin-bottom:20px;">
+                <p style="color:#ef4444;font-size:12px;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Votre code de sécurité (4 chiffres)</p>
+                <p style="color:#dc2626;font-size:40px;font-weight:900;letter-spacing:10px;margin:0;">${code}</p>
+              </div>
+              <p style="color:#94a3b8;font-size:12px;">Ce code expire dans <strong>10 minutes</strong>.</p>
+              <p style="color:#ef4444;font-size:11px;margin-top:10px;font-weight:600;">⚠️ Cette action est irréversible.</p>
+            </div>
+            <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:20px;">Efficience Analytics — Sécurité</p>
+          </div>
+        `
+      });
+      console.log(`[REPORT-DELETE] Code envoyé à ${SECURITY_RECIPIENT} pour rapport ${report.praticien} ${moisLabel}`);
+    } catch (mailErr) {
+      console.error('[REPORT-DELETE] Email indisponible:', mailErr.message || mailErr);
+    }
+
+    return res.json({ message: `Code de sécurité envoyé à ${SECURITY_RECIPIENT}.` });
+  } catch (err) {
+    console.error('[REPORT-DELETE] request-delete error:', err);
+    return res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
+// DELETE /api/reports/:id — Vérifie le code et supprime le rapport
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ message: 'Code requis.' });
+
+    const stored = reportDeleteCodes.get(id);
+    if (!stored) return res.status(400).json({ message: 'Aucun code en attente. Veuillez redemander un code.' });
+    if (Date.now() > stored.expiresAt) {
+      reportDeleteCodes.delete(id);
+      return res.status(400).json({ message: 'Code expiré. Veuillez redemander un code.' });
+    }
+    if (stored.code !== code.trim()) {
+      return res.status(400).json({ message: 'Code incorrect.' });
+    }
+
+    const report = await Report.findByIdAndDelete(id);
+    reportDeleteCodes.delete(id);
+    if (!report) return res.status(404).json({ message: 'Rapport introuvable.' });
+
+    invalidateKpisCache(report.mois);
+    console.log(`[REPORT-DELETE] Rapport supprimé : ${report.praticien} ${report.mois}`);
+    return res.json({ message: `Rapport de ${report.praticien} (${report.mois}) supprimé avec succès.` });
+  } catch (err) {
+    console.error('[REPORT-DELETE] delete error:', err);
+    return res.status(500).json({ message: 'Erreur serveur.' });
+  }
 });
 
 module.exports = router;

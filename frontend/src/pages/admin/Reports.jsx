@@ -4,12 +4,13 @@ import {
   getAvailableMonths, getReportKPIs,
   generateReport, generateAllReports,
   sendReportsNow, downloadReport,
-  getReportsList, getAdminPractitioners, sendSingleReport, getReportsRecipient
+  getReportsList, getAdminPractitioners, sendSingleReport, getReportsRecipient,
+  requestDeleteReport, confirmDeleteReport
 } from '../../services/api';
 import {
   FiFileText, FiDownload, FiRefreshCw,
   FiCheck, FiAlertCircle, FiZap, FiCalendar,
-  FiActivity, FiTrendingUp, FiClock, FiBarChart2
+  FiActivity, FiTrendingUp, FiClock, FiBarChart2, FiTrash2
 } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 
@@ -140,6 +141,10 @@ export default function Reports() {
   const [sendingAll, setSendingAll] = useState(false);
   const [sendingOne, setSendingOne] = useState(null);
   const [message, setMessage] = useState(null);
+  const [deleteModal, setDeleteModal] = useState(null); // { reportId, label }
+  const [deleteCode, setDeleteCode] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteStatus, setDeleteStatus] = useState(null);
 
   useEffect(() => {
     const init = async () => {
@@ -268,6 +273,36 @@ export default function Reports() {
       showMessage('error', err.response?.data?.message || 'Erreur envoi rapport.');
     } finally {
       setSendingOne(null);
+    }
+  };
+
+  const handleRequestDelete = async (report) => {
+    setDeleteModal({ reportId: report._id, label: `${report.praticien} — ${formatMonth(report.mois)}` });
+    setDeleteCode('');
+    setDeleteStatus(null);
+    try {
+      await requestDeleteReport(report._id);
+      setDeleteStatus({ type: 'success', text: 'Code envoyé à maarzoukrayan3@gmail.com' });
+    } catch (err) {
+      setDeleteStatus({ type: 'error', text: err.response?.data?.message || 'Erreur envoi du code.' });
+    }
+  };
+
+  const handleConfirmDelete = async (e) => {
+    e.preventDefault();
+    if (!deleteModal || !deleteCode.trim()) return;
+    setDeleting(true);
+    try {
+      const res = await confirmDeleteReport(deleteModal.reportId, deleteCode.trim());
+      showMessage('success', res.data.message || 'Rapport supprimé.');
+      setDeleteModal(null);
+      setDeleteCode('');
+      await loadHistory(selectedMonth, selectedPractitioner);
+      await loadKPIs(selectedMonth);
+    } catch (err) {
+      setDeleteStatus({ type: 'error', text: err.response?.data?.message || 'Code incorrect ou expiré.' });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -459,6 +494,13 @@ export default function Reports() {
                             >
                               {sendingOne === r._id ? 'Envoi...' : 'Envoyer mail'}
                             </button>
+                            <button
+                              onClick={() => handleRequestDelete(r)}
+                              className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                              title="Supprimer ce rapport"
+                            >
+                              <FiTrash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -470,6 +512,60 @@ export default function Reports() {
           </>
         )}
       </div>
+
+      {/* ── Modal suppression rapport avec code 4 chiffres ── */}
+      {deleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-sm w-full p-7">
+            <div className="text-center mb-5">
+              <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FiTrash2 className="w-7 h-7 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Supprimer le rapport</h3>
+              <p className="text-sm text-gray-500 mt-1">Un code a été envoyé à <strong>maarzoukrayan3@gmail.com</strong></p>
+              <p className="text-xs text-gray-400 mt-1">{deleteModal.label}</p>
+            </div>
+            {deleteStatus && (
+              <div className={`mb-4 p-3 rounded-xl flex items-center gap-2 text-xs border ${
+                deleteStatus.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+              }`}>
+                {deleteStatus.type === 'success' ? <FiCheck /> : <FiAlertCircle />}
+                {deleteStatus.text}
+              </div>
+            )}
+            <form onSubmit={handleConfirmDelete} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Code de sécurité (4 chiffres)</label>
+                <input
+                  type="text"
+                  maxLength={4}
+                  placeholder="0000"
+                  value={deleteCode}
+                  onChange={e => setDeleteCode(e.target.value.replace(/\D/g, ''))}
+                  className="w-full text-center text-3xl font-bold tracking-widest px-4 py-3 border-2 border-red-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={deleting || deleteCode.length < 4}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-semibold rounded-xl text-sm transition"
+                >
+                  {deleting ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Suppression...</> : <><FiTrash2 className="w-4 h-4" />Supprimer</>}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setDeleteModal(null); setDeleteCode(''); setDeleteStatus(null); }}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-xl text-sm transition"
+                >
+                  Annuler
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

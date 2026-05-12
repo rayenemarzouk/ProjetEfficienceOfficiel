@@ -95,6 +95,8 @@ export const getAvailableMonths = (timeout = 15000) => api.get('/reports/availab
 export const getReportKPIs = (mois, timeout = 20000) => api.get(`/reports/kpis/${mois}`, { timeout });
 export const downloadReport = (id) => api.get(`/reports/download/${id}`, { responseType: 'blob' });
 export const sendSingleReport = (reportId) => api.post('/reports/send-one', { reportId });
+export const requestDeleteReport = (id) => api.post(`/reports/${id}/request-delete`);
+export const confirmDeleteReport = (id, code) => api.delete(`/reports/${id}`, { data: { code } });
 
 // Consultant
 export const getConsultantDashboard = (params) => api.get('/consultant/dashboard', { params });
