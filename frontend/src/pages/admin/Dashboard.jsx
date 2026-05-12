@@ -126,6 +126,17 @@ export default function AdminDashboard() {
     fetchDashboard();
   }, []); // Fetch once on mount, no period dependency
 
+  // Rafraîchir les compteurs (rapports, emails) quand l'onglet/page redevient visible
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchDashboardSilent();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Animation loop pour les effets streaming temps réel
   useEffect(() => {
     if (!isDynamic) return;
@@ -144,6 +155,16 @@ export default function AdminDashboard() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Rafraîchissement silencieux (sans spinner) — pour mise à jour en arrière-plan
+  const fetchDashboardSilent = async () => {
+    try {
+      const res = await getAdminDashboard();
+      setData(res.data);
+    } catch (err) {
+      console.error(err);
     }
   };
 
