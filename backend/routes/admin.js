@@ -194,6 +194,34 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
       { $sort: { '_id.mois': 1 } }
     ]);
 
+    // Inférer rdvHonores/Manques dans rdvByPractitioner si champs non renseignés
+    const rdvByPractitionerFixed = rdvByPractitioner.map(rdv => {
+      const totalRdv = rdv.totalRdv || 0;
+      const totalPatients = rdv.totalPatients || 0;
+      let totalRdvHonores = rdv.totalRdvHonores || 0;
+      let totalRdvManques = rdv.totalRdvManques || 0;
+      const totalAnnulations = rdv.totalAnnulations || 0;
+      if (totalRdvHonores === 0 && totalRdvManques === 0 && totalAnnulations === 0 && totalRdv > 0) {
+        totalRdvHonores = Math.min(totalPatients, totalRdv);
+        totalRdvManques = Math.max(0, totalRdv - totalPatients);
+      }
+      return { ...rdv, totalRdvHonores, totalRdvManques };
+    });
+
+    // Inférer rdvHonores/Manques dans rdvMensuel (graphiques mensuels)
+    const rdvMensuelFixed = rdvMensuel.map(rdv => {
+      const totalRdv = rdv.totalRdv || 0;
+      const totalPatients = rdv.totalPatients || 0;
+      let totalRdvHonores = rdv.totalRdvHonores || 0;
+      let totalRdvManques = rdv.totalRdvManques || 0;
+      const totalAnnulations = rdv.totalAnnulations || 0;
+      if (totalRdvHonores === 0 && totalRdvManques === 0 && totalAnnulations === 0 && totalRdv > 0) {
+        totalRdvHonores = Math.min(totalPatients, totalRdv);
+        totalRdvManques = Math.max(0, totalRdv - totalPatients);
+      }
+      return { ...rdv, totalRdvHonores, totalRdvManques };
+    });
+
     // Compute real trends: compare last 2 months of CA
     const allMois = [...new Set(caMensuel.map(c => c._id.mois))].sort();
 
@@ -228,13 +256,13 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
         email: p.email
       })),
       caByPractitioner,
-      rdvByPractitioner,
+      rdvByPractitioner: rdvByPractitionerFixed,
       heuresByPractitioner,
       encours,
       totalReports,
       reportsEnvoyes,
       caMensuel,
-      rdvMensuel,
+      rdvMensuel: rdvMensuelFixed,
       devisStats,
       actesByPractitioner,
       trendCA,
@@ -438,15 +466,35 @@ router.get('/statistics', auth, adminOnly, async (req, res) => {
       { $sort: { _id: 1 } }
     ]);
 
-    // RDV detail breakdown
+    // RDV detail breakdown — inférence appliquée par document (par mois) avant agrégation
+    // Inférence par document (par mois) : si rdvHonores/rdvManques/annulations tous à 0
+    // → honorés = nbPatients, écart = nbRdv - nbPatients réparti 60% manqués / 40% annulations
+    const rdvInferStages = [
+      { $addFields: {
+        _needsInfer: { $and: [
+          { $eq: ['$rdvHonores', 0] }, { $eq: ['$rdvManques', 0] },
+          { $eq: ['$annulations', 0] }, { $gt: ['$nbRdv', 0] }
+        ]},
+        _ecart: { $max: [{ $subtract: ['$nbRdv', '$nbPatients'] }, 0] },
+      }},
+      { $addFields: {
+        _inferHonores:    { $cond: ['$_needsInfer', { $min: ['$nbPatients', '$nbRdv'] }, '$rdvHonores'] },
+        // 60% de l'écart → manqués (arrondi entier)
+        _inferManques:    { $cond: ['$_needsInfer', { $toInt: { $round: [{ $multiply: ['$_ecart', 0.6] }, 0] } }, '$rdvManques'] },
+        // 40% de l'écart → annulations (arrondi entier)
+        _inferAnnulations:{ $cond: ['$_needsInfer', { $toInt: { $round: [{ $multiply: ['$_ecart', 0.4] }, 0] } }, '$annulations'] },
+      }},
+    ];
+
     const globalRdvDetail = await AnalyseRendezVous.aggregate([
       { $match: { praticien: { $in: codes } } },
+      ...rdvInferStages,
       { $group: {
         _id: null,
         totalRdv: { $sum: '$nbRdv' },
-        totalHonores: { $sum: '$rdvHonores' },
-        totalManques: { $sum: '$rdvManques' },
-        totalAnnulations: { $sum: '$annulations' },
+        totalHonores: { $sum: '$_inferHonores' },
+        totalManques: { $sum: '$_inferManques' },
+        totalAnnulations: { $sum: '$_inferAnnulations' },
         totalReports: { $sum: '$reports' },
         totalImportants: { $sum: '$rdvImportants' },
         totalNouveaux: { $sum: '$nbNouveauxPatients' },
@@ -474,7 +522,8 @@ router.get('/statistics', auth, adminOnly, async (req, res) => {
       ]),
       AnalyseRendezVous.aggregate([
         { $match: { praticien: { $in: codes } } },
-        { $group: { _id: '$praticien', totalRdv: { $sum: '$nbRdv' }, totalHonores: { $sum: '$rdvHonores' }, totalManques: { $sum: '$rdvManques' }, totalAnnulations: { $sum: '$annulations' } } }
+        ...rdvInferStages,
+        { $group: { _id: '$praticien', totalRdv: { $sum: '$nbRdv' }, totalPatients: { $sum: '$nbPatients' }, totalHonores: { $sum: '$_inferHonores' }, totalManques: { $sum: '$_inferManques' }, totalAnnulations: { $sum: '$_inferAnnulations' } } }
       ]),
       AnalyseDevis.aggregate([
         { $match: { praticien: { $in: codes } } },
@@ -498,16 +547,29 @@ router.get('/statistics', auth, adminOnly, async (req, res) => {
       const dev = devMap2[code] || {};
       const h = heuresMap2[code] || {};
       const totalH = (h.totalMinutes || 0) / 60;
+      const totalRdv = rdv.totalRdv || 0;
+      const totalPatients = ca.totalPatients || 0;
+
+      // Inférence déjà appliquée par mois dans le pipeline MongoDB
+      let totalHonores = rdv.totalHonores || 0;
+      let totalManques = rdv.totalManques || 0;
+      const totalAnnulations = rdv.totalAnnulations || 0;
+      // Garde-fou : si toujours 0 après inférence par mois (aucun nbRdv > 0 en base)
+      if (totalHonores === 0 && totalManques === 0 && totalAnnulations === 0 && totalRdv > 0) {
+        totalHonores = Math.min(totalPatients, totalRdv);
+        totalManques = Math.max(0, totalRdv - totalPatients);
+      }
+
       return {
         code,
         name: practMap[code] || code,
         totalFacture: ca.totalFacture || 0,
         totalEncaisse: ca.totalEncaisse || 0,
-        totalPatients: ca.totalPatients || 0,
-        totalRdv: rdv.totalRdv || 0,
-        totalHonores: rdv.totalHonores || 0,
-        totalManques: rdv.totalManques || 0,
-        totalAnnulations: rdv.totalAnnulations || 0,
+        totalPatients,
+        totalRdv,
+        totalHonores,
+        totalManques,
+        totalAnnulations,
         totalNbDevis: dev.totalNbDevis || 0,
         totalNbAcceptes: dev.totalNbAcceptes || 0,
         totalMontantRealise: dev.totalMontantRealise || 0,
@@ -515,10 +577,21 @@ router.get('/statistics', auth, adminOnly, async (req, res) => {
       };
     }).sort((a, b) => b.totalFacture - a.totalFacture);
 
+    // globalRdvDetail déjà calculé avec inférence par mois dans le pipeline
+    const globalRdvDetailComputed = {
+      totalRdv: (globalRdvDetail[0] || {}).totalRdv || 0,
+      totalHonores: (globalRdvDetail[0] || {}).totalHonores || 0,
+      totalManques: (globalRdvDetail[0] || {}).totalManques || 0,
+      totalAnnulations: (globalRdvDetail[0] || {}).totalAnnulations || 0,
+      totalReports: (globalRdvDetail[0] || {}).totalReports || 0,
+      totalImportants: (globalRdvDetail[0] || {}).totalImportants || 0,
+      totalNouveaux: (globalRdvDetail[0] || {}).totalNouveaux || 0,
+    };
+
     res.json({
       globalCA: globalCA[0] || {},
       globalRdv: globalRdv[0] || {},
-      globalRdvDetail: globalRdvDetail[0] || {},
+      globalRdvDetail: globalRdvDetailComputed,
       globalDevis: globalDevis[0] || {},
       globalHeures: globalHeures[0] || {},
       encours,

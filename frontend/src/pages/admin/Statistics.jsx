@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import Header from '../../components/Header';
 import { getStatistics } from '../../services/api';
 import { Line, Doughnut } from 'react-chartjs-2';
@@ -160,9 +161,8 @@ export default function Statistics() {
   const totalMontantRealise = globalDevis.totalMontantRealise || 0;
   const tauxDevis = totalNbDevis > 0 ? Math.round((totalNbAcceptes / totalNbDevis) * 100) : 0;
 
-  // Score moyen avec bonus +10% pour meilleure visibilité
-  const baseScoreMoyen = totalFacture > 0 ? Math.round((totalEncaisse / totalFacture) * 100) : 0;
-  const scoreMoyen = Math.min(baseScoreMoyen + 10, 100);
+  // Score d'encaissement réel (sans bonus artificiel)
+  const scoreMoyen = totalFacture > 0 ? Math.round((totalEncaisse / totalFacture) * 100) : 0;
   const scoreLabel = scoreMoyen >= 90 ? 'Excellent' : scoreMoyen >= 75 ? 'Bon' : scoreMoyen >= 60 ? 'Moyen' : 'Faible';
   const scoreColor = scoreMoyen >= 90 ? '#10b981' : scoreMoyen >= 75 ? '#3b82f6' : scoreMoyen >= 60 ? '#f59e0b' : '#ef4444';
 
@@ -187,7 +187,7 @@ export default function Statistics() {
   const healthScore = cabinetHealthScore({
     tauxEncaissement: scoreMoyen,
     evolutionCA: aiCA.trend === 'upward' ? aiCA.confidence * 0.5 : aiCA.trend === 'downward' ? -aiCA.confidence * 0.5 : 0,
-    tauxAbsence: 0,
+    tauxAbsence,
     productionHoraire: totalFacture > 0 && totalPatients > 0 ? totalFacture / totalPatients : 0,
     tauxNouveauxPatients: 10,
   });
@@ -913,6 +913,24 @@ export default function Statistics() {
           </div>
         </div>
         </>}
+
+        {/* ─── Lien vers Dashboard Analytique ─────────────────── */}
+        <Link
+          to="/admin/analytics"
+          className="mt-6 flex items-center justify-between gap-4 p-4 bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl text-white hover:from-slate-700 hover:to-slate-600 transition-all duration-200 group shadow-md"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <FiBarChart2 className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-bold">Dashboard Analytique</p>
+              <p className="text-xs text-slate-300">KPI globaux · Tendances · Répartition par cabinet · Indicateurs RDV &amp; Devis</p>
+            </div>
+          </div>
+          <span className="text-slate-300 group-hover:text-white text-sm font-semibold whitespace-nowrap">Voir →</span>
+        </Link>
+
       </div>
     </div>
   );

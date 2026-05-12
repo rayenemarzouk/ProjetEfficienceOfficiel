@@ -1,31 +1,33 @@
+Options -MultiViews
+
 # MIME Types pour JavaScript modules - OBLIGATOIRE
 AddType application/javascript .js .mjs
-AddType text/javascript .js
 AddType text/css .css
 AddType image/svg+xml .svg
-
-# Headers pour les fichiers JS et CSS
-<IfModule mod_headers.c>
-    <FilesMatch "\.(js|mjs)$">
-        Header set Content-Type "application/javascript"
-    </FilesMatch>
-    <FilesMatch "\.css$">
-        Header set Content-Type "text/css"
-    </FilesMatch>
-</IfModule>
+AddType application/json .json
+AddType font/woff2 .woff2
+AddType font/woff .woff
 
 # Réécriture pour SPA React
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /
-    
-    # Ne pas réécrire les fichiers/dossiers existants
+
+    # Ne pas réécrire les fichiers et dossiers existants
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
-    
-    # Tout le reste va vers index.html
-    RewriteRule ^ index.html [L]
+
+    # Tout le reste va vers index.html (SPA routing)
+    RewriteRule ^ /index.html [L]
+</IfModule>
+
+# Cache pour les assets statiques
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
 </IfModule>
 
 # Empêcher l'affichage des erreurs PHP

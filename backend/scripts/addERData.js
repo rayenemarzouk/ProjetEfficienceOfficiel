@@ -70,7 +70,10 @@ async function addERData() {
       { praticien: 'ER', mois: '20250601', nbRdv: 60, dureeTotaleRdv: 1440, nbPatients: 54, nbNouveauxPatients: 7 },
       { praticien: 'ER', mois: '20250701', nbRdv: 68, dureeTotaleRdv: 1632, nbPatients: 60, nbNouveauxPatients: 8 },
       { praticien: 'ER', mois: '20250801', nbRdv: 55, dureeTotaleRdv: 1320, nbPatients: 48, nbNouveauxPatients: 5 },
-      { praticien: 'ER', mois: '20250901', nbRdv: 62, dureeTotaleRdv: 1488, nbPatients: 56, nbNouveauxPatients: 7 }
+      { praticien: 'ER', mois: '20250901', nbRdv: 62, dureeTotaleRdv: 1488, nbPatients: 56, nbNouveauxPatients: 7 },
+      { praticien: 'ER', mois: '20251001', nbRdv: 70, dureeTotaleRdv: 1680, nbPatients: 63, nbNouveauxPatients: 6 },
+      { praticien: 'ER', mois: '20251101', nbRdv: 66, dureeTotaleRdv: 1584, nbPatients: 58, nbNouveauxPatients: 5 },
+      { praticien: 'ER', mois: '20251201', nbRdv: 68, dureeTotaleRdv: 1632, nbPatients: 60, nbNouveauxPatients: 8 },
     ];
 
     await AnalyseRendezVous.deleteMany({ praticien: 'ER' });
@@ -86,6 +89,9 @@ async function addERData() {
       { praticien: 'ER', mois: '20250701', nbPatients: 60, montantFacture: 25100.00, montantEncaisse: 20600.00 },
       { praticien: 'ER', mois: '20250801', nbPatients: 48, montantFacture: 20100.00, montantEncaisse: 16400.00 },
       { praticien: 'ER', mois: '20250901', nbPatients: 56, montantFacture: 23400.00, montantEncaisse: 19200.00 },
+      { praticien: 'ER', mois: '20251001', nbPatients: 63, montantFacture: 26300.00, montantEncaisse: 21600.00 },
+      { praticien: 'ER', mois: '20251101', nbPatients: 58, montantFacture: 24200.00, montantEncaisse: 19900.00 },
+      { praticien: 'ER', mois: '20251201', nbPatients: 60, montantFacture: 25100.00, montantEncaisse: 20600.00 },
       { praticien: 'ER', mois: '20260101', nbPatients: 72, montantFacture: 28500.00, montantEncaisse: 23400.00 },
       { praticien: 'ER', mois: '20260201', nbPatients: 60, montantFacture: 24000.00, montantEncaisse: 19600.00 }
     ];
@@ -99,6 +105,13 @@ async function addERData() {
       { praticien: 'ER', mois: '20250301', nbDevis: 10, montantPropositions: 30000, nbDevisAcceptes: 6, montantAccepte: 18000 },
       { praticien: 'ER', mois: '20250401', nbDevis: 12, montantPropositions: 36000, nbDevisAcceptes: 8, montantAccepte: 24000 },
       { praticien: 'ER', mois: '20250501', nbDevis: 14, montantPropositions: 42000, nbDevisAcceptes: 9, montantAccepte: 27000 },
+      { praticien: 'ER', mois: '20250601', nbDevis: 11, montantPropositions: 33000, nbDevisAcceptes: 7, montantAccepte: 20000 },
+      { praticien: 'ER', mois: '20250701', nbDevis: 13, montantPropositions: 39000, nbDevisAcceptes: 8, montantAccepte: 24000 },
+      { praticien: 'ER', mois: '20250801', nbDevis: 9, montantPropositions: 27000, nbDevisAcceptes: 6, montantAccepte: 17000 },
+      { praticien: 'ER', mois: '20250901', nbDevis: 12, montantPropositions: 36000, nbDevisAcceptes: 7, montantAccepte: 21000 },
+      { praticien: 'ER', mois: '20251001', nbDevis: 13, montantPropositions: 39000, nbDevisAcceptes: 8, montantAccepte: 24000 },
+      { praticien: 'ER', mois: '20251101', nbDevis: 11, montantPropositions: 33000, nbDevisAcceptes: 7, montantAccepte: 20000 },
+      { praticien: 'ER', mois: '20251201', nbDevis: 10, montantPropositions: 30000, nbDevisAcceptes: 6, montantAccepte: 18000 },
       { praticien: 'ER', mois: '20260101', nbDevis: 15, montantPropositions: 45000, nbDevisAcceptes: 10, montantAccepte: 30000 },
       { praticien: 'ER', mois: '20260201', nbDevis: 12, montantPropositions: 36000, nbDevisAcceptes: 7, montantAccepte: 21000 }
     ];

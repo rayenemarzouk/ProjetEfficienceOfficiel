@@ -111,12 +111,29 @@ async function calculateKPI(practitionerCode, mois) {
   const patients = realisation[0]?.totalPatients || 0;
   const heuresTravaillees = heures ? heures.nbHeures / 60 : 0;
 
-  const nbRdv = rdv?.nbRdv || 0;
-  const rdvHonores = rdv?.rdvHonores || 0;
-  const rdvManques = rdv?.rdvManques || 0;
-  const annulations = rdv?.annulations || 0;
+  let nbRdv = rdv?.nbRdv || 0;
+  let rdvHonores = rdv?.rdvHonores || 0;
+  let rdvManques = rdv?.rdvManques || 0;
+  let annulations = rdv?.annulations || 0;
   const reportsRdv = rdv?.reports || 0;
   const rdvImportants = rdv?.rdvImportants || 0;
+
+  // Inférer les données RDV manquantes depuis nbRdv et/ou nbPatients (ratio 60% manqués / 40% annulations)
+  if (rdvHonores === 0 && rdvManques === 0 && annulations === 0) {
+    if (nbRdv > 0) {
+      const ecart = Math.max(0, nbRdv - patients);
+      rdvHonores = Math.min(patients, nbRdv);
+      rdvManques = Math.round(ecart * 0.6);
+      annulations = Math.round(ecart * 0.4);
+    } else if (patients > 0) {
+      // Aucun document AnalyseRendezVous pour ce mois — inférer depuis les patients
+      nbRdv = patients;
+      rdvHonores = patients;
+      rdvManques = 0;
+      annulations = 0;
+    }
+  }
+
   const tauxAbsence = nbRdv > 0 ? (((rdvManques + annulations) / nbRdv) * 100).toFixed(1) : 0;
 
   let objectif = Math.round(ca * 1.1);
@@ -146,7 +163,7 @@ async function calculateKPI(practitionerCode, mois) {
     productionHoraire: heuresTravaillees > 0 ? (ca / heuresTravaillees).toFixed(2) : 0,
     heuresTravaillees: heuresTravaillees.toFixed(1),
     nbHeuresMin: heures?.nbHeures || 0,
-    joursOuverts: heures?.joursOuverts || 0,
+    joursOuverts: heures?.joursOuverts || (heuresTravaillees > 0 ? Math.round(heuresTravaillees / 7) : 0),
     // RDV enrichis
     nbRdv,
     rdvHonores,
@@ -907,14 +924,31 @@ router.get('/kpis/:mois', auth, async (req, res) => {
       const caMensuel = Number(real.totalFacture || 0);
       const montantEncaisse = Number(real.totalEncaisse || 0);
       const nbPatients = Number(real.totalPatients || 0);
-      const nbRdv = Number(rdv.nbRdv || 0);
+      let nbRdv = Number(rdv.nbRdv || 0);
       const nbNouveauxPatients = Number(rdv.nbNouveauxPatients || 0);
-      const rdvManques = Number(rdv.rdvManques || 0);
-      const annulations = Number(rdv.annulations || 0);
+      let rdvManques = Number(rdv.rdvManques || 0);
+      let annulations = Number(rdv.annulations || 0);
+      let rdvHonores = Number(rdv.rdvHonores || 0);
       const totalMinutes = Number(heures.nbHeures || 0);
       const heuresTravaillees = totalMinutes / 60;
       const nbDevis = Number(devis.nbDevis || 0);
       const nbDevisAcceptes = Number(devis.nbDevisAcceptes || 0);
+
+      // Inférer les données RDV manquantes depuis nbRdv et/ou nbPatients (ratio 60% manqués / 40% annulations)
+      if (rdvHonores === 0 && rdvManques === 0 && annulations === 0) {
+        if (nbRdv > 0) {
+          const ecart = Math.max(0, nbRdv - nbPatients);
+          rdvHonores = Math.min(nbPatients, nbRdv);
+          rdvManques = Math.round(ecart * 0.6);
+          annulations = Math.round(ecart * 0.4);
+        } else if (nbPatients > 0) {
+          // Aucun document AnalyseRendezVous pour ce mois — inférer depuis les patients
+          nbRdv = nbPatients;
+          rdvHonores = nbPatients;
+          rdvManques = 0;
+          annulations = 0;
+        }
+      }
 
       const kpi = {
         caMensuel,
@@ -927,8 +961,8 @@ router.get('/kpis/:mois', auth, async (req, res) => {
         productionHoraire: heuresTravaillees > 0 ? Number((caMensuel / heuresTravaillees).toFixed(2)) : 0,
         heuresTravaillees: Number(heuresTravaillees.toFixed(1)),
         nbHeuresMin: totalMinutes,
-        joursOuverts: Number(heures.joursOuverts || 0),
-        rdvHonores: Number(rdv.rdvHonores || 0),
+        joursOuverts: heuresTravaillees > 0 ? Math.round(heuresTravaillees / 7) : 0,
+        rdvHonores,
         rdvManques,
         annulations,
         reportsRdv: Number(rdv.reportsRdv || 0),

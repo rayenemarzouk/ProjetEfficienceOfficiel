@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Header from '../../components/Header';
 import PeriodFilter from '../../components/PeriodFilter';
 import { getAdminDashboard } from '../../services/api';
-import { FiActivity, FiCalendar, FiCheckCircle, FiDollarSign, FiFileText, FiRefreshCw, FiTrendingUp, FiUsers, FiXCircle } from 'react-icons/fi';
+import { FiActivity, FiCalendar, FiCheckCircle, FiDollarSign, FiFileText, FiRefreshCw, FiTrendingUp, FiUsers, FiXCircle, FiBarChart2 } from 'react-icons/fi';
 import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, Legend, LinearScale, Title, Tooltip } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
 
@@ -384,6 +385,25 @@ export default function Comparison() {
             <div className="rounded-lg bg-white px-3 py-2">Honoraires actes: <strong>{totals.honorairesActes.toLocaleString('fr-FR')} €</strong></div>
           </div>
         </div>
+      </div>
+
+      {/* ─── Lien vers Dashboard Analytique ─────────────────── */}
+      <div className="px-6 pb-6">
+        <Link
+          to="/admin/analytics"
+          className="flex items-center justify-between gap-4 p-4 bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl text-white hover:from-slate-700 hover:to-slate-600 transition-all duration-200 group shadow-md"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <FiBarChart2 className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-bold">Dashboard Analytique</p>
+              <p className="text-xs text-slate-300">KPI globaux · Tendances · Répartition par cabinet · Indicateurs RDV &amp; Devis</p>
+            </div>
+          </div>
+          <span className="text-slate-300 group-hover:text-white text-sm font-semibold whitespace-nowrap">Voir →</span>
+        </Link>
       </div>
     </div>
   );
