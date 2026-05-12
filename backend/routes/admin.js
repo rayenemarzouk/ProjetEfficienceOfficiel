@@ -235,8 +235,8 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
     }
 
     // Real absences: nbRdv (booked) - nbPatients (showed up)
-    const totalRdvAll = rdvByPractitioner.reduce((s, r) => s + (r.totalRdv || 0), 0);
-    const totalPatientsRdv = rdvByPractitioner.reduce((s, r) => s + (r.totalPatients || 0), 0);
+    const totalRdvAll = rdvByPractitionerFixed.reduce((s, r) => s + (r.totalRdv || 0), 0);
+    const totalPatientsRdv = rdvByPractitionerFixed.reduce((s, r) => s + (r.totalPatients || 0), 0);
     const totalAbsences = Math.max(0, totalRdvAll - totalPatientsRdv);
     const totalPresences = totalPatientsRdv;
 
