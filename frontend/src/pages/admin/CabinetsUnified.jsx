@@ -370,6 +370,17 @@ export default function CabinetsUnified() {
     return 'Période sélectionnée';
   }, [period]);
 
+  // Label des années couvertes par les données filtrées
+  const yearsLabel = useMemo(() => {
+    const years = [...new Set(caMensuelFiltered.map(c => {
+      const m = c._id?.mois || '';
+      return m ? m.substring(0, 4) : null;
+    }).filter(Boolean))].sort();
+    if (years.length === 0) return 'Toutes années';
+    if (years.length === 1) return years[0];
+    return `${years[0]} → ${years[years.length - 1]}`;
+  }, [caMensuelFiltered]);
+
   // Label des cabinets analysés (depuis les données de la période)
   const cabinetsLabel = useMemo(() => {
     const codes = caByP.filter(c => (c.totalFacture || 0) > 0).map(c => c._id);
@@ -553,6 +564,9 @@ export default function CabinetsUnified() {
   const renderAnalysisView = () => (
     <div className="space-y-6">
       {/* KPIs */}
+      <div className="mb-1 px-0.5">
+        <p className="text-xs text-gray-400">Indicateurs d'activité \u00b7 Dr. {cabinetsLabel} \u00b7 {periodLabel} ({yearsLabel})</p>
+      </div>
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <div className={`${cardCls} rounded-xl p-5`}>
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-1"><FiUsers /> Patients traités</div>
@@ -580,7 +594,10 @@ export default function CabinetsUnified() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className={`${cardCls} rounded-xl p-6`}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Patients par Cabinet</h3>
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white">Patients par Cabinet</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Dr. {cabinetsLabel} · {periodLabel} ({yearsLabel})</p>
+            </div>
           </div>
           <div className="h-72">
             <Bar ref={patientsChartRef} data={patientsBarData} options={barOptions} plugins={isDynamic ? [streamingBarPlugin] : []} />
@@ -590,7 +607,10 @@ export default function CabinetsUnified() {
 
         <div className={`${cardCls} rounded-xl p-6`}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Activité par Cabinet</h3>
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white">Activité par Cabinet</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Consultations & heures · Dr. {cabinetsLabel} · {yearsLabel}</p>
+            </div>
           </div>
           <div className="h-72">
             <Bar ref={activiteChartRef} data={activiteBarData} options={barOptions} plugins={isDynamic ? [streamingBarPlugin] : []} />
@@ -603,6 +623,7 @@ export default function CabinetsUnified() {
       <div className={`${cardCls} rounded-xl overflow-hidden`}>
         <div className="p-4 border-b border-gray-100 dark:border-gray-700">
           <h3 className="font-semibold text-gray-900 dark:text-white">Scores de Santé IA par Cabinet</h3>
+          <p className="text-xs text-gray-400 mt-0.5">Calcul basé sur encaissement, absences & CA · Dr. {cabinetsLabel} · {periodLabel} ({yearsLabel})</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -672,14 +693,16 @@ export default function CabinetsUnified() {
       {/* Charts Comparaison */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className={`${cardCls} rounded-xl p-6 lg:col-span-2`}>
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Présences vs Absences par Cabinet</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Présences vs Absences par Cabinet</h3>
+          <p className="text-xs text-gray-400 mb-4">RDV honorés vs manqués/annulés · Dr. {cabinetsLabel} · {periodLabel} ({yearsLabel})</p>
           <div className="h-72">
             <Bar ref={barChartRef} data={comparisonBarData} options={barOptions} plugins={isDynamic ? [streamingBarPlugin] : []} />
           </div>
         </div>
 
         <div className={`${cardCls} rounded-xl p-6`}>
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Répartition Globale</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Présence vs Absence — Répartition Globale</h3>
+          <p className="text-xs text-gray-400 mb-4">Tous cabinets confondus · Dr. {cabinetsLabel} · {yearsLabel}</p>
           <div className="h-64">
             <Doughnut 
               ref={doughnutChartRef}
@@ -769,7 +792,20 @@ export default function CabinetsUnified() {
 
     return (
       <div className="space-y-5">
-        {/* ── Top 5 KPIs ─────────────────────────────── */}
+        {/* ── Bandeau contexte ───────────────────── */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-full px-3 py-1">
+            <FiCalendar className="w-3.5 h-3.5" />
+            {periodLabel} ({yearsLabel})
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-teal-700 bg-teal-50 border border-teal-100 rounded-full px-3 py-1">
+            <FiUsers className="w-3.5 h-3.5" />
+            Dr. {cabinetsLabel}
+          </span>
+          <span className="text-xs text-gray-400">Tableau de bord exécutif — toutes les données sont filtrées selon la période et les cabinets actifs</span>
+        </div>
+
+        {/* ── Top 5 KPIs ─────────────────────────────── */}}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-indigo-600 rounded-2xl p-5 text-white">
             <div className="flex items-center justify-between mb-2">
@@ -777,7 +813,7 @@ export default function CabinetsUnified() {
               <FiDollarSign className="w-5 h-5 opacity-60" />
             </div>
             <p className="text-2xl font-bold tabular-nums">{fmtEur(kpiCATotal)}</p>
-            <p className="text-xs opacity-70 mt-1">{practitioners.length} cabinets actifs</p>
+            <p className="text-xs opacity-70 mt-1">{practitioners.length} cabinets · {yearsLabel}</p>
           </div>
           <div className="bg-violet-600 rounded-2xl p-5 text-white">
             <div className="flex items-center justify-between mb-2">
@@ -801,7 +837,7 @@ export default function CabinetsUnified() {
               <FiUsers className="w-5 h-5 opacity-60" />
             </div>
             <p className="text-2xl font-bold tabular-nums">{kpiPatientsTotal.toLocaleString('fr-FR')}</p>
-            <p className="text-xs opacity-70 mt-1">traités (période)</p>
+            <p className="text-xs opacity-70 mt-1">traités · {yearsLabel}</p>
           </div>
           <div className={`rounded-2xl p-5 text-white ${tauxEncGlobal >= 85 ? 'bg-green-600' : tauxEncGlobal >= 70 ? 'bg-amber-500' : 'bg-red-500'}`}>
             <div className="flex items-center justify-between mb-2">
@@ -818,7 +854,7 @@ export default function CabinetsUnified() {
           <div className={`${cardCls} rounded-2xl p-5 lg:col-span-2`}>
             <div className="mb-4">
               <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Évolution CA — Facturé vs Encaissé</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Période sélectionnée</p>
+              <p className="text-xs text-gray-400 mt-0.5">Dr. {cabinetsLabel} · {periodLabel} ({yearsLabel})</p>
             </div>
             <div className="h-64">
               <Bar data={caBarData} options={barCaOptions} />
@@ -827,7 +863,7 @@ export default function CabinetsUnified() {
           <div className={`${cardCls} rounded-2xl p-5`}>
             <div className="mb-4">
               <h3 className="font-semibold text-gray-900 dark:text-white text-sm">CA par Praticien</h3>
-              <p className="text-xs text-gray-400 mt-0.5">CA facturé, toutes périodes</p>
+              <p className="text-xs text-gray-400 mt-0.5">CA facturé cumulé · {periodLabel} ({yearsLabel})</p>
             </div>
             <div style={{ height: `${Math.max(160, pracData.length * 54)}px` }}>
               <Bar data={hBarData} options={hBarOptions} />
@@ -839,14 +875,16 @@ export default function CabinetsUnified() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className={`${cardCls} rounded-2xl p-5`}>
             <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-1">Répartition CA Encaissé</h3>
-            <p className="text-xs text-gray-400 mb-3">Part d'encaissement par cabinet</p>
+            <p className="text-xs text-gray-400 mb-1">Part d'encaissement par cabinet</p>
+            <p className="text-xs text-indigo-400 mb-3 font-medium">Dr. {cabinetsLabel} · {periodLabel} ({yearsLabel})</p>
             <div className="h-52">
               <Doughnut data={tauxEncDoughnut} options={doughnutSimpleOpts} />
             </div>
           </div>
           <div className={`${cardCls} rounded-2xl p-5`}>
             <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-1">Présence vs Absence (RDV)</h3>
-            <p className="text-xs text-gray-400 mb-3">Répartition globale des rendez-vous</p>
+            <p className="text-xs text-gray-400 mb-1">Répartition globale des rendez-vous</p>
+            <p className="text-xs text-indigo-400 mb-3 font-medium">Dr. {cabinetsLabel} · {periodLabel} ({yearsLabel})</p>
             <div className="h-44">
               <Doughnut data={doughnutData} options={doughnutSimpleOpts} />
             </div>
@@ -863,7 +901,8 @@ export default function CabinetsUnified() {
           </div>
           <div className={`${cardCls} rounded-2xl p-5`}>
             <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-1">Top Praticiens par CA</h3>
-            <p className="text-xs text-gray-400 mb-4">Classement sur la période</p>
+            <p className="text-xs text-gray-400 mb-1">Classement sur la période</p>
+            <p className="text-xs text-indigo-400 mb-4 font-medium">{periodLabel} ({yearsLabel})</p>
             <div className="space-y-3">
               {rankedPracs.map((p, i) => (
                 <div key={p.code} className="flex items-center gap-3">
@@ -886,11 +925,12 @@ export default function CabinetsUnified() {
         {/* ── Insights IA + Synthèse ───────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="bg-slate-800 rounded-2xl p-6 text-white">
-            <div className="flex items-center gap-2.5 mb-5">
+            <div className="flex items-center gap-2.5 mb-2">
               <FiCpu className="w-5 h-5 text-indigo-400" />
               <h3 className="font-semibold text-sm">Insights Clés</h3>
               <span className="ml-auto text-[10px] bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30">IA</span>
             </div>
+            <p className="text-xs text-slate-400 mb-4">Analyse automatique · Dr. {cabinetsLabel} · {periodLabel} ({yearsLabel})</p>
             <ul className="space-y-3.5">
               {insights.map((ins, i) => (
                 <li key={i} className="flex items-start gap-3">
@@ -903,6 +943,7 @@ export default function CabinetsUnified() {
           <div className={`${cardCls} rounded-2xl overflow-hidden`}>
             <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
               <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Synthèse par Cabinet</h3>
+              <p className="text-xs text-gray-400 mt-0.5">CA facturé, patients traités, encaissement & score santé \u00b7 Dr. {cabinetsLabel} \u00b7 {periodLabel} ({yearsLabel})</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -1111,8 +1152,10 @@ export default function CabinetsUnified() {
           <div className={`rounded-2xl p-6 shadow-sm mb-6 ${cardCls}`}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className={`text-base font-bold ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>Évolution du Chiffre d'Affaires</h3>
-                <p className={`text-xs mt-0.5 ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>Facturé vs encaissé — période sélectionnée</p>
+                <h3 className={`text-base font-bold ${isRayan ? 'text-gray-900' : 'text-gray-900 dark:text-white'}`}>Évolution du Chiffre d'Affaires — Facturé vs Encaissé</h3>
+                <p className={`text-xs mt-0.5 ${isRayan ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}`}>
+                  Praticiens : {cabinetsLabel} · Période : {periodLabel} ({yearsLabel})
+                </p>
               </div>
             </div>
             <div style={{ height: '260px' }}>
