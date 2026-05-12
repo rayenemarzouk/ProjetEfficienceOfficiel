@@ -39,7 +39,7 @@ export default function CabinetsUnified() {
   const [data, setData] = useState(null);
   const [practitioners, setPractitioners] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState({ period: 'last_year' });
+  const [period, setPeriod] = useState({ period: 'all_time' });
   const [expandedInsight, setExpandedInsight] = useState({ patients: false, activite: false });
   
   const { isDynamic: _isDynamic, dataAccessEnabled } = useDynamic();
@@ -59,6 +59,10 @@ export default function CabinetsUnified() {
     let startDate, endDate;
     
     switch (periodObj?.period) {
+      case 'all_time':
+        startDate = new Date(2020, 0, 1);
+        endDate = new Date(now.getFullYear() + 1, 11, 31);
+        break;
       case 'this_month':
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -349,6 +353,28 @@ export default function CabinetsUnified() {
   const kpiRapports = data?.dashboard?.totalReports || 0;
   const kpiEmails = data?.dashboard?.reportsEnvoyes || 0;
   const kpiPerf = pracData.length > 0 ? Math.round(pracData.reduce((s, p) => s + (p.score || 0), 0) / pracData.length) : 0;
+
+  // Label de période pour affichage
+  const periodLabel = useMemo(() => {
+    if (!period?.period) return 'Toute la durée';
+    if (period.period === 'all_time') return 'Toute la durée (2024 → 2026)';
+    if (period.period === 'this_month') return 'Ce mois';
+    if (period.period === 'last_month') return 'Mois dernier';
+    if (period.period === '3_months') return '3 derniers mois';
+    if (period.period === '6_months') return '6 derniers mois';
+    if (period.period === 'this_year') return `Année ${new Date().getFullYear()}`;
+    if (period.period === 'last_year') return `Année ${new Date().getFullYear() - 1}`;
+    if (period.period === 'custom' && period.startDate && period.endDate) {
+      return `${new Date(period.startDate).toLocaleDateString('fr-FR', {month:'short',year:'numeric'})} → ${new Date(period.endDate).toLocaleDateString('fr-FR', {month:'short',year:'numeric'})}`;
+    }
+    return 'Période sélectionnée';
+  }, [period]);
+
+  // Label des cabinets analysés (depuis les données de la période)
+  const cabinetsLabel = useMemo(() => {
+    const codes = caByP.filter(c => (c.totalFacture || 0) > 0).map(c => c._id);
+    return codes.length > 0 ? codes.join(' · ') : (practitioners.map(p => p.code).join(' · ') || 'Tous');
+  }, [caByP, practitioners]);
 
   // ═══ MODÈLES IA ═══
   const patientsRdvArr = pracData.map(p => p.patientsRdv);
@@ -926,16 +952,29 @@ export default function CabinetsUnified() {
       
       <div className="p-4 lg:p-6 max-w-7xl mx-auto">
 
+        {/* ── Bandeau info période & cabinets ─────────────────────── */}
+        <div className="flex flex-wrap items-center gap-3 mb-3 px-1">
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-full px-3 py-1">
+            <FiCalendar className="w-3.5 h-3.5" />
+            {periodLabel}
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-teal-700 bg-teal-50 border border-teal-100 rounded-full px-3 py-1">
+            <FiUsers className="w-3.5 h-3.5" />
+            Cabinets analysés : {cabinetsLabel}
+          </span>
+        </div>
+
         {/* ── KPI Synthèse Globale ────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
             <div className="flex items-start justify-between">
               <div>
+                <p className="text-xs text-blue-400 mb-0.5">{periodLabel} · {cabinetsLabel}</p>
                 <p className="text-sm text-blue-600 font-medium">CA Total Facturé</p>
                 <p className="text-2xl font-bold text-blue-700 mt-1 tabular-nums">
                   {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(animKpiCA)}
                 </p>
-                <p className="text-xs text-blue-500 mt-1">{practitioners.length} cabinets</p>
+                <p className="text-xs text-blue-500 mt-1">{practitioners.length} cabinets actifs</p>
               </div>
               <FiDollarSign className="w-6 h-6 text-blue-400 flex-shrink-0" />
             </div>
@@ -943,6 +982,7 @@ export default function CabinetsUnified() {
           <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
             <div className="flex items-start justify-between">
               <div>
+                <p className="text-xs text-emerald-400 mb-0.5">{periodLabel} · {cabinetsLabel}</p>
                 <p className="text-sm text-emerald-600 font-medium">CA Encaissé</p>
                 <p className="text-2xl font-bold text-emerald-700 mt-1 tabular-nums">
                   {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(animKpiEncaisse)}
@@ -957,9 +997,10 @@ export default function CabinetsUnified() {
           <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4">
             <div className="flex items-start justify-between">
               <div>
+                <p className="text-xs text-purple-400 mb-0.5">{periodLabel} · {cabinetsLabel}</p>
                 <p className="text-sm text-purple-600 font-medium">Patients Total</p>
                 <p className="text-2xl font-bold text-purple-700 mt-1 tabular-nums">{animKpiPatients.toLocaleString('fr-FR')}</p>
-                <p className="text-xs text-purple-500 mt-1">traités (période)</p>
+                <p className="text-xs text-purple-500 mt-1">traités sur la période</p>
               </div>
               <FiUsers className="w-6 h-6 text-purple-400 flex-shrink-0" />
             </div>
@@ -967,6 +1008,7 @@ export default function CabinetsUnified() {
           <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4">
             <div className="flex items-start justify-between">
               <div>
+                <p className="text-xs text-amber-400 mb-0.5">Tous cabinets · Toutes années</p>
                 <p className="text-sm text-amber-600 font-medium">Rapports Générés</p>
                 <p className="text-2xl font-bold text-amber-700 mt-1 tabular-nums">{animKpiRapports}</p>
                 <p className="text-xs text-amber-500 mt-1">au total</p>
@@ -977,6 +1019,7 @@ export default function CabinetsUnified() {
           <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4">
             <div className="flex items-start justify-between">
               <div>
+                <p className="text-xs text-rose-400 mb-0.5">{periodLabel} · {cabinetsLabel}</p>
                 <p className="text-sm text-rose-600 font-medium">Performance Moy.</p>
                 <p className="text-2xl font-bold text-rose-700 mt-1 tabular-nums">{animKpiPerf}%</p>
                 <p className="text-xs text-rose-500 mt-1">score moyen cabinets</p>

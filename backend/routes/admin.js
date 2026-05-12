@@ -45,9 +45,11 @@ const RDV_INFER_STAGES = [
 // GET /api/admin/dashboard - Dashboard global admin
 router.get('/dashboard', auth, adminOnly, async (req, res) => {
   try {
-    // Nombre de praticiens actifs
+    // Praticiens actifs (pour l'affichage des cartes)
     const practitioners = await User.find({ role: 'practitioner', isActive: true });
-    const practitionerCodes = practitioners.map(p => getPraticienId(p));
+    // Tous les praticiens (actifs + inactifs) pour les stats globales historiques
+    const allPractitioners = await User.find({ role: 'practitioner' });
+    const practitionerCodes = allPractitioners.map(p => getPraticienId(p));
 
     // CA total par praticien (agrégé)
     const caByPractitioner = await AnalyseRealisation.aggregate([

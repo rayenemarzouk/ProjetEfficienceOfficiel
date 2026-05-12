@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { CalendarIcon, ChevronDownIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 const periodOptions = [
+  { value: 'all_time', label: 'Toute la durée' },
   { value: 'this_month', label: 'Ce mois' },
   { value: 'last_month', label: 'Mois dernier' },
   { value: '3_months', label: '3 derniers mois' },
