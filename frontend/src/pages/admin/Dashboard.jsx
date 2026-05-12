@@ -473,7 +473,7 @@ export default function AdminDashboard() {
                 <div>
                   <p className="text-sm text-purple-600 font-medium">Rapports Générés</p>
                   <p className="text-3xl font-bold text-purple-600 mt-1">{animRapports}</p>
-                  <p className="text-xs text-purple-500 mt-1">ce mois</p>
+                  <p className="text-xs text-purple-500 mt-1">total historique</p>
                 </div>
                 <FiFileText className={`w-6 h-6 text-purple-400 ${isDynamic ? 'animate-float-soft' : ''}`} />
               </div>
@@ -483,7 +483,7 @@ export default function AdminDashboard() {
                 <div>
                   <p className="text-sm text-green-600 font-medium">Emails Envoyés</p>
                   <p className="text-3xl font-bold text-green-600 mt-1">{animEmails}</p>
-                  <p className="text-xs text-green-500 mt-1">taux : 98%</p>
+                  <p className="text-xs text-green-500 mt-1">taux : {rapportsGeneres > 0 ? Math.round((emailsEnvoyes / rapportsGeneres) * 100) : 0}%</p>
                 </div>
                 <FiMail className={`w-6 h-6 text-green-400 ${isDynamic ? 'animate-float-soft' : ''}`} />
               </div>
