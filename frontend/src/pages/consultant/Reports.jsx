@@ -230,7 +230,7 @@ export default function ConsultantReports() {
                         
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => handleDownload(report._id, report.filename)}
+                            onClick={() => handleDownload(report.id || report._id, `rapport_${report.praticien || report.practitionerCode}_${report.mois}.html`)}
                             disabled={downloading === report._id}
                             className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
                             title="Télécharger"

@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+﻿const nodemailer = require('nodemailer');
 
 const createTransporter = () => {
   return nodemailer.createTransport({
@@ -42,10 +42,14 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
   const heuresTravaillees = parseFloat(kpi?.heuresTravaillees || 0);
   const tauxAcceptationDevis = parseFloat(kpi?.tauxAcceptationDevis || 0);
   const tauxAbsence = Number.isFinite(Number(kpi?.tauxAbsence)) ? Number(kpi?.tauxAbsence) : 0;
-  const financialCommentary = String(kpi?.financialCommentary || 'Analyse financière indisponible pour ce rapport.');
-  const rdvHonores = Math.round(nbRdv * 0.95);
-  const patientsTraites = Math.round(nbPatients * 0.85);
-  const tauxConversion = nbPatients > 0 ? Math.min(95, Math.round((patientsTraites / nbPatients) * 100)) : 85;
+  const financialCommentary = String(kpi?.financialCommentary || 'Analyse financi\u00e8re indisponible pour ce rapport.');
+  const financialCommentaryHTML = financialCommentary
+    .split('\n\n')
+    .map(para => `<p style="margin:0 0 8px;font-size:13px;line-height:1.7;color:#1e293b;">${para.replace(/\n/g, '<br>')}</p>`)
+    .join('');
+  // RDV honor\u00e9s coh\u00e9rent avec le taux d'absence r\u00e9el
+  const rdvHonores = tauxAbsence > 0 ? Math.round(nbRdv * (1 - tauxAbsence / 100)) : nbRdv;
+  const rdvManques = nbRdv - rdvHonores;
 
   // Score global
   const scoreCA = Math.min(100, progression);
@@ -53,24 +57,14 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
   const scorePatients = Math.min(100, Math.round((nbPatients / 200) * 100));
   const performanceGlobale = Math.round((scoreCA * 0.4 + scoreProd * 0.3 + scorePatients * 0.3));
   const performanceColor = performanceGlobale >= 80 ? '#10b981' : performanceGlobale >= 60 ? '#f59e0b' : '#ef4444';
-  const statutOK = true; // Tous les cabinets sont affichés comme OK
-
-  // Actes data
-  const actesData = [
-    { type: 'Consultations', icon: '\uD83D\uDD0D', nombre: Math.round(nbRdv * 0.44), ca: Math.round(ca * 0.18), pct: 18, color: '#3b82f6' },
-    { type: 'D\u00E9tartrages', icon: '\uD83E\uDDB7', nombre: Math.round(nbRdv * 0.34), ca: Math.round(ca * 0.20), pct: 20, color: '#10b981' },
-    { type: 'Soins conservateurs', icon: '\u2695\uFE0F', nombre: Math.round(nbRdv * 0.15), ca: Math.round(ca * 0.19), pct: 19, color: '#8b5cf6' },
-    { type: 'Proth\u00E8ses', icon: '\uD83D\uDC51', nombre: Math.round(nbRdv * 0.07), ca: Math.round(ca * 0.43), pct: 43, color: '#f59e0b' },
-  ];
-  const totalActes = actesData.reduce((s, a) => s + a.nombre, 0);
-  const totalCAActes = actesData.reduce((s, a) => s + a.ca, 0);
+  const statutOK = true; // Tous les cabinets sont affich\u00e9s comme OK
 
   const fmtMoney = (v) => Number(v || 0).toLocaleString('fr-FR');
 
   // Build Comportement du Cabinet section dynamically
   function buildComportementCabinet() {
     if (hist.length === 0) {
-      return '<p style="margin:10px 0;font-size:13px;color:#94a3b8;text-align:center;">Aucune donnée historique disponible.</p>';
+      return '<p style="margin:10px 0;font-size:13px;color:#94a3b8;text-align:center;">Aucune donn\u00e9e historique disponible.</p>';
     }
     const cur = hist[hist.length - 1] || {};
     const prv = hist.length > 1 ? hist[hist.length - 2] : null;
@@ -82,8 +76,8 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
     o += '<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;"><tr>';
     // CA du mois
     o += '<td width="25%" style="text-align:center;padding:18px 10px;background:#eff6ff;border-right:1px solid #e2e8f0;">';
-    o += '<p style="margin:0;font-size:24px;font-weight:800;color:#2563eb;">' + fmtMoney(cur.ca || 0) + ' €</p>';
-    o += '<p style="margin:4px 0 0;font-size:10px;color:#64748b;">💰 CA du mois</p>';
+    o += '<p style="margin:0;font-size:24px;font-weight:800;color:#2563eb;">' + fmtMoney(cur.ca || 0) + ' &euro;</p>';
+    o += '<p style="margin:4px 0 0;font-size:10px;color:#64748b;">&#x1F4B0; CA du mois</p>';
     if (caEvol !== null) {
       const c = parseFloat(caEvol) >= 0 ? '#10b981' : '#ef4444';
       const s = parseFloat(caEvol) >= 0 ? '+' : '';
@@ -93,7 +87,7 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
     // Patients
     o += '<td width="25%" style="text-align:center;padding:18px 10px;background:#f0fdf4;border-right:1px solid #e2e8f0;">';
     o += '<p style="margin:0;font-size:24px;font-weight:800;color:#10b981;">' + (cur.patients || 0) + '</p>';
-    o += '<p style="margin:4px 0 0;font-size:10px;color:#64748b;">👥 Patients</p>';
+    o += '<p style="margin:4px 0 0;font-size:10px;color:#64748b;">&#x1F465; Patients</p>';
     if (patEvol !== null) {
       const c2 = parseFloat(patEvol) >= 0 ? '#10b981' : '#ef4444';
       const s2 = parseFloat(patEvol) >= 0 ? '+' : '';
@@ -103,12 +97,12 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
     // RDV
     o += '<td width="25%" style="text-align:center;padding:18px 10px;background:#faf5ff;border-right:1px solid #e2e8f0;">';
     o += '<p style="margin:0;font-size:24px;font-weight:800;color:#8b5cf6;">' + (cur.rdv || nbRdv || 0) + '</p>';
-    o += '<p style="margin:4px 0 0;font-size:10px;color:#64748b;">📅 RDV</p></td>';
+    o += '<p style="margin:4px 0 0;font-size:10px;color:#64748b;">&#x1F4C5; RDV</p></td>';
     // Heures
     o += '<td width="25%" style="text-align:center;padding:18px 10px;background:#fffbeb;">';
     const hT = cur.heures ? (cur.heures / 60).toFixed(0) : Math.round(heuresTravaillees);
     o += '<p style="margin:0;font-size:24px;font-weight:800;color:#f59e0b;">' + hT + 'h</p>';
-    o += '<p style="margin:4px 0 0;font-size:10px;color:#64748b;">⏰ Heures</p></td>';
+    o += '<p style="margin:4px 0 0;font-size:10px;color:#64748b;">&#x23F0; Heures</p></td>';
     o += '</tr></table>';
 
     return o;
@@ -273,7 +267,7 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
               <tr>
                 <td style="padding:14px 16px;">
                   <p style="margin:0;font-size:11px;font-weight:700;color:#1d4ed8;letter-spacing:0.3px;text-transform:uppercase;">Commentaire IA financier</p>
-                  <p style="margin:6px 0 0;font-size:13px;line-height:1.6;color:#1e293b;">${financialCommentary}</p>
+                  <div style="margin:6px 0 0;">${financialCommentaryHTML}</div>
                 </td>
               </tr>
             </table>
@@ -294,155 +288,24 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
             <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
               <tr>
                 <td width="25%" style="text-align:center;padding:18px 10px;background:#eff6ff;border-right:1px solid #e2e8f0;">
-                  <p style="margin:0;font-size:28px;font-weight:800;color:#2563eb;">${nbNouveauxPatients}</p>
-                  <p style="margin:4px 0 0;font-size:10px;color:#64748b;">Nouveaux patients</p>
+                  <p style="margin:0;font-size:28px;font-weight:800;color:#2563eb;">${nbPatients}</p>
+                  <p style="margin:4px 0 0;font-size:10px;color:#64748b;">Patients</p>
                 </td>
                 <td width="25%" style="text-align:center;padding:18px 10px;background:#f0fdf4;border-right:1px solid #e2e8f0;">
-                  <p style="margin:0;font-size:28px;font-weight:800;color:#10b981;">${patientsTraites}</p>
-                  <p style="margin:4px 0 0;font-size:10px;color:#64748b;">Patients trait\u00E9s</p>
+                  <p style="margin:0;font-size:28px;font-weight:800;color:#10b981;">${nbRdv}</p>
+                  <p style="margin:4px 0 0;font-size:10px;color:#64748b;">RDV total</p>
                 </td>
                 <td width="25%" style="text-align:center;padding:18px 10px;background:#faf5ff;border-right:1px solid #e2e8f0;">
                   <p style="margin:0;font-size:28px;font-weight:800;color:#8b5cf6;">${rdvHonores}</p>
                   <p style="margin:4px 0 0;font-size:10px;color:#64748b;">RDV honor\u00E9s</p>
                 </td>
-                <td width="25%" style="text-align:center;padding:18px 10px;background:#fef2f2;">
-                  <p style="margin:0;font-size:28px;font-weight:800;color:#ef4444;">${tauxAbsence}%</p>
-                  <p style="margin:4px 0 0;font-size:10px;color:#64748b;">Taux d'absence</p>
+                <td width="25%" style="text-align:center;padding:18px 10px;background:${tauxAbsence > 10 ? '#fef2f2' : '#f0fdf4'};">
+                  <p style="margin:0;font-size:28px;font-weight:800;color:${tauxAbsence > 10 ? '#ef4444' : '#10b981'};">${tauxAbsence}%</p>
+                  <p style="margin:4px 0 0;font-size:10px;color:#64748b;">Absent\u00E9isme</p>
                 </td>
               </tr>
             </table>
-
-            <p style="margin:18px 0 6px;font-size:12px;color:#64748b;">Taux de conversion patients <span style="color:#10b981;font-weight:700;">${tauxConversion}%</span></p>
-            <table width="100%" cellpadding="0" cellspacing="0" style="background:#e2e8f0;border-radius:6px;overflow:hidden;">
-              <tr>
-                <td style="width:${tauxConversion}%;background:linear-gradient(90deg,#10b981,#34d399);padding:7px 12px;border-radius:6px;color:#fff;font-size:11px;font-weight:700;"></td>
-              </tr>
-            </table>
-            <p style="margin:6px 0 0;font-size:11px;color:#64748b;">Objectif : \u2265 80% | ${tauxConversion >= 80 ? '\u2705 Objectif atteint' : '\u26A0\uFE0F \u00C0 am\u00E9liorer'}</p>
-          </td>
-        </tr>
-
-        <!-- R\u00C9PARTITION DES ACTES -->
-        <tr>
-          <td style="padding:30px 40px 0;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e2e8f0;padding-top:25px;">
-              <tr>
-                <td style="border-left:4px solid #f59e0b;padding-left:12px;">
-                  <p style="margin:0;font-size:18px;font-weight:700;color:#1e293b;">&#x1F9B7; R\u00C9PARTITION DES ACTES</p>
-                </td>
-              </tr>
-            </table>
-
-            <p style="margin:15px 0 8px;font-size:13px;color:#475569;">CA Total <strong>${fmtMoney(totalCAActes)}\u20AC</strong></p>
-
-            ${actesData.map(a => `
-            <p style="margin:12px 0 4px;font-size:12px;color:#475569;">${a.type} (${a.nombre}) <strong style="color:${a.color};">${fmtMoney(a.ca)} \u20AC</strong></p>
-            <table width="100%" cellpadding="0" cellspacing="0" style="background:#e2e8f0;border-radius:4px;overflow:hidden;">
-              <tr>
-                <td style="width:${a.pct}%;background:${a.color};padding:5px 10px;border-radius:4px;color:#fff;font-size:10px;font-weight:700;">${a.pct}%</td>
-              </tr>
-            </table>
-            `).join('')}
-
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;border-collapse:collapse;border-radius:10px;overflow:hidden;">
-              <tr style="background:#1e293b;">
-                <td style="padding:10px 14px;font-size:12px;color:#fff;font-weight:600;">Type d'acte</td>
-                <td style="padding:10px 14px;font-size:12px;color:#fff;font-weight:600;text-align:center;">Nombre</td>
-                <td style="padding:10px 14px;font-size:12px;color:#fff;font-weight:600;text-align:right;">CA G\u00E9n\u00E9r\u00E9</td>
-              </tr>
-              ${actesData.map((a, i) => `
-              <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f8fafc'};border-bottom:1px solid #f1f5f9;">
-                <td style="padding:10px 14px;font-size:13px;color:#334155;">${a.icon} ${a.type}</td>
-                <td style="padding:10px 14px;font-size:13px;color:#475569;text-align:center;">${a.nombre}</td>
-                <td style="padding:10px 14px;font-size:13px;font-weight:700;color:#1e293b;text-align:right;">${fmtMoney(a.ca)} \u20AC</td>
-              </tr>
-              `).join('')}
-              <tr style="background:#1e293b;">
-                <td style="padding:10px 14px;font-size:13px;color:#fff;font-weight:800;">TOTAL</td>
-                <td style="padding:10px 14px;font-size:13px;color:#fff;font-weight:700;text-align:center;">${totalActes}</td>
-                <td style="padding:10px 14px;font-size:13px;color:#10b981;font-weight:800;text-align:right;">${fmtMoney(totalCAActes)} \u20AC</td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-
-        <!-- RECOMMANDATIONS -->
-        <tr>
-          <td style="padding:30px 40px 0;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e2e8f0;padding-top:25px;">
-              <tr>
-                <td style="border-left:4px solid #f59e0b;padding-left:12px;">
-                  <p style="margin:0;font-size:18px;font-weight:700;color:#1e293b;">&#x1F4A1; RECOMMANDATIONS</p>
-                </td>
-              </tr>
-            </table>
-
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px;border-left:4px solid #3b82f6;background:#eff6ff;border-radius:0 10px 10px 0;overflow:hidden;">
-              <tr>
-                <td style="padding:18px 20px;">
-                  <p style="margin:0;font-size:14px;font-weight:700;color:#1e293b;">1. Optimiser le taux de conversion des devis (+5-10% potentiel)</p>
-                  <ul style="margin:8px 0 0;padding-left:20px;color:#475569;font-size:13px;">
-                    <li style="padding:3px 0;">Mettre en place un suivi syst\u00E9matique des devis non accept\u00E9s</li>
-                    <li style="padding:3px 0;">Proposer des facilit\u00E9s de paiement</li>
-                  </ul>
-                </td>
-              </tr>
-            </table>
-
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;border-left:4px solid #10b981;background:#f0fdf4;border-radius:0 10px 10px 0;overflow:hidden;">
-              <tr>
-                <td style="padding:18px 20px;">
-                  <p style="margin:0;font-size:14px;font-weight:700;color:#1e293b;">2. Maintenir le bon taux de pr\u00E9sence \u2713</p>
-                  <ul style="margin:8px 0 0;padding-left:20px;color:#475569;font-size:13px;">
-                    <li style="padding:3px 0;">Envoyer des rappels SMS 48h et 24h avant le RDV</li>
-                    <li style="padding:3px 0;">Mettre en place une politique de gestion des annulations</li>
-                  </ul>
-                </td>
-              </tr>
-            </table>
-
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;border-left:4px solid #f59e0b;background:#fffbeb;border-radius:0 10px 10px 0;overflow:hidden;">
-              <tr>
-                <td style="padding:18px 20px;">
-                  <p style="margin:0;font-size:14px;font-weight:700;color:#1e293b;">3. D\u00E9velopper l'activit\u00E9 proth\u00E9tique</p>
-                  <ul style="margin:8px 0 0;padding-left:20px;color:#475569;font-size:13px;">
-                    <li style="padding:3px 0;">Fort potentiel de CA sur ce segment</li>
-                    <li style="padding:3px 0;">Investir dans la formation continue</li>
-                  </ul>
-                </td>
-              </tr>
-            </table>
-
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;border-left:4px solid #ef4444;background:#fef2f2;border-radius:0 10px 10px 0;overflow:hidden;">
-              <tr>
-                <td style="padding:18px 20px;">
-                  <p style="margin:0;font-size:14px;font-weight:700;color:#1e293b;">4. Fid\u00E9lisation patients</p>
-                  <ul style="margin:8px 0 0;padding-left:20px;color:#475569;font-size:13px;">
-                    <li style="padding:3px 0;">Programme de rappel pour contr\u00F4les annuels</li>
-                    <li style="padding:3px 0;">Communication r\u00E9guli\u00E8re (newsletter)</li>
-                  </ul>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-
-        <!-- PROCHAINES \u00C9TAPES -->
-        <tr>
-          <td style="padding:30px 40px 0;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e2e8f0;padding-top:25px;">
-              <tr>
-                <td style="border-left:4px solid #2563eb;padding-left:12px;">
-                  <p style="margin:0;font-size:18px;font-weight:700;color:#1e293b;">&#x1F4C5; PROCHAINES \u00C9TAPES</p>
-                </td>
-              </tr>
-            </table>
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:15px;">
-              <tr><td style="padding:10px 0;font-size:13px;color:#475569;">\u2610 R\u00E9union d'\u00E9quipe pour pr\u00E9senter les r\u00E9sultats</td></tr>
-              <tr><td style="padding:10px 0;font-size:13px;color:#475569;border-top:1px solid #f1f5f9;">\u2610 Mise en place du syst\u00E8me de rappels automatiques</td></tr>
-              <tr><td style="padding:10px 0;font-size:13px;color:#475569;border-top:1px solid #f1f5f9;">\u2610 Audit des devis en attente (&gt; 30 jours)</td></tr>
-              <tr><td style="padding:10px 0;font-size:13px;color:#475569;border-top:1px solid #f1f5f9;">\u2610 Formation sur les techniques de pr\u00E9sentation des plans de traitement</td></tr>
-            </table>
+            ${rdvManques > 0 ? '<p style="margin:12px 0 0;font-size:12px;color:#64748b;">RDV manqu\u00E9s / annul\u00E9s\u00A0: <strong style="color:#ef4444;">' + rdvManques + '</strong> sur ' + nbRdv + '</p>' : '<p style="margin:12px 0 0;font-size:12px;color:#10b981;">\u2705 Aucun RDV manqu\u00E9 ce mois-ci</p>'}
           </td>
         </tr>
 

@@ -211,6 +211,43 @@ router.post('/manual-entry', auth, practitionerOnly, async (req, res) => {
     let result;
 
     switch (type) {
+      case 'instantanee': {
+        // Saves to AnalyseRealisation + AnalyseRendezVous + AnalyseJoursOuverts in one shot
+        const nbPatients = parseFloat(data.nbPatients) || 0;
+        const montantFacture = parseFloat(data.montantFacture) || 0;
+        const nbHeuresMin = parseFloat(data.nbHeures) || 0; // stored in minutes
+        const [rRes, rvRes, joRes] = await Promise.all([
+          AnalyseRealisation.findOneAndUpdate(
+            { praticien: code, mois },
+            {
+              praticien: code, mois,
+              nbPatients,
+              montantFacture,
+              montantEncaisse: parseFloat(data.montantEncaisse) || 0
+            },
+            { upsert: true, new: true }
+          ),
+          AnalyseRendezVous.findOneAndUpdate(
+            { praticien: code, mois },
+            {
+              praticien: code, mois,
+              nbRdv: parseFloat(data.nbRdv) || 0,
+              dureeTotaleRdv: parseFloat(data.dureeTotaleRdv) || 0,
+              nbPatients,
+              nbNouveauxPatients: parseFloat(data.nbNouveauxPatients) || 0
+            },
+            { upsert: true, new: true }
+          ),
+          AnalyseJoursOuverts.findOneAndUpdate(
+            { praticien: code, mois },
+            { praticien: code, mois, nbHeures: nbHeuresMin },
+            { upsert: true, new: true }
+          )
+        ]);
+        result = { realisation: rRes, rendezVous: rvRes, joursOuverts: joRes };
+        break;
+      }
+
       case 'realisation':
         result = await AnalyseRealisation.findOneAndUpdate(
           { praticien: code, mois },
@@ -252,31 +289,40 @@ router.post('/manual-entry', auth, practitionerOnly, async (req, res) => {
         );
         break;
 
-      case 'devis':
+      case 'devis': {
+        const nbDevis = parseFloat(data.nbDevis) || 0;
+        const montantPropositions = parseFloat(data.montantPropositions) || 0;
+        const nbDevisAcceptes = parseFloat(data.nbDevisAcceptes) || 0;
+        const montantAccepte = parseFloat(data.montantAccepte) || 0;
         result = await AnalyseDevis.findOneAndUpdate(
           { praticien: code, mois },
           {
             praticien: code,
             mois,
-            nbDevis: parseFloat(data.nbDevis) || 0,
-            montantPropositions: parseFloat(data.montantPropositions) || 0,
-            nbDevisAcceptes: parseFloat(data.nbDevisAcceptes) || 0,
-            montantAccepte: parseFloat(data.montantAccepte) || 0
+            nbDevis,
+            montantPropositions,
+            montantDevisEnAttente: parseFloat(data.montantDevisEnAttente) || 0,
+            montantMoyenPresente: nbDevis > 0 ? Math.round(montantPropositions / nbDevis) : 0,
+            nbDevisAcceptes,
+            tauxAcceptationNombre: nbDevis > 0 ? Math.round((nbDevisAcceptes / nbDevis) * 100 * 10) / 10 : 0,
+            montantAccepte,
+            montantMoyenAccepte: nbDevisAcceptes > 0 ? Math.round(montantAccepte / nbDevisAcceptes) : 0,
+            tauxAcceptationMontant: montantPropositions > 0 ? Math.round((montantAccepte / montantPropositions) * 100 * 10) / 10 : 0
           },
           { upsert: true, new: true }
         );
         break;
+      }
 
       case 'encours':
         result = await Encours.findOneAndUpdate(
           { praticien: code },
           {
             praticien: code,
+            patientsEnCours: parseFloat(data.patientsEnCours) || 0,
             dureeTotaleARealiser: parseFloat(data.dureeTotaleARealiser) || 0,
             montantTotalAFacturer: parseFloat(data.montantTotalAFacturer) || 0,
             rentabiliteHoraire: parseFloat(data.rentabiliteHoraire) || 0,
-            rentabiliteJoursTravailles: parseFloat(data.rentabiliteJoursTravailles) || 0,
-            patientsEnCours: parseFloat(data.patientsEnCours) || 0,
             dateImport: new Date()
           },
           { upsert: true, new: true }
@@ -304,6 +350,23 @@ router.get('/manual-entry/:type/:mois', auth, practitionerOnly, async (req, res)
     let data = null;
 
     switch (type) {
+      case 'instantanee': {
+        const [real, rdv, jo] = await Promise.all([
+          AnalyseRealisation.findOne({ praticien: code, mois }),
+          AnalyseRendezVous.findOne({ praticien: code, mois }),
+          AnalyseJoursOuverts.findOne({ praticien: code, mois })
+        ]);
+        data = {
+          montantFacture: real?.montantFacture || 0,
+          montantEncaisse: real?.montantEncaisse || 0,
+          nbPatients: real?.nbPatients || rdv?.nbPatients || 0,
+          nbNouveauxPatients: rdv?.nbNouveauxPatients || 0,
+          nbRdv: rdv?.nbRdv || 0,
+          dureeTotaleRdv: rdv?.dureeTotaleRdv || 0,
+          nbHeures: jo?.nbHeures || 0
+        };
+        break;
+      }
       case 'realisation':
         data = await AnalyseRealisation.findOne({ praticien: code, mois });
         break;

@@ -6,6 +6,7 @@ const analyseDevisSchema = new mongoose.Schema({
   // Devis présentés
   nbDevis: { type: Number, default: 0 },
   montantPropositions: { type: Number, default: 0 },
+  montantDevisEnAttente: { type: Number, default: 0 },
   montantMoyenPresente: { type: Number, default: 0 },
   // Devis acceptés
   nbDevisAcceptes: { type: Number, default: 0 },

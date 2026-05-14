@@ -756,15 +756,20 @@ router.get('/reports', auth, consultantOnly, async (req, res) => {
     const enriched = reports.map(r => {
       const p = practitioners.find(pr => getPraticienId(pr) === r.praticien);
       return {
+        _id: r._id,
         id: r._id,
         praticien: r.praticien,
+        practitionerCode: r.praticien,
+        practitionerName: p?.name || r.praticien,
         praticienNom: p?.name || r.praticien,
         cabinetName: p?.cabinetName || 'Cabinet',
         email: p?.email || '',
         mois: r.mois,
         moisLabel: formatMoisLabel(r.mois),
         type: r.type,
+        status: r.emailEnvoye ? 'sent' : 'generated',
         emailEnvoye: r.emailEnvoye,
+        sentAt: r.dateEnvoi,
         dateEnvoi: r.dateEnvoi,
         createdAt: r.createdAt,
         contenu: r.contenu
@@ -835,6 +840,11 @@ router.post('/manual-entry', auth, consultantOnly, async (req, res) => {
       delaiMoyenAcceptation,
       montantTotalRealise,
       montantMoyenRealise,
+      montantDevisEnAttente,
+      // === En cours ===
+      nbPatientsEnCours,
+      dureeTotaleARealiser,
+      montantTotalAFacturer,
       // === Actes réalisés (capture 2) ===
       soinsConservateurs,
       prothesesFixes,
@@ -944,7 +954,23 @@ router.post('/manual-entry', auth, consultantOnly, async (req, res) => {
         tauxAcceptationMontant:Number(tauxAcceptationMontant)|| 0,
         delaiMoyenAcceptation: Number(delaiMoyenAcceptation) || 0,
         montantTotalRealise:   Number(montantTotalRealise)   || 0,
-        montantMoyenRealise:   Number(montantMoyenRealise)   || 0
+        montantMoyenRealise:   Number(montantMoyenRealise)   || 0,
+        montantDevisEnAttente: Number(montantDevisEnAttente) || 0
+      },
+      { upsert: true, new: true }
+    );
+
+    // Upsert Encours
+    const heuresEnCours = Number(dureeTotaleARealiser) || 0;
+    const montantEnCours = Number(montantTotalAFacturer) || 0;
+    await Encours.findOneAndUpdate(
+      { praticien },
+      {
+        praticien,
+        patientsEnCours:      Number(nbPatientsEnCours)   || 0,
+        dureeTotaleARealiser: heuresEnCours,
+        montantTotalAFacturer: montantEnCours,
+        rentabiliteHoraire:   heuresEnCours > 0 ? montantEnCours / heuresEnCours : 0
       },
       { upsert: true, new: true }
     );

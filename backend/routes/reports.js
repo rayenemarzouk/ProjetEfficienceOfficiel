@@ -225,74 +225,108 @@ function generateFinancialCommentary(kpi, practitionerCode, mois, style = 'consu
   const encaisse = Number(kpi.montantEncaisse || 0);
   const prod = Number(kpi.productionHoraire || 0);
   const objProd = Number(kpi.objectifHoraire || 0);
-  const tauxEnc = ca > 0 ? (encaisse / ca) * 100 : 0;
-  const tauxDevis = Number(kpi.tauxAcceptationDevis || 0);
+  const tauxEnc = ca > 0 ? Math.round((encaisse / ca) * 100) : 0;
+  const tauxDevis = Math.round(Number(kpi.tauxAcceptationDevis || 0));
+  const nbDevis = Number(kpi.nbDevis || 0);
+  const nbDevisAcceptes = Number(kpi.nbDevisAcceptes || 0);
+  const nbRdv = Number(kpi.nbRdv || 0);
+  const tauxAbsence = Math.round(Number(kpi.tauxAbsence || 0));
   const ecartCA = ca - objectif;
-  const ecartProd = prod - objProd;
+  const ecartPct = objectif > 0 ? Math.round((ecartCA / objectif) * 100) : 0;
+  const isConsultant = style === 'consultant';
 
-  const key = `${practitionerCode || ''}${mois || ''}${style}`;
-  const variant = key.split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 3;
+  const fmt = (n) => Math.round(n).toLocaleString('fr-FR');
 
-  let ouverture;
-  const isConsultantStyle = style === 'consultant';
-  if (ecartCA >= 0 && tauxEnc >= 90) {
-    const opts = isConsultantStyle
-      ? [
-        `Le cabinet surperforme ce mois-ci: le CA dépasse la cible de ${Math.abs(Math.round(ecartCA)).toLocaleString('fr-FR')} EUR avec une conversion en trésorerie élevée.`,
-        `La trajectoire business est robuste: objectif dépassé et encaissement sécurisé, ce qui améliore la visibilité financière.`,
-        `Les indicateurs valident un mois très performant, avec un CA au-dessus du plan et un excellent niveau d'encaissement.`
-      ]
-      : [
-        `Très bon mois: vous êtes au-dessus de l'objectif de ${Math.abs(Math.round(ecartCA)).toLocaleString('fr-FR')} EUR et l'encaissement suit bien.`,
-        `La dynamique est positive sur le terrain: objectif atteint puis dépassé, avec des règlements bien récupérés.`,
-        `Vos résultats sont solides: bonne production clinique et encaissement efficace sur la période.`
-      ];
-    ouverture = opts[variant];
-  } else if (ecartCA >= 0) {
-    const opts = isConsultantStyle
-      ? [
-        `Le CA est conforme au plan, avec un levier de marge immédiat sur l'accélération de l'encaissement.`,
-        `Le mois est dans la cible côté production; la priorité business reste la vitesse de conversion en cash.`,
-        `La performance est stable et alignée avec l'objectif, mais la trésorerie peut être sécurisée plus tôt.`
-      ]
-      : [
-        `Objectif atteint, bravo. Le point à travailler est surtout de transformer plus vite en encaissement.`,
-        `Vous êtes dans le bon rythme de production; l'étape suivante est de réduire le délai de règlement.`,
-        `Le niveau d'activité est bon ce mois-ci, avec encore du potentiel sur la partie encaissement.`
-      ];
-    ouverture = opts[variant];
+  // --- Paragraphe 1 : bilan chiffré du CA + productivité ---
+  let para1 = '';
+  if (ca > 0 && objectif > 0) {
+    if (ecartCA >= 0) {
+      para1 = isConsultant
+        ? `Le cabinet affiche ce mois un chiffre d'affaires de ${fmt(ca)} €, soit ${ecartPct > 0 ? '+' + ecartPct : ecartPct}% par rapport à l'objectif fixé à ${fmt(objectif)} €. La dynamique de production est bien orientée.`
+        : `Votre CA du mois s'élève à ${fmt(ca)} €, au-dessus de l'objectif de ${fmt(objectif)} € (${ecartPct > 0 ? '+' + ecartPct : ecartPct}%). Bonne dynamique à maintenir.`;
+    } else {
+      para1 = isConsultant
+        ? `Le cabinet enregistre un chiffre d'affaires de ${fmt(ca)} € ce mois-ci, en retrait de ${Math.abs(ecartPct)}% par rapport à l'objectif de ${fmt(objectif)} €. Un plan d'action à court terme est nécessaire pour corriger la trajectoire.`
+        : `Votre CA du mois est de ${fmt(ca)} €, soit ${Math.abs(ecartPct)}% en dessous de l'objectif de ${fmt(objectif)} €. Il faut rattraper ce retard rapidement.`;
+    }
+  } else if (ca > 0) {
+    para1 = isConsultant
+      ? `Le cabinet enregistre un chiffre d'affaires de ${fmt(ca)} € ce mois-ci.`
+      : `Votre CA du mois s'élève à ${fmt(ca)} €.`;
   } else {
-    const opts = isConsultantStyle
-      ? [
-        `Le CA reste sous la cible de ${Math.abs(Math.round(ecartCA)).toLocaleString('fr-FR')} EUR; un recentrage commercial est nécessaire à court terme.`,
-        `Le mois est en retrait par rapport au plan et nécessite une action immédiate sur le pipeline devis et les relances.`,
-        `La performance financière est inférieure à l'attendu, avec un gap à corriger sur les prochaines semaines.`
-      ]
-      : [
-        `Le CA est en dessous de l'objectif de ${Math.abs(Math.round(ecartCA)).toLocaleString('fr-FR')} EUR; il faut reprendre de l'avance rapidement.`,
-        `Le mois est plus difficile que prévu: priorisez les devis à fort potentiel et le suivi des patients hésitants.`,
-        `La période est en retrait par rapport à l'objectif, mais un plan d'action simple peut corriger la trajectoire.`
-      ];
-    ouverture = opts[variant];
+    para1 = isConsultant
+      ? "Les données de production du mois ne permettent pas encore d'établir un bilan financier complet."
+      : "Les données de production du mois sont en cours de consolidation.";
   }
 
-  const productivite = ecartProd >= 0
-    ? (isConsultantStyle
-      ? `La productivité horaire est au-dessus de la référence (${Math.round(prod)} EUR/h vs ${Math.round(objProd)} EUR/h), ce qui soutient la rentabilité.`
-      : `Votre productivité horaire est au-dessus de la référence (${Math.round(prod)} EUR/h vs ${Math.round(objProd)} EUR/h), continuez ce rythme.`)
-    : (isConsultantStyle
-      ? `La productivité horaire reste sous la référence (${Math.round(prod)} EUR/h vs ${Math.round(objProd)} EUR/h) et pèse sur l'efficacité opérationnelle.`
-      : `La productivité horaire est sous la référence (${Math.round(prod)} EUR/h vs ${Math.round(objProd)} EUR/h): ajustez la planification des actes pour remonter.`);
+  // Productivité horaire chiffrée
+  if (prod > 0) {
+    if (objProd > 0) {
+      const prodEcart = Math.round(prod - objProd);
+      para1 += isConsultant
+        ? ` La productivité horaire atteint ${fmt(prod)} €/h (objectif : ${fmt(objProd)} €/h, écart : ${prodEcart >= 0 ? '+' : ''}${fmt(prodEcart)} €/h).`
+        : ` Votre productivité horaire est de ${fmt(prod)} €/h (objectif : ${fmt(objProd)} €/h).`;
+    } else {
+      para1 += isConsultant
+        ? ` La productivité horaire s'établit à ${fmt(prod)} €/h.`
+        : ` Votre productivité horaire est de ${fmt(prod)} €/h.`;
+    }
+  }
 
-  const devis = tauxDevis >= 65
-    ? (isConsultantStyle
-      ? `Le taux d'acceptation des devis (${tauxDevis.toFixed(1)}%) soutient correctement la croissance du chiffre d'affaires.`
-      : `Le taux d'acceptation des devis (${tauxDevis.toFixed(1)}%) est bon et soutient votre activité.`)
-    : (isConsultantStyle
-      ? `Le taux d'acceptation des devis (${tauxDevis.toFixed(1)}%) limite la progression et nécessite une stratégie de conversion plus active.`
-      : `Le taux d'acceptation des devis (${tauxDevis.toFixed(1)}%) freine la progression: renforcez l'explication des plans de traitement.`);
+  // --- Paragraphe 2 : encaissement chiffré ---
+  let para2 = '';
+  if (ca > 0) {
+    const nonEncaisse = ca - encaisse;
+    if (tauxEnc >= 90) {
+      para2 = isConsultant
+        ? `L'encaissement est très satisfaisant ce mois-ci : ${fmt(encaisse)} € encaissés sur ${fmt(ca)} € produits, soit un taux de ${tauxEnc}%. La trésorerie du cabinet est bien alimentée.`
+        : `Encaissement solide : ${fmt(encaisse)} € encaissés sur ${fmt(ca)} € (${tauxEnc}%). Votre trésorerie est bien gérée.`;
+    } else if (tauxEnc >= 75) {
+      para2 = isConsultant
+        ? `Le taux d'encaissement s'élève à ${tauxEnc}% (${fmt(encaisse)} € sur ${fmt(ca)} € produits). Un solde de ${fmt(nonEncaisse)} € reste à recouvrer ; une relance ciblée permettrait d'améliorer rapidement la trésorerie.`
+        : `Taux d'encaissement : ${tauxEnc}% (${fmt(encaisse)} € / ${fmt(ca)} €). Il reste ${fmt(nonEncaisse)} € à encaisser — pensez à relancer les règlements en attente.`;
+    } else if (ca > 0) {
+      para2 = isConsultant
+        ? `L'encaissement présente un écart significatif : seulement ${tauxEnc}% encaissé (${fmt(encaisse)} € sur ${fmt(ca)} €), laissant ${fmt(nonEncaisse)} € de créances en attente. L'accélération du recouvrement est une priorité immédiate pour la trésorerie du cabinet.`
+        : `Attention : seulement ${tauxEnc}% encaissé ce mois-ci (${fmt(encaisse)} € sur ${fmt(ca)} €). Il faut accélérer les relances de règlement pour les ${fmt(nonEncaisse)} € restants.`;
+    }
+  }
 
-  return `${ouverture} ${productivite} ${devis}`;
+  // --- Paragraphe 3 : devis et RDV chiffrés ---
+  let para3 = '';
+  if (nbDevis > 0) {
+    if (tauxDevis >= 75) {
+      para3 = isConsultant
+        ? `La conversion des devis est excellente ce mois-ci : ${nbDevisAcceptes} devis acceptés sur ${nbDevis} présentés (${tauxDevis}%). Ce niveau de transformation sécurise le chiffre d'affaires futur du cabinet.`
+        : `Très bon taux d'acceptation des devis : ${nbDevisAcceptes}/${nbDevis} (${tauxDevis}%). Continuez à bien présenter vos plans de traitement.`;
+    } else if (tauxDevis >= 60) {
+      para3 = isConsultant
+        ? `Le taux d'acceptation des devis s'établit à ${tauxDevis}% (${nbDevisAcceptes} acceptés sur ${nbDevis} présentés). Ce niveau est acceptable mais perfectible — un suivi actif des ${nbDevis - nbDevisAcceptes} devis restants pourrait générer un complément de chiffre d'affaires significatif.`
+        : `Taux d'acceptation des devis : ${tauxDevis}% (${nbDevisAcceptes}/${nbDevis}). Les ${nbDevis - nbDevisAcceptes} devis en attente représentent un levier de croissance direct.`;
+    } else {
+      para3 = isConsultant
+        ? `Le taux d'acceptation des devis est insuffisant : ${nbDevisAcceptes} acceptés sur ${nbDevis} présentés (${tauxDevis}%). Ce niveau fragilise la visibilité financière à court terme. Il est impératif de travailler la qualité de présentation des plans de traitement et de relancer systématiquement les ${nbDevis - nbDevisAcceptes} devis en attente.`
+        : `Taux d'acceptation des devis trop faible : ${nbDevisAcceptes}/${nbDevis} (${tauxDevis}%). Relancez les ${nbDevis - nbDevisAcceptes} devis en attente — c'est votre principal levier de croissance ce mois-ci.`;
+    }
+  } else if (nbRdv > 0 && tauxAbsence > 0) {
+    para3 = isConsultant
+      ? `L'activité du cabinet s'appuie sur ${nbRdv} rendez-vous ce mois, avec un taux d'absence de ${tauxAbsence}%. La maîtrise de ce taux est un levier direct sur la production mensuelle.`
+      : `Vous avez réalisé ${nbRdv} rendez-vous ce mois (taux d'absence : ${tauxAbsence}%). Réduire ce taux aura un impact direct sur votre production.`;
+  }
+
+  // --- Paragraphe 4 : priorités pour le mois suivant ---
+  const prios = [];
+  if (ecartCA < 0) prios.push(isConsultant ? 'retrouver le niveau de production cible' : 'rattraper le retard de production');
+  else prios.push(isConsultant ? 'maintenir le niveau de production actuel' : 'maintenir votre rythme de production');
+  if (tauxDevis > 0 && tauxDevis < 65) prios.push(isConsultant ? `améliorer la conversion des devis (actuellement ${tauxDevis}%) par un suivi renforcé des plans de traitement en attente` : `améliorer votre taux de conversion des devis (${tauxDevis}%) via des relances ciblées`);
+  else if (tauxEnc < 85 && ca > 0) prios.push(isConsultant ? `accélérer le recouvrement pour ramener le taux d'encaissement au-dessus de 85% (actuellement ${tauxEnc}%)` : `accélérer vos encaissements pour atteindre 85%+ (actuellement ${tauxEnc}%)`);
+  else prios.push(isConsultant ? 'consolider la fidélisation patient et la qualité du suivi clinique' : 'renforcer le suivi patient pour consolider vos résultats');
+
+  const para4 = isConsultant
+    ? `Les priorités pour la période à venir sont les suivantes :\n\n${prios.map(p => `— ${p}`).join(' ;\n\n')} .`
+    : `Vos priorités pour le mois prochain :\n\n${prios.map(p => `— ${p}`).join(' ;\n\n')} .`;
+
+  return [para1, para2, para3, para4].filter(Boolean).join('\n\n');
 }
 
 function ensureFinancialCommentary(kpi, practitionerCode, mois, role = 'consultant') {
@@ -799,6 +833,11 @@ router.get('/download/:id', auth, async (req, res) => {
     const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
     const moisLabel = report.mois ? `${months[parseInt(report.mois.substring(4, 6)) - 1]} ${report.mois.substring(0, 4)}` : '';
 
+    // Recalculate fresh KPIs from live data (stored contenu is incomplete — schema only stores a subset)
+    const freshKpi = await calculateKPI(report.praticien, report.mois);
+    const commentaryStyle = getCommentaryStyleByRole(req.user.role);
+    freshKpi.financialCommentary = generateFinancialCommentary(freshKpi, report.praticien, report.mois, commentaryStyle);
+
     const historique = await getHistorique(report.praticien, report.mois);
 
     const reportData = {
@@ -807,8 +846,8 @@ router.get('/download/:id', auth, async (req, res) => {
       mois: report.mois,
       moisFormate: moisLabel,
       cabinetName: practitioner?.cabinetName || 'Cabinet',
-      ...ensureFinancialCommentary(report.contenu.toObject(), report.praticien, report.mois, req.user.role),
-      recommandations: report.contenu.recommandations || [],
+      ...freshKpi,
+      recommandations: generateRecommendations(freshKpi),
       historique
     };
 

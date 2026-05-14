@@ -932,52 +932,13 @@ export default function Settings() {
 
         {/* Configuration */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className={`${cardCls} rounded-2xl p-6 transition-colors`}>
+          <div className={`${cardCls} rounded-2xl p-6 transition-colors opacity-60`}>
             <h3 className="text-lg font-semibold dark:text-white mb-4 flex items-center gap-2">
               <FiCalendar className="text-primary-600" /> Automatisation
+              <span className="ml-auto text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 px-2 py-0.5 rounded-full">Bientôt disponible</span>
             </h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Génération automatique</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Rapports générés le dernier jour du mois</p>
-                </div>
-                <button
-                  onClick={() => handleToggle('autoGeneration')}
-                  disabled={saving}
-                  className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
-                    autoGeneration ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'
-                  }`}
-                >
-                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
-                    autoGeneration ? 'translate-x-[22px]' : 'translate-x-1'
-                  }`}></div>
-                </button>
-              </div>
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Envoi automatique par email</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Rapports envoyés après génération</p>
-                </div>
-                <button
-                  onClick={() => handleToggle('autoEmail')}
-                  disabled={saving}
-                  className={`w-11 h-6 rounded-full relative transition-colors duration-200 focus:outline-none ${
-                    autoEmail ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'
-                  }`}
-                >
-                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
-                    autoEmail ? 'translate-x-[22px]' : 'translate-x-1'
-                  }`}></div>
-                </button>
-              </div>
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Heure de génération</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Planifié chaque dernier jour du mois</p>
-                </div>
-                <span className="text-sm font-mono font-bold text-primary-700">20:00</span>
-              </div>
+            <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-sm text-amber-800 dark:text-amber-300">
+              L'automatisation sera activée après l'intégration du workflow n8n. Les options de génération et d'envoi automatique seront disponibles à ce moment.
             </div>
           </div>
 

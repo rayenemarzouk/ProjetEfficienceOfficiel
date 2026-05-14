@@ -48,6 +48,10 @@ const EMPTY_FORM = {
   delaiMoyenAcceptation: '',
   montantTotalRealise: '',
   montantMoyenRealise: '',
+  montantDevisEnAttente: '',
+  nbPatientsEnCours: '',
+  dureeTotaleARealiser: '',
+  montantTotalAFacturer: '',
   soinsConservateurs: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
   prothesesFixes: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
   prothesesAmovibles: { nombre: '', dents: '', honoraires: '', honorairesNR: '' },
@@ -574,97 +578,53 @@ export default function AdminSaisieData() {
             </Section>
 
             {/* Patients */}
-            <Section title="👥 Patients">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <Field label="Nb Patients">{numInput('nbPatients')}</Field>
-                <Field label="Nouveaux">{numInput('nouveauxPatients')}</Field>
-                <Field label="Nouveaux Dossiers">{numInput('nouveauxDossiers')}</Field>
-                <Field label="Règlements Année (€)">{numInput('reglementsPourAnnee', '0.00', '0.01')}</Field>
-              </div>
-            </Section>
-
-            {/* RDV */}
-            <Section title="📅 Rendez-vous Détaillés">
+            <Section title="👥 Patients & Activité">
               <div className="space-y-4">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-3 bg-green-50 rounded-lg">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-3 bg-blue-50 rounded-lg">
+                  <Field label="Nb Patients">{numInput('nbPatients')}</Field>
+                  <Field label="Nouveaux">{numInput('nouveauxPatients')}</Field>
+                  <Field label="Nouveaux Dossiers">{numInput('nouveauxDossiers')}</Field>
+                  <Field label="Règlements Année (€)">{numInput('reglementsPourAnnee', '0.00', '0.01')}</Field>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-3 bg-green-50 rounded-lg">
                   <Field label="Total RDV">{numInput('totalRdv')}</Field>
-                  <Field label="RDV Honorés">{numInput('rdvHonores')}</Field>
-                  <Field label="RDV Manqués">{numInput('rdvManques')}</Field>
-                  <Field label="RDV Importants">{numInput('rdvImportants')}</Field>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-3 bg-orange-50 rounded-lg">
-                  <Field label="Annulations">{numInput('annulations')}</Field>
-                  <Field label="Reports">{numInput('reports')}</Field>
-                  <Field label="Durée moy (min)">{numInput('dureeMoyennePrevue')}</Field>
-                  <Field label="RDV/Jour">{numInput('rdvParJour', '0', '0.1')}</Field>
-                </div>
-                <div className="p-3 bg-yellow-50 rounded-lg">
+                  <Field label="Durée totale RDV (h)">{numInput('dureeMoyennePrevue', '0', '0.5')}</Field>
                   <Field label="Heures Travaillées">{numInput('heuresTravaillees', '0', '0.5')}</Field>
                 </div>
               </div>
             </Section>
 
             {/* Devis */}
-            <Section title="💼 Analyse Devis & Propositions" defaultOpen={false}>
+            <Section title="💼 Devis" defaultOpen={false}>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3 bg-purple-50 rounded-lg">
                   <Field label="Nb Devis">{numInput('nbDevis')}</Field>
-                  <Field label="Montant Total (€)">{numInput('montantTotalPresente', '0.00', '0.01')}</Field>
-                  <Field label="Montant Moyen (€)">{numInput('montantMoyenPresente', '0.00', '0.01')}</Field>
+                  <Field label="Montant total présenté (€)">{numInput('montantTotalPresente', '0.00', '0.01')}</Field>
+                  <Field label="Montant devis en attente (€)">{numInput('montantDevisEnAttente', '0.00', '0.01')}</Field>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3 bg-pink-50 rounded-lg">
                   <Field label="Devis Acceptés">{numInput('nbDevisAcceptes')}</Field>
                   <Field label="Taux Accept. Nombre (%)">{numInput('tauxAcceptationNombre', '0', '0.1')}</Field>
-                  <Field label="Délai Moyen (j)">{numInput('delaiMoyenAcceptation', '0', '0.5')}</Field>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3 bg-indigo-50 rounded-lg">
-                  <Field label="Montant Accept. (€)">{numInput('montantTotalAccepte', '0.00', '0.01')}</Field>
-                  <Field label="Montant Moyen Accept. (€)">{numInput('montantMoyenAccepte', '0.00', '0.01')}</Field>
                   <Field label="Taux Accept. Montant (%)">{numInput('tauxAcceptationMontant', '0', '0.1')}</Field>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-red-50 rounded-lg">
-                  <Field label="Montant Réalisé (€)">{numInput('montantTotalRealise', '0.00', '0.01')}</Field>
-                  <Field label="Montant Moyen Réalisé (€)">{numInput('montantMoyenRealise', '0.00', '0.01')}</Field>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-indigo-50 rounded-lg">
+                  <Field label="Montant Moyen Accepté (€)">{numInput('montantMoyenAccepte', '0.00', '0.01')}</Field>
+                  <Field label="Montant Total Accepté (€)">{numInput('montantTotalAccepte', '0.00', '0.01')}</Field>
                 </div>
               </div>
             </Section>
 
-            {/* Actes */}
-            <Section title="🦷 Actes Réalisés (Détails)" defaultOpen={false}>
-              <div className="text-xs text-gray-600 mb-3 p-2 bg-gray-50 rounded">
-                Remplissez: Nombre d'actes | Dents traitées | Honoraires | Honoraires dont NR
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-                      <th className="text-left px-3 py-2 font-semibold border border-blue-700 min-w-[200px]">Acte</th>
-                      <th className="px-3 py-2 font-semibold border border-blue-700 w-20">Nombre</th>
-                      <th className="px-3 py-2 font-semibold border border-blue-700 w-20">Dents</th>
-                      <th className="px-3 py-2 font-semibold border border-blue-700 w-28">Honoraires (€)</th>
-                      <th className="px-3 py-2 font-semibold border border-blue-700 w-28">dont NR (€)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ACTES_LIST.map(({ key, label }, idx) => (
-                      <tr key={key} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-3 py-2 border border-gray-200 font-medium text-gray-800">{label}</td>
-                        {['nombre', 'dents', 'honoraires', 'honorairesNR'].map(sub => (
-                          <td key={sub} className="px-2 py-1 border border-gray-200">
-                            <input
-                              type="number" min="0"
-                              step={sub === 'honoraires' || sub === 'honorairesNR' ? '0.01' : '1'}
-                              placeholder="0"
-                              value={form[key][sub]}
-                              onChange={e => handleActeChange(key, sub, e.target.value)}
-                              className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm text-right focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {/* En Cours */}
+            <Section title="📋 En Cours" defaultOpen={false}>
+              <div className="space-y-4">
+                <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+                  Plans de traitement acceptés en cours de réalisation au cabinet.
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3 bg-orange-50 rounded-lg">
+                  <Field label="Nb Patients en cours">{numInput('nbPatientsEnCours')}</Field>
+                  <Field label="Durée totale à réaliser (h)">{numInput('dureeTotaleARealiser', '0', '0.5')}</Field>
+                  <Field label="Montant total à facturer (€)">{numInput('montantTotalAFacturer', '0.00', '0.01')}</Field>
+                </div>
               </div>
             </Section>
 

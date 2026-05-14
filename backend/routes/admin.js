@@ -979,6 +979,11 @@ router.post('/manual-entry', auth, adminOnly, async (req, res) => {
       delaiMoyenAcceptation,
       montantTotalRealise,
       montantMoyenRealise,
+      montantDevisEnAttente,
+      // === En cours ===
+      nbPatientsEnCours,
+      dureeTotaleARealiser,
+      montantTotalAFacturer,
       soinsConservateurs,
       prothesesFixes,
       prothesesAmovibles,
@@ -1081,10 +1086,26 @@ router.post('/manual-entry', auth, adminOnly, async (req, res) => {
             delaiMoyenAcceptation: Number(delaiMoyenAcceptation) || 0,
             montantTotalRealise: Number(montantTotalRealise) || 0,
             montantMoyenRealise: Number(montantMoyenRealise) || 0,
+            montantDevisEnAttente: Number(montantDevisEnAttente) || 0,
         }},
         { upsert: true, new: true }
       )
     ]);
+
+    // Upsert Encours
+    const heuresEnCours = Number(dureeTotaleARealiser) || 0;
+    const montantEnCours = Number(montantTotalAFacturer) || 0;
+    await Encours.findOneAndUpdate(
+      { praticien },
+      {
+        praticien,
+        patientsEnCours:       Number(nbPatientsEnCours)  || 0,
+        dureeTotaleARealiser:  heuresEnCours,
+        montantTotalAFacturer: montantEnCours,
+        rentabiliteHoraire:    heuresEnCours > 0 ? montantEnCours / heuresEnCours : 0
+      },
+      { upsert: true, new: true }
+    );
 
     res.json({ message: 'Données enregistrées avec succès.', mois: moisNorm, praticien });
   } catch (error) {
