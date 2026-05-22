@@ -22,50 +22,31 @@ function generateMonthOptions() {
 
 const dataTypes = [
   {
-    value: 'realisation',
-    label: 'Réalisation',
+    value: 'instantanee',
+    label: 'Instantanée',
     icon: FiDollarSign,
-    desc: 'CA facturé, CA encaissé, nombre de patients',
+    desc: 'CA, règlement, RDV, heures, patients',
     color: 'primary',
     fields: [
-      { key: 'nbPatients', label: 'Nombre de patients', type: 'number', icon: FiUsers, placeholder: 'Ex: 45' },
-      { key: 'montantFacture', label: 'Montant facturé (€)', type: 'number', icon: FiDollarSign, placeholder: 'Ex: 12500', step: '0.01' },
-      { key: 'montantEncaisse', label: 'Montant encaissé (€)', type: 'number', icon: FiDollarSign, placeholder: 'Ex: 11200', step: '0.01' },
-    ]
-  },
-  {
-    value: 'rendez-vous',
-    label: 'Rendez-vous',
-    icon: FiCalendar,
-    desc: 'RDV, durée totale, patients, nouveaux patients',
-    color: 'blue',
-    fields: [
-      { key: 'nbRdv', label: 'Nombre de RDV', type: 'number', icon: FiCalendar, placeholder: 'Ex: 120' },
-      { key: 'dureeTotaleRdv', label: 'Durée totale RDV (minutes)', type: 'number', icon: FiClock, placeholder: 'Ex: 3600' },
+      { key: 'montantFacture', label: 'CA (€)', type: 'number', icon: FiDollarSign, placeholder: 'Ex: 12500', step: '0.01' },
+      { key: 'montantEncaisse', label: 'Règlement sur la période (€)', type: 'number', icon: FiDollarSign, placeholder: 'Ex: 11200', step: '0.01' },
+      { key: 'dureeTotaleRdv', label: 'Durée totale des RDV (minutes)', type: 'number', icon: FiClock, placeholder: 'Ex: 3600' },
+      { key: 'nbHeures', label: 'Heures travaillées (minutes)', type: 'number', icon: FiClock, placeholder: 'Ex: 1800' },
       { key: 'nbPatients', label: 'Nombre de patients', type: 'number', icon: FiUsers, placeholder: 'Ex: 45' },
       { key: 'nbNouveauxPatients', label: 'Nouveaux patients', type: 'number', icon: FiUsers, placeholder: 'Ex: 8' },
-    ]
-  },
-  {
-    value: 'jours-ouverts',
-    label: 'Jours Ouverts',
-    icon: FiClock,
-    desc: 'Heures travaillées par mois',
-    color: 'purple',
-    fields: [
-      { key: 'nbHeures', label: 'Heures travaillées (en minutes)', type: 'number', icon: FiClock, placeholder: 'Ex: 9600' },
     ]
   },
   {
     value: 'devis',
     label: 'Devis',
     icon: FiFileText,
-    desc: 'Nb devis, montants proposés/acceptés',
+    desc: 'Devis présentés, en attente, acceptés',
     color: 'amber',
     fields: [
       { key: 'nbDevis', label: 'Nombre de devis', type: 'number', icon: FiFileText, placeholder: 'Ex: 15' },
-      { key: 'montantPropositions', label: 'Montant proposé (€)', type: 'number', icon: FiDollarSign, placeholder: 'Ex: 25000', step: '0.01' },
-      { key: 'nbDevisAcceptes', label: 'Devis acceptés', type: 'number', icon: FiCheck, placeholder: 'Ex: 10' },
+      { key: 'montantPropositions', label: 'Montant total présenté (€)', type: 'number', icon: FiDollarSign, placeholder: 'Ex: 25000', step: '0.01' },
+      { key: 'montantDevisEnAttente', label: 'Montant devis en attente (€)', type: 'number', icon: FiClock, placeholder: 'Ex: 8000', step: '0.01' },
+      { key: 'nbDevisAcceptes', label: 'Nombre de devis acceptés', type: 'number', icon: FiCheck, placeholder: 'Ex: 10' },
       { key: 'montantAccepte', label: 'Montant accepté (€)', type: 'number', icon: FiDollarSign, placeholder: 'Ex: 18000', step: '0.01' },
     ]
   },
@@ -73,14 +54,13 @@ const dataTypes = [
     value: 'encours',
     label: 'En-cours',
     icon: FiRefreshCw,
-    desc: 'Travaux en cours — durée, montant, rentabilité',
+    desc: 'Patients, durée, montant, rentabilité',
     color: 'teal',
     fields: [
-      { key: 'dureeTotaleARealiser', label: 'Durée à réaliser (minutes)', type: 'number', icon: FiClock, placeholder: 'Ex: 4800' },
-      { key: 'montantTotalAFacturer', label: 'Montant à facturer (€)', type: 'number', icon: FiDollarSign, placeholder: 'Ex: 35000', step: '0.01' },
+      { key: 'patientsEnCours', label: 'Nombre de patients', type: 'number', icon: FiUsers, placeholder: 'Ex: 22' },
+      { key: 'dureeTotaleARealiser', label: 'Durée totale à réaliser (minutes)', type: 'number', icon: FiClock, placeholder: 'Ex: 4800' },
+      { key: 'montantTotalAFacturer', label: 'Montant total à facturer (€)', type: 'number', icon: FiDollarSign, placeholder: 'Ex: 35000', step: '0.01' },
       { key: 'rentabiliteHoraire', label: 'Rentabilité horaire (€/h)', type: 'number', icon: FiDollarSign, placeholder: 'Ex: 250', step: '0.01' },
-      { key: 'rentabiliteJoursTravailles', label: 'Rentabilité jours travaillés (€/j)', type: 'number', icon: FiDollarSign, placeholder: 'Ex: 1800', step: '0.01' },
-      { key: 'patientsEnCours', label: 'Patients en cours', type: 'number', icon: FiUsers, placeholder: 'Ex: 22' },
     ]
   },
 ];
@@ -88,7 +68,7 @@ const dataTypes = [
 export default function ManualEntry() {
   const { user, updateUser } = useAuth();
   const monthOptions = generateMonthOptions();
-  const [selectedType, setSelectedType] = useState('realisation');
+  const [selectedType, setSelectedType] = useState('instantanee');
   const [selectedMois, setSelectedMois] = useState(monthOptions[0].value);
   const [formData, setFormData] = useState({});
   const [saving, setSaving] = useState(false);
@@ -165,18 +145,26 @@ export default function ManualEntry() {
 
   // Calculs automatiques en direct
   const computedStats = [];
-  if (selectedType === 'realisation') {
+  if (selectedType === 'instantanee') {
     const facture = parseFloat(formData.montantFacture) || 0;
     const encaisse = parseFloat(formData.montantEncaisse) || 0;
+    const heuresMin = parseFloat(formData.nbHeures) || 0;
     const patients = parseFloat(formData.nbPatients) || 0;
+    const nouveaux = parseFloat(formData.nbNouveauxPatients) || 0;
+    if (facture > 0 && heuresMin > 0) {
+      computedStats.push({ label: 'CA horaire', value: `${Math.round(facture / (heuresMin / 60))} €/h` });
+    }
     if (facture > 0) {
       computedStats.push({ label: 'Taux encaissement', value: `${((encaisse / facture) * 100).toFixed(1)}%` });
+    }
+    if (facture > 0) {
+      computedStats.push({ label: 'Reste à encaisser', value: fmt(facture - encaisse) });
     }
     if (patients > 0) {
       computedStats.push({ label: 'Panier moyen', value: fmt(facture / patients) });
     }
-    if (facture > 0) {
-      computedStats.push({ label: 'Reste à encaisser', value: fmt(facture - encaisse) });
+    if (patients > 0) {
+      computedStats.push({ label: 'Taux nouveaux patients', value: `${((nouveaux / patients) * 100).toFixed(1)}%` });
     }
   }
   if (selectedType === 'devis') {
@@ -184,23 +172,17 @@ export default function ManualEntry() {
     const nbAcceptes = parseFloat(formData.nbDevisAcceptes) || 0;
     const montantProp = parseFloat(formData.montantPropositions) || 0;
     const montantAcc = parseFloat(formData.montantAccepte) || 0;
+    if (nbDevis > 0 && montantProp > 0) {
+      computedStats.push({ label: 'Montant moyen d\'un devis', value: fmt(montantProp / nbDevis) });
+    }
     if (nbDevis > 0) {
-      computedStats.push({ label: 'Taux acceptation', value: `${((nbAcceptes / nbDevis) * 100).toFixed(1)}%` });
+      computedStats.push({ label: 'Taux acceptation (nombre)', value: `${((nbAcceptes / nbDevis) * 100).toFixed(1)}%` });
     }
     if (montantProp > 0) {
-      computedStats.push({ label: 'Taux montant accepté', value: `${((montantAcc / montantProp) * 100).toFixed(1)}%` });
+      computedStats.push({ label: 'Taux acceptation (montant)', value: `${((montantAcc / montantProp) * 100).toFixed(1)}%` });
     }
-  }
-  if (selectedType === 'rendez-vous') {
-    const nbRdv = parseFloat(formData.nbRdv) || 0;
-    const duree = parseFloat(formData.dureeTotaleRdv) || 0;
-    if (nbRdv > 0 && duree > 0) {
-      computedStats.push({ label: 'Durée moy. / RDV', value: `${(duree / nbRdv).toFixed(0)} min` });
-    }
-    const nbPat = parseFloat(formData.nbPatients) || 0;
-    const nbNew = parseFloat(formData.nbNouveauxPatients) || 0;
-    if (nbPat > 0) {
-      computedStats.push({ label: 'Taux nouveaux patients', value: `${((nbNew / nbPat) * 100).toFixed(1)}%` });
+    if (nbAcceptes > 0) {
+      computedStats.push({ label: 'Montant moyen accepté', value: fmt(montantAcc / nbAcceptes) });
     }
   }
 
@@ -222,7 +204,7 @@ export default function ManualEntry() {
         <div className="max-w-4xl mx-auto">
 
           {/* Type Selection */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+          <div className="grid grid-cols-3 gap-3 mb-8">
             {dataTypes.map(dt => {
               const Icon = dt.icon;
               const isActive = selectedType === dt.value;

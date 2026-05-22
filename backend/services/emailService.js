@@ -155,7 +155,7 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
                 </td>
               </tr>
             </table>
-            <p style="margin:12px 0 0;font-size:14px;color:${statutOK ? '#16a34a' : '#dc2626'};font-weight:700;">Statut du cabinet : ${statutOK ? 'OK' : '\u00C0 SURVEILLER'}</p>
+            <p style="margin:12px 0 0;font-size:14px;color:${statutOK ? '#16a34a' : '#dc2626'};font-weight:700;">Statut du cabinet : ${statutOK ? 'Passable' : '\u00C0 SURVEILLER'}</p>
             <p style="margin:6px 0 0;font-size:13px;color:#64748b;">${statutOK ? 'F\u00E9licitations, votre cabinet a atteint ses objectifs ce mois-ci !' : 'Attention, certains indicateurs n\u00E9cessitent votre attention.'}</p>
           </td>
         </tr>
@@ -177,7 +177,7 @@ function buildEmailHTML({ practitionerName, mois, kpi, recommandations, cabinetN
               <tr>
                 <td style="padding:16px;text-align:center;">
                   <p style="margin:0;font-size:28px;">${statutOK ? '\u2705' : '\u26A0\uFE0F'}</p>
-                  <p style="margin:4px 0 0;font-size:16px;font-weight:700;color:${statutOK ? '#16a34a' : '#d97706'};">${statutOK ? 'OK' : '\u00C0 surveiller'}</p>
+                  <p style="margin:4px 0 0;font-size:16px;font-weight:700;color:${statutOK ? '#16a34a' : '#d97706'};">${statutOK ? 'Passable' : '\u00C0 surveiller'}</p>
                   <p style="margin:2px 0 0;font-size:12px;color:${statutOK ? '#16a34a' : '#d97706'};">${statutOK ? 'Objectif atteint' : 'Objectif non atteint'}</p>
                 </td>
               </tr>
