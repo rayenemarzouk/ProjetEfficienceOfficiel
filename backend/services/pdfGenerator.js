@@ -57,8 +57,6 @@ async function generatePDFReport(data) {
             '--disable-dev-shm-usage',
             '--disable-accelerated-2d-canvas',
             '--disable-gpu',
-            '--no-zygote',
-            '--single-process',
             '--disable-extensions',
             '--disable-background-networking',
             '--disable-default-apps',
