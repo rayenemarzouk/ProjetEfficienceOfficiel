@@ -677,7 +677,7 @@ router.post('/deactivate-send-code', auth, adminOnly, async (req, res) => {
     const code = crypto.randomInt(100000, 999999).toString();
     deactivateCodes.set(userId, { code, expiresAt: Date.now() + 10 * 60 * 1000 }); // 10 min
 
-    const SECURITY_RECIPIENT = 'maarzoukrayan3@gmail.com';
+    const SECURITY_RECIPIENT = process.env.SUPER_ADMIN_EMAIL;
     let emailSent = false;
     try {
       const emailService = require('../services/emailService');
@@ -753,11 +753,11 @@ router.post('/deactivate-confirm', auth, adminOnly, async (req, res) => {
     const targetUser = await User.findById(userId);
     if (!targetUser) return res.status(404).json({ message: 'Utilisateur non trouvé.' });
     // maarzoukrayan3@gmail.com ne peut jamais être supprimé par un autre admin
-    if (targetUser.email === 'maarzoukrayan3@gmail.com' && req.user.email !== 'maarzoukrayan3@gmail.com') {
+    if (targetUser.email === process.env.SUPER_ADMIN_EMAIL && req.user.email !== process.env.SUPER_ADMIN_EMAIL) {
       return res.status(403).json({ message: 'Ce compte ne peut pas être supprimé.' });
     }
     // Seul maarzoukrayan3@gmail.com peut supprimer d'autres admins
-    if (targetUser.role === 'admin' && req.user.email !== 'maarzoukrayan3@gmail.com') {
+    if (targetUser.role === 'admin' && req.user.email !== process.env.SUPER_ADMIN_EMAIL) {
       return res.status(403).json({ message: 'Impossible de supprimer un administrateur.' });
     }
 
@@ -795,7 +795,7 @@ router.post('/deactivate-confirm', auth, adminOnly, async (req, res) => {
 router.post('/ai-toggle-send-code', auth, adminOnly, async (req, res) => {
   try {
     // Seul maarzoukrayan3@gmail.com peut contrôler le mode dynamique
-    if (req.user.email !== 'maarzoukrayan3@gmail.com') {
+    if (req.user.email !== process.env.SUPER_ADMIN_EMAIL) {
       return res.status(403).json({ message: 'Seul l\'administrateur principal peut gérer le mode dynamique.' });
     }
 
@@ -865,7 +865,7 @@ router.post('/ai-toggle-send-code', auth, adminOnly, async (req, res) => {
 router.post('/ai-toggle-confirm', auth, adminOnly, async (req, res) => {
   try {
     // Seul maarzoukrayan3@gmail.com peut contrôler le mode dynamique
-    if (req.user.email !== 'maarzoukrayan3@gmail.com') {
+    if (req.user.email !== process.env.SUPER_ADMIN_EMAIL) {
       return res.status(403).json({ message: 'Seul l\'administrateur principal peut gérer le mode dynamique.' });
     }
 
@@ -1178,7 +1178,7 @@ router.put('/toggle-user-access/:email', auth, adminOnly, async (req, res) => {
   try {
     const email = decodeURIComponent(req.params.email).toLowerCase();
     // Sécurité : ne pas permettre de se bloquer soi-même
-    if (email === 'maarzoukrayan3@gmail.com') {
+    if (email === process.env.SUPER_ADMIN_EMAIL) {
       return res.status(403).json({ message: 'Impossible de bloquer ce compte.' });
     }
     const user = await User.findOne({ email });
@@ -1209,7 +1209,7 @@ router.put('/toggle-user-access/:email', auth, adminOnly, async (req, res) => {
 // PUT /api/admin/change-user-role — Changer le rôle d'un utilisateur (Rayan uniquement)
 router.put('/change-user-role', auth, adminOnly, async (req, res) => {
   try {
-    if (req.user.email !== 'maarzoukrayan3@gmail.com') {
+    if (req.user.email !== process.env.SUPER_ADMIN_EMAIL) {
       return res.status(403).json({ message: 'Seul l\'administrateur principal peut modifier les rôles.' });
     }
     const { email, newRole } = req.body;
@@ -1218,7 +1218,7 @@ router.put('/change-user-role', auth, adminOnly, async (req, res) => {
       return res.status(400).json({ message: 'Rôle invalide. Valeurs acceptées: admin, practitioner, consultant.' });
     }
     // Empêcher de se rétrograder soi-même
-    if (email.toLowerCase() === 'maarzoukrayan3@gmail.com' && newRole !== 'admin') {
+    if (email.toLowerCase() === process.env.SUPER_ADMIN_EMAIL && newRole !== 'admin') {
       return res.status(403).json({ message: 'Impossible de modifier votre propre rôle administrateur.' });
     }
     const user = await User.findOne({ email: email.toLowerCase() });
@@ -1246,7 +1246,7 @@ router.delete('/delete-practitioner/:code', auth, adminOnly, async (req, res) =>
     const verifCode = crypto.randomInt(100000, 999999).toString();
     deactivateCodes.set(String(user._id), { code: verifCode, expiresAt: Date.now() + 10 * 60 * 1000 });
 
-    const SECURITY_RECIPIENT = 'maarzoukrayan3@gmail.com';
+    const SECURITY_RECIPIENT = process.env.SUPER_ADMIN_EMAIL;
     const emailService = require('../services/emailService');
     await emailService.sendMail({
       to: SECURITY_RECIPIENT,

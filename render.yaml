@@ -30,3 +30,5 @@ services:
         sync: false
       - key: REPORT_RECIPIENT
         sync: false
+      - key: SUPER_ADMIN_EMAIL
+        sync: false

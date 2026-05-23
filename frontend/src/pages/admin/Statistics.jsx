@@ -11,6 +11,7 @@ import { streamingLinePlugin, startChartAnimation } from '../../utils/chartPlugi
 import { useDynamic } from '../../context/DynamicContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import { isSuperAdmin } from '../../utils/permissions';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler);
 
@@ -29,7 +30,7 @@ export default function Statistics() {
   const { isDynamic: _isDynamic, dataAccessEnabled } = useDynamic();
   const { dark } = useTheme();
   const { user } = useAuth();
-  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const isRayan = isSuperAdmin(user);
   const isDynamic = isRayan || _isDynamic; // Rayan toujours dynamique
   const showAI = dataAccessEnabled || isRayan;
   const cardCls = isRayan ? 'bg-white border border-gray-200 shadow-sm' : 'bg-white dark:bg-[#1e293b] border border-gray-100 dark:border-gray-700';

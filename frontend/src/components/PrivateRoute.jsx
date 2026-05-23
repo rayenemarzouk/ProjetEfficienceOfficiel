@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { isSuperAdmin } from '../utils/permissions';
 import { useAppSettings } from '../context/AppSettingsContext';
 import { useDynamic } from '../context/DynamicContext';
 import { FiTool, FiLock } from 'react-icons/fi';
@@ -9,7 +10,7 @@ export default function PrivateRoute({ allowedRoles }) {
   const appSettings = useAppSettings();
   const { dataAccessEnabled } = useDynamic();
   const location = useLocation();
-  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const isRayan = isSuperAdmin(user);
 
   if (loading) {
     return (

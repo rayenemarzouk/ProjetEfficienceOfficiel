@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { isSuperAdmin } from '../utils/permissions';
 import { 
   FiHome, FiBarChart2, FiGitMerge, FiFileText, FiPieChart, 
   FiSettings, FiLogOut, FiActivity, FiDatabase, FiCpu, FiBriefcase, FiEdit3, FiUsers, FiUser
@@ -8,7 +9,7 @@ import {
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const isRayan = isSuperAdmin(user);
 
   const handleLogout = () => {
     logout();

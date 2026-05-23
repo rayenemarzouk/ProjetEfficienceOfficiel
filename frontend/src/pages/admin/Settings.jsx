@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import { getSettings, updateSettings, impersonateUser, deactivateSendCode, deactivateConfirm, aiToggleSendCode, aiToggleConfirm, toggleUserAccess } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { isSuperAdmin, RAYAN_EMAIL, YOUNIS_EMAIL } from '../../utils/permissions';
 import { useAppSettings } from '../../context/AppSettingsContext';
 import { useDynamic } from '../../context/DynamicContext';
 import { setAIEnabled } from '../../utils/aiModels';
@@ -11,7 +12,7 @@ import { FiUser, FiMail, FiShield, FiActivity, FiCalendar, FiCheck, FiLogIn, FiX
 export default function Settings() {
   const navigate = useNavigate();
   const { loginUser, user } = useAuth();
-  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const isRayan = isSuperAdmin(user);
   const cardCls = isRayan ? 'bg-white border border-gray-200 shadow-sm' : 'bg-white dark:bg-[#111c44] border border-gray-200 dark:border-blue-800/60';
   const { refreshSettings } = useAppSettings();
   const { isDynamic, refreshDynamic } = useDynamic();
@@ -68,7 +69,7 @@ export default function Settings() {
         const res = await getSettings();
         setUsers(res.data.users || []);
         // Initialiser l'état d'accès Younis
-        const younisUser = (res.data.users || []).find(u => u.email === 'younis@efficience.fr');
+        const younisUser = (res.data.users || []).find(u => u.email === YOUNIS_EMAIL);
         if (younisUser) setYounisActive(younisUser.isActive !== false);
         if (res.data.appSettings) {
           setAutoGeneration(res.data.appSettings.autoGeneration);
@@ -105,10 +106,10 @@ export default function Settings() {
   const handleToggleYounisAccess = async () => {
     setTogglingYounis(true);
     try {
-      const res = await toggleUserAccess('younis@efficience.fr');
+      const res = await toggleUserAccess(YOUNIS_EMAIL);
       setYounisActive(res.data.isActive);
       setUsers(prev => prev.map(u =>
-        u.email === 'younis@efficience.fr' ? { ...u, isActive: res.data.isActive } : u
+        u.email === YOUNIS_EMAIL ? { ...u, isActive: res.data.isActive } : u
       ));
       showToast(res.data.message);
     } catch (err) {
@@ -342,7 +343,7 @@ export default function Settings() {
   const handleDeactivateClick = (e, user) => {
     e.stopPropagation(); // prevent impersonation click
     // Un admin ne peut pas supprimer maarzoukrayan3@gmail.com
-    if (user.email === 'maarzoukrayan3@gmail.com') return;
+    if (user.email === RAYAN_EMAIL) return;
     // Seul maarzoukrayan3@gmail.com peut supprimer d'autres admins
     if (user.role === 'admin' && !isRayan) return;
     setDeactModal({ user, step: 'confirm' });
@@ -459,7 +460,7 @@ export default function Settings() {
                         <FiLogIn className="w-3 h-3" /> Se connecter
                       </span>
                     )}
-                    {(user.role !== 'admin' || isRayan) && user.email !== 'maarzoukrayan3@gmail.com' && (
+                    {(user.role !== 'admin' || isRayan) && user.email !== RAYAN_EMAIL && (
                       <button
                         onClick={(e) => handleDeactivateClick(e, user)}
                         className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors opacity-0 group-hover:opacity-100"
