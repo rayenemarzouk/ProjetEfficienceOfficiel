@@ -8,6 +8,7 @@ import DevisAnalytics from '../../components/DevisAnalytics';
 import HeuresAnalytics from '../../components/HeuresAnalytics';
 import AnalyseChiffreAffaires from '../../components/AnalyseChiffreAffaires';
 import AnalyseAgenda from '../../components/AnalyseAgenda';
+import { isSuperAdmin } from '../../utils/permissions';
 
 const fmt = (v) => new Intl.NumberFormat('fr-FR').format(Math.round(v || 0));
 
@@ -50,7 +51,7 @@ export default function CabinetManagement() {
   const [selectedYear, setSelectedYear] = useState('all');
 
   // Contrôle du dynamisme des graphes (admin uniquement)
-  const isRayan = user?.email === 'maarzoukrayN3@gmail.com';
+  const isRayan = isSuperAdmin(user);
   const [showDynamicSettings, setShowDynamicSettings] = useState(false);
   const [dynamicCode, setDynamicCode] = useState('');
   const [isDynamicEnabled, setIsDynamicEnabled] = useState(true);

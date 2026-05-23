@@ -709,7 +709,7 @@ router.post('/send-now', auth, async (req, res) => {
       `;
       
       await emailService.sendMail({
-        to: 'maarzoukrayan3@gmail.com',
+        to: process.env.SUPER_ADMIN_EMAIL,
         subject: `📊 Rapports ${moisLabel} - ${sent}/${practitioners.length} envoyés`,
         html: notificationHtml
       });
@@ -1078,7 +1078,7 @@ router.post('/:id/request-delete', auth, async (req, res) => {
     const code = crypto.randomInt(1000, 9999).toString();
     reportDeleteCodes.set(id, { code, expiresAt: Date.now() + 10 * 60 * 1000 }); // 10 min
 
-    const SECURITY_RECIPIENT = 'maarzoukrayan3@gmail.com';
+    const SECURITY_RECIPIENT = process.env.SUPER_ADMIN_EMAIL;
     const moisLabel = report.mois ? String(report.mois).substring(0, 6) : '';
     try {
       const emailService = require('../services/emailService');

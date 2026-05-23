@@ -11,6 +11,7 @@ import {
   FiCalendar, FiFileText, FiClock, FiAward, FiRefreshCw, FiBarChart2
 } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
+import { isSuperAdmin } from '../../utils/permissions';
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement, LineElement, PointElement,
@@ -67,7 +68,7 @@ export default function AnalyticsDashboard() {
   const [loading, setLoading] = useState(true);
   const [year, setYear] = useState('2025');
   const [metricView, setMetricView] = useState('ca'); // 'ca' | 'patients' | 'rdv'
-  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const isRayan = isSuperAdmin(user);
 
   useEffect(() => {
     const fetchAll = async () => {

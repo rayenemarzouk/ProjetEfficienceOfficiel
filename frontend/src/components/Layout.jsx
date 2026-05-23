@@ -2,12 +2,13 @@ import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { useAuth } from '../context/AuthContext';
+import { isSuperAdmin } from '../utils/permissions';
 import { useTheme } from '../context/ThemeContext';
 
 export default function Layout() {
   const { user } = useAuth();
   const { setForcedLight } = useTheme();
-  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const isRayan = isSuperAdmin(user);
 
   // Force light mode for isRayan: prevents dark:text-white on white card backgrounds
   useEffect(() => {

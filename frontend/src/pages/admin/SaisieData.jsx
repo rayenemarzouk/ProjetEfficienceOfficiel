@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getAdminPractitioners, adminManualEntry, addPractitioner, deletePractitioner, deactivateConfirm } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { isSuperAdmin } from '../../utils/permissions';
 import {
   CheckCircleIcon, ExclamationCircleIcon, PencilSquareIcon,
   UserPlusIcon, ChevronDownIcon, ChevronUpIcon, TrashIcon
@@ -140,7 +141,7 @@ function Section({ title, children, defaultOpen = true }) {
 
 export default function AdminSaisieData() {
   const { user } = useAuth();
-  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const isRayan = isSuperAdmin(user);
 
   const [practitioners, setPractitioners] = useState([]);
   const [loading, setLoading] = useState(true);

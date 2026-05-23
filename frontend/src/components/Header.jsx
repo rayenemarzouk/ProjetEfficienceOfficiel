@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { isSuperAdmin } from '../utils/permissions';
 import { useTheme } from '../context/ThemeContext';
 import {
   FiBell, FiSearch, FiMoon, FiSun,
@@ -168,7 +169,7 @@ export default function Header({ title, subtitle }) {
     error: { icon: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/30' },
   };
 
-  const isRayan = user?.email === 'maarzoukrayan3@gmail.com' || user?.email === 'younis@efficience.fr';
+  const isRayan = isSuperAdmin(user);
 
   // Styles conditionnels selon l'utilisateur (Rayan et Younis gardent le thème sombre)
   const headerBg = isRayan ? 'bg-[#0f1d2f] border-b border-[#1e3a5f]/50' : 'bg-white border-b border-gray-200 shadow-sm';

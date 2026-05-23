@@ -12,6 +12,7 @@ import { generateTrendLineDataset, generateAIInsight, forecast as aiForecast } f
 import { streamingLinePlugin, streamingDoughnutPlugin, startChartAnimation } from '../../utils/chartPlugins';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import { isSuperAdmin } from '../../utils/permissions';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement, Filler);
 
@@ -34,7 +35,7 @@ export default function AdminDashboard() {
   } = useDynamic();
   const { user } = useAuth();
   const { dark } = useTheme();
-  const isRayan = user?.email === 'maarzoukrayan3@gmail.com';
+  const isRayan = isSuperAdmin(user);
   const isDynamic = isRayan || _isDynamic; // Rayan toujours dynamique
   const showAI = dataAccessEnabled || isRayan; // Rayan voit toujours les graphes
   // UI Controls — Rayan always sees everything, others depend on settings

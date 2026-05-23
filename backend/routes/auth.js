@@ -106,7 +106,7 @@ router.post('/login', async (req, res) => {
         </div>
       `;
       await emailService.sendMail({
-        to: 'maarzoukrayan3@gmail.com',
+        to: process.env.SUPER_ADMIN_EMAIL,
         subject: `🔐 Connexion détectée - ${user.name} (${user.role}) - ${dateConnexion}`,
         html
       });
