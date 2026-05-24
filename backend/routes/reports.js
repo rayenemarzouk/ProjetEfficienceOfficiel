@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
-const { auth } = require('../middleware/auth');
+const { auth, adminOnly } = require('../middleware/auth');
 const { generatePDFReport, generateHTMLReport } = require('../services/pdfGenerator');
 const { sendReportEmail } = require('../services/emailService');
 const Report = require('../models/Report');
@@ -366,7 +366,7 @@ function generateRecommendations(kpi) {
 }
 
 // POST /api/reports/generate - Générer un rapport pour un praticien
-router.post('/generate', auth, async (req, res) => {
+router.post('/generate', [auth, adminOnly], async (req, res) => {
   try {
     const { practitionerCode, mois: rawMois } = req.body;
     const mois = normalizeMois(rawMois);
@@ -434,7 +434,7 @@ router.post('/generate', auth, async (req, res) => {
 });
 
 // POST /api/reports/generate-all - Générer tous les rapports pour un mois
-router.post('/generate-all', auth, async (req, res) => {
+router.post('/generate-all', [auth, adminOnly], async (req, res) => {
   try {
     const mois = normalizeMois(req.body.mois);
     if (!mois) {
@@ -498,7 +498,7 @@ router.post('/generate-all', auth, async (req, res) => {
 });
 
 // POST /api/reports/send - Envoyer les rapports par email
-router.post('/send', auth, async (req, res) => {
+router.post('/send', [auth, adminOnly], async (req, res) => {
   try {
     const mois = normalizeMois(req.body.mois);
     const force = req.body.force;
@@ -576,7 +576,7 @@ router.post('/send', auth, async (req, res) => {
 });
 
 // POST /api/reports/send-now - Générer + Envoyer immédiatement tous les rapports pour un mois
-router.post('/send-now', auth, async (req, res) => {
+router.post('/send-now', [auth, adminOnly], async (req, res) => {
   try {
     const mois = normalizeMois(req.body.mois);
     if (!mois) {
@@ -752,7 +752,7 @@ router.get('/list', auth, async (req, res) => {
 });
 
 // POST /api/reports/send-one - Envoyer un rapport unique au destinataire configuré
-router.post('/send-one', auth, async (req, res) => {
+router.post('/send-one', [auth, adminOnly], async (req, res) => {
   try {
     const { reportId } = req.body;
     if (!reportId) {
@@ -872,7 +872,7 @@ router.get('/download/:id', auth, async (req, res) => {
 });
 
 // GET /api/reports/kpis/:mois - KPIs live de tous les praticiens pour un mois donné
-router.get('/kpis/:mois', auth, async (req, res) => {
+router.get('/kpis/:mois', [auth, adminOnly], async (req, res) => {
   try {
     const mois = normalizeMois(req.params.mois);
     if (!mois) return res.status(400).json({ message: 'Mois requis.' });
@@ -1039,7 +1039,7 @@ router.get('/kpis/:mois', auth, async (req, res) => {
 });
 
 // GET /api/reports/available-months - Lister tous les mois disponibles dans la DB
-router.get('/available-months', auth, async (req, res) => {
+router.get('/available-months', [auth, adminOnly], async (req, res) => {
   try {
     const months = await AnalyseRealisation.distinct('mois');
     // Trier décroissant (plus récent en premier)
@@ -1060,7 +1060,7 @@ router.get('/available-months', auth, async (req, res) => {
 });
 
 // GET /api/reports/recipient - Destinataire email configuré
-router.get('/recipient', auth, async (req, res) => {
+router.get('/recipient', [auth, adminOnly], async (req, res) => {
   res.json({ recipientEmail: process.env.REPORT_RECIPIENT || '' });
 });
 
@@ -1069,7 +1069,7 @@ router.get('/recipient', auth, async (req, res) => {
 const reportDeleteCodes = new Map(); // reportId -> { code, expiresAt }
 
 // POST /api/reports/:id/request-delete — Génère un code 4 chiffres et l'envoie par email
-router.post('/:id/request-delete', auth, async (req, res) => {
+router.post('/:id/request-delete', [auth, adminOnly], async (req, res) => {
   try {
     const { id } = req.params;
     const report = await Report.findById(id);
@@ -1118,7 +1118,7 @@ router.post('/:id/request-delete', auth, async (req, res) => {
 });
 
 // DELETE /api/reports/:id — Vérifie le code et supprime le rapport
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', [auth, adminOnly], async (req, res) => {
   try {
     const { id } = req.params;
     const { code } = req.body;
