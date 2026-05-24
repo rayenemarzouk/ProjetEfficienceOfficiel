@@ -269,20 +269,28 @@ export default function CabinetsUnified() {
     return Object.values(byPrac);
   }, [rdvMensuelFiltered]);
   
-  const heuresByP = rawHeuresByP;
+  // Heures filtrées par période depuis les données mensuelles de chaque cabinet
+  const heuresByPFiltered = useMemo(() => {
+    const result = {};
+    practitioners.forEach(p => {
+      const heuresMensuelles = data?.cabinets?.[p.code]?.heures || [];
+      const filtered = filterByPeriod(heuresMensuelles, period, 'mois');
+      result[p.code] = filtered.reduce((s, h) => s + (h.nbHeures || 0), 0); // en minutes
+    });
+    return result;
+  }, [data, period, practitioners, filterByPeriod]);
   const rdvMensuel = rdvMensuelFiltered;
 
   // Calculate per-practitioner data
   const pracData = practitioners.map((p, idx) => {
     const ca = caByP.find(c => c._id === p.code);
-    const heures = heuresByP.find(h => h._id === p.code);
     const rdv = rdvByP.find(r => r._id === p.code);
     const totalCA = ca?.totalFacture || 0;
     const totalEncaisse = ca?.totalEncaisse || 0;
     const patientsTraites = ca?.totalPatients || 0;
     const patientsRdv = rdv?.totalPatients || 0;
     const consultations = rdv?.totalRdv || 0;
-    const heuresTravaillees = heures ? Math.round(heures.totalMinutes / 60) : 0;
+    const heuresTravaillees = Math.round((heuresByPFiltered[p.code] || 0) / 60);
     // Score calculé avec bonus +10% pour meilleure visibilité
     const baseScore = totalCA > 0 ? Math.round((totalEncaisse / totalCA) * 100) : 0;
     const score = Math.min(baseScore + 10, 100);
