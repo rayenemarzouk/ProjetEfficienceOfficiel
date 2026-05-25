@@ -89,8 +89,8 @@ export default function CabinetsUnified() {
         endDate = new Date(now.getFullYear() - 1, 11, 31);
         break;
       case 'custom':
-        startDate = periodObj.startDate ? new Date(periodObj.startDate) : new Date(now.getFullYear(), 0, 1);
-        endDate = periodObj.endDate ? new Date(periodObj.endDate) : now;
+        startDate = periodObj.startDate ? new Date(periodObj.startDate + 'T00:00:00') : new Date(now.getFullYear(), 0, 1);
+        endDate = periodObj.endDate ? new Date(periodObj.endDate + 'T23:59:59') : now;
         break;
       default:
         startDate = new Date(now.getFullYear() - 1, 0, 1);
