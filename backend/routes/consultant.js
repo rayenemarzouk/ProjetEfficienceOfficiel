@@ -9,6 +9,8 @@ const Encours = require('../models/Encours');
 const Report = require('../models/Report');
 const User = require('../models/User');
 
+const { calculateHealthScore, getHealthScoreLabel } = require('../utils/healthScore');
+
 // Helper: get practitioner identifier
 const getPraticienId = (user) => user.practitionerCode || user.name || user.email;
 
@@ -123,7 +125,8 @@ router.get('/dashboard', auth, consultantOnly, async (req, res) => {
         totalRdv: { $sum: '$nbRdv' },
         totalPatients: { $sum: '$nbPatients' },
         totalNouveaux: { $sum: '$nbNouveauxPatients' },
-        totalDuree: { $sum: '$dureeTotaleRdv' }
+        totalDuree: { $sum: '$dureeTotaleRdv' },
+        totalRdvManques: { $sum: '$rdvManques' }
       }}
     ]);
 
@@ -204,12 +207,20 @@ router.get('/dashboard', auth, consultantOnly, async (req, res) => {
       const h = (heures.totalMinutes || 0) / 60;
       const practitioner = practitioners.find(pr => getPraticienId(pr) === p._id);
       
-      // Score de performance avec bonus +10%
+      // Score de santé (5 critères — backend/utils/healthScore.js)
       const tauxEnc = p.totalFacture > 0 ? (p.totalEncaisse / p.totalFacture) * 100 : 0;
       const prodHoraire = h > 0 ? p.totalFacture / h : 0;
-      const tauxDevis = devis.totalDevis > 0 ? (devis.totalAcceptes / devis.totalDevis) * 100 : 0;
-      const baseScore = Math.round((tauxEnc * 0.3 + Math.min(100, prodHoraire / 4) * 0.4 + tauxDevis * 0.3));
-      const score = Math.min(baseScore + 10, 100);
+      const totalRdvP = rdv.totalRdv || 0;
+      const tauxNouveaux = totalRdvP > 0 ? ((rdv.totalNouveaux || 0) / totalRdvP) * 100 : 0;
+      const tauxAbsenceP = totalRdvP > 0 ? ((rdv.totalRdvManques || 0) / totalRdvP) * 100 : 0;
+      // evolutionCA non disponible dans cette route (pas de comparaison période précédente) → défaut 0 (neutre)
+      const { score, label: scoreLabel } = calculateHealthScore({
+        tauxEncaissement: tauxEnc,
+        evolutionCA: 0,
+        tauxAbsence: tauxAbsenceP,
+        productionHoraire: prodHoraire,
+        tauxNouveauxPatients: tauxNouveaux,
+      });
       
       return {
         praticien: p._id,
@@ -228,7 +239,7 @@ router.get('/dashboard', auth, consultantOnly, async (req, res) => {
         devisAcceptes: devis.totalAcceptes || 0,
         tauxDevis,
         score,
-        scoreLabel: score >= 85 ? 'Excellent' : score >= 70 ? 'Bon' : score >= 50 ? 'Moyen' : 'À surveiller'
+        scoreLabel
       };
     });
 
@@ -357,7 +368,8 @@ router.get('/analyses', auth, consultantOnly, async (req, res) => {
           _id: { mois: '$mois', praticien: '$praticien' },
           totalRdv: { $sum: '$nbRdv' },
           totalPatients: { $sum: '$nbPatients' },
-          totalNouveaux: { $sum: '$nbNouveauxPatients' }
+          totalNouveaux: { $sum: '$nbNouveauxPatients' },
+          totalRdvManques: { $sum: '$rdvManques' }
         }},
         { $sort: { '_id.mois': 1 } }
       ]),
@@ -384,6 +396,7 @@ router.get('/analyses', auth, consultantOnly, async (req, res) => {
           totalEncaisse: 0,
           totalRdv: 0,
           totalNouveaux: 0,
+          totalRdvManques: 0,
           totalMinutes: 0,
           totalDevis: 0,
           totalAcceptes: 0
@@ -421,6 +434,7 @@ router.get('/analyses', auth, consultantOnly, async (req, res) => {
       const acc = ensurePraticien(code);
       acc.totalRdv += row.totalRdv || 0;
       acc.totalNouveaux += row.totalNouveaux || 0;
+      acc.totalRdvManques += row.totalRdvManques || 0;
     });
 
     devisParMoisParPraticien.forEach((row) => {
@@ -442,12 +456,28 @@ router.get('/analyses', auth, consultantOnly, async (req, res) => {
         ? (totals.totalEncaisse / totals.totalCA) * 100
         : 0;
       const prodHoraire = totalHours > 0 ? totals.totalCA / totalHours : 0;
-      const tauxDevis = totals.totalDevis > 0
-        ? (totals.totalAcceptes / totals.totalDevis) * 100
-        : 0;
 
-      const baseScore = Math.round((tauxRealisation * 0.3 + Math.min(100, prodHoraire / 4) * 0.4 + tauxDevis * 0.3));
-      const scoreGlobal = Math.min(baseScore + 10, 100);
+      // Évolution CA : % entre le premier et le dernier mois de la période (données mensuelles disponibles ici)
+      const monthlyMapForEvol = monthlyByCode.get(code) || new Map();
+      const monthlyRowsForEvol = Array.from(monthlyMapForEvol.values())
+        .sort((a, b) => String(a.mois).localeCompare(String(b.mois)));
+      let evolutionCA = 0;
+      if (monthlyRowsForEvol.length >= 2) {
+        const firstCA = monthlyRowsForEvol[0].totalFacture || 0;
+        const lastCA = monthlyRowsForEvol[monthlyRowsForEvol.length - 1].totalFacture || 0;
+        evolutionCA = firstCA > 0 ? ((lastCA - firstCA) / firstCA) * 100 : 0;
+      }
+
+      const tauxNouveauxA = totals.totalRdv > 0 ? (totals.totalNouveaux / totals.totalRdv) * 100 : 0;
+      const tauxAbsenceA = totals.totalRdv > 0 ? (totals.totalRdvManques / totals.totalRdv) * 100 : 0;
+
+      const { score: scoreGlobal } = calculateHealthScore({
+        tauxEncaissement: tauxRealisation,
+        evolutionCA,
+        tauxAbsence: tauxAbsenceA,
+        productionHoraire: prodHoraire,
+        tauxNouveauxPatients: tauxNouveauxA,
+      });
 
       const monthlyMap = monthlyByCode.get(code) || new Map();
       const monthlyRows = Array.from(monthlyMap.values())
@@ -570,22 +600,31 @@ router.get('/clients', auth, consultantOnly, async (req, res) => {
       // Total enregistrements
       const totalEnregistrements = await AnalyseRealisation.countDocuments({ praticien: code });
       
-      // Score moyen
+      // Score moyen (all-time, sans filtre de date)
       const allCA = await AnalyseRealisation.find({ praticien: code });
       const allHeures = await AnalyseJoursOuverts.find({ praticien: code });
       const allDevis = await AnalyseDevis.find({ praticien: code });
+      const allRdv = await AnalyseRendezVous.find({ praticien: code });
       
       const totalFacture = allCA.reduce((s, c) => s + (c.montantFacture || 0), 0);
       const totalEncaisse = allCA.reduce((s, c) => s + (c.montantEncaisse || 0), 0);
       const totalH = allHeures.reduce((s, h) => s + (h.nbHeures || 0), 0) / 60;
-      const nbDevis = allDevis.reduce((s, d) => s + (d.nbDevis || 0), 0);
-      const nbAcceptes = allDevis.reduce((s, d) => s + (d.nbDevisAcceptes || 0), 0);
+      const totalRdvAll = allRdv.reduce((s, r) => s + (r.nbRdv || 0), 0);
+      const totalNouveauxAll = allRdv.reduce((s, r) => s + (r.nbNouveauxPatients || 0), 0);
+      const totalRdvManquesAll = allRdv.reduce((s, r) => s + (r.rdvManques || 0), 0);
       
       const tauxEnc = totalFacture > 0 ? (totalEncaisse / totalFacture) * 100 : 0;
       const prodH = totalH > 0 ? totalFacture / totalH : 0;
-      const tauxDevis = nbDevis > 0 ? (nbAcceptes / nbDevis) * 100 : 0;
-      const baseScoreMoyen = Math.round((tauxEnc * 0.3 + Math.min(100, prodH / 4) * 0.4 + tauxDevis * 0.3));
-      const scoreMoyen = Math.min(baseScoreMoyen + 10, 100);
+      const tauxNouveauxC = totalRdvAll > 0 ? (totalNouveauxAll / totalRdvAll) * 100 : 0;
+      const tauxAbsenceC = totalRdvAll > 0 ? (totalRdvManquesAll / totalRdvAll) * 100 : 0;
+      // evolutionCA non disponible sur score all-time (pas de référence temporelle) → défaut 0 (neutre)
+      const { score: scoreMoyen, label: scoreLabel } = calculateHealthScore({
+        tauxEncaissement: tauxEnc,
+        evolutionCA: 0,
+        tauxAbsence: tauxAbsenceC,
+        productionHoraire: prodH,
+        tauxNouveauxPatients: tauxNouveauxC,
+      });
       
       // % analysé par IA (simulation)
       const pctAnalyseIA = totalEnregistrements > 0 ? Math.min(100, Math.round((totalEnregistrements / 12) * 100)) : 0;
@@ -600,7 +639,7 @@ router.get('/clients', auth, consultantOnly, async (req, res) => {
         nbEnregistrements: totalEnregistrements,
         pctAnalyseIA,
         scoreMoyen,
-        scoreLabel: scoreMoyen >= 85 ? 'Excellent' : scoreMoyen >= 70 ? 'Bon' : scoreMoyen >= 50 ? 'Moyen' : 'À surveiller',
+        scoreLabel,
         derniereAnalyse: lastRealisation?.updatedAt || lastRdv?.updatedAt || null,
         chiffreAffaires: totalFacture,
         lastReport: lastReport ? {
