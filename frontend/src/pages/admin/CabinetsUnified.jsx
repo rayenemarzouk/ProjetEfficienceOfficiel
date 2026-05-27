@@ -13,7 +13,7 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { 
-  linearRegression, detectAnomalies, cabinetHealthScore, 
+  linearRegression, detectAnomalies,
   generateAIInsight, analyzeTrend 
 } from '../../utils/aiModels';
 import { streamingBarPlugin, startChartAnimation } from '../../utils/chartPlugins';
@@ -281,9 +281,13 @@ export default function CabinetsUnified() {
   }, [data, period, practitioners, filterByPeriod]);
   const rdvMensuel = rdvMensuelFiltered;
 
+  // Tableau brut du backend (non filtré par période) — contient healthScore/healthScoreLabel
+  const caByPRaw = data?.dashboard?.caByPractitioner || [];
+
   // Calculate per-practitioner data
   const pracData = practitioners.map((p, idx) => {
     const ca = caByP.find(c => c._id === p.code);
+    const caRaw = caByPRaw.find(c => c._id === p.code); // source des scores backend
     const rdv = rdvByP.find(r => r._id === p.code);
     const totalCA = ca?.totalFacture || 0;
     const totalEncaisse = ca?.totalEncaisse || 0;
@@ -291,9 +295,6 @@ export default function CabinetsUnified() {
     const patientsRdv = rdv?.totalPatients || 0;
     const consultations = rdv?.totalRdv || 0;
     const heuresTravaillees = Math.round((heuresByPFiltered[p.code] || 0) / 60);
-    // Score calculé avec bonus +10% pour meilleure visibilité
-    const baseScore = totalCA > 0 ? Math.round((totalEncaisse / totalCA) * 100) : 0;
-    const score = Math.min(baseScore + 10, 100);
 
     // Absences réelles
     const totalRdv = rdv?.totalRdv || 0;
@@ -316,16 +317,8 @@ export default function CabinetsUnified() {
       }
     }
 
-    // Health Score
-    const tauxEnc = totalCA > 0 ? Math.round((totalEncaisse / totalCA) * 100) : 0;
-    const tauxAbs = totalRdv > 0 ? (absents / totalRdv) * 100 : 0;
-    const health = cabinetHealthScore({
-      tauxEncaissement: tauxEnc,
-      evolutionCA: tendance === 'Hausse' ? -5 : tendance === 'Baisse' ? 5 : 0,
-      tauxAbsence: tauxAbs,
-      productionHoraire: totalCA,
-      tauxNouveauxPatients: 10,
-    });
+    // Health Score — lu depuis data.dashboard.caByPractitioner (non filtré par période)
+    const health = { score: caRaw?.healthScore || 0, label: caRaw?.healthScoreLabel || 'Critique' };
 
     return {
       code: p.code,
@@ -334,7 +327,7 @@ export default function CabinetsUnified() {
       patientsRdv,
       consultations,
       heuresTravaillees,
-      score,
+      score: health.score,
       absents,
       presents: totalPatients,
       totalRdv,

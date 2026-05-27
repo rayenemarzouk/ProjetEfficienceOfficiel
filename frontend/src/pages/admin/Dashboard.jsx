@@ -373,14 +373,8 @@ export default function AdminDashboard() {
 
   // ═══ AI ENGINE METRICS ═══
   const aiHealthScore = useMemo(() => {
-    if (!data) return 0;
-    const encRate = totalCA > 0 ? (totalEncaisse / totalCA) * 100 : 0;
-    const presRate = totalRdv > 0 ? (totalPresences / totalRdv) * 100 : 0;
-    const trendScore = (trendCA !== null && trendCA >= 0) ? Math.min(100, 60 + trendCA) : 40;
-    // Ajout bonus +10% pour meilleure visibilité
-    const baseScore = Math.round((encRate * 0.35 + presRate * 0.3 + trendScore * 0.35));
-    return Math.min(baseScore + 10, 100);
-  }, [data, totalCA, totalEncaisse, totalRdv, totalPresences, trendCA]);
+    return data?.performanceMoyenne || 0;
+  }, [data]);
 
   const animHealthScore = useCountUp(aiHealthScore, 2000, dyn);
 

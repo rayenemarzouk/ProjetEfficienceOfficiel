@@ -121,16 +121,14 @@ export default function Header({ title, subtitle }) {
 
         practitioners.forEach(p => {
           const ca = caByP.find(c => c._id === p.code);
-          const totalCA = ca?.totalFacture || 0;
-          const totalEnc = ca?.totalEncaisse || 0;
-          // Score avec bonus +10%
-          const baseScore = totalCA > 0 ? Math.round((totalEnc / totalCA) * 100) : 0;
-          const score = Math.min(baseScore + 10, 100);
-          if (score < 40) {
+          // Health Score — lu depuis l'API (source unique : healthScore.js backend)
+          const score = ca?.healthScore || 0;
+          const scoreLabel = ca?.healthScoreLabel || 'Critique';
+          if (score < 50) {
             notifs.push({
-              id: `perf-${p.code}`, type: score < 40 ? 'error' : 'warning', iconKey: 'alert',
-              title: score < 40 ? `⚠ Alerte — ${p.name}` : `À vérifier — ${p.name}`,
-              message: `Taux encaissement: ${score}% (${p.code})`, time: new Date().toISOString(), action: '/admin/gestion',
+              id: `perf-${p.code}`, type: score < 50 ? 'error' : 'warning', iconKey: 'alert',
+              title: `⚠ Alerte — ${p.name}`,
+              message: `Score santé: ${score}/100 — ${scoreLabel} (${p.code})`, time: new Date().toISOString(), action: '/admin/gestion',
             });
           }
         });

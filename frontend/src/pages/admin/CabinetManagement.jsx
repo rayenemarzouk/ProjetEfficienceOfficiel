@@ -236,9 +236,10 @@ export default function CabinetManagement() {
     const totalCA = monthData?.totalFacture || 0;
     const totalEncaisse = monthData?.totalEncaisse || 0;
     const patients = monthData?.totalPatients || 0;
-    // Score calculé avec bonus +10% pour meilleure visibilité
-    const baseScore = totalCA > 0 ? Math.round((totalEncaisse / totalCA) * 100) : 0;
-    const score = Math.min(baseScore + 10, 100);
+    // Health Score — lu depuis l'API (source unique : healthScore.js backend)
+    const caInfo = caByP.find(c => c._id === p.code);
+    const score = caInfo?.healthScore || 0;
+    const healthScoreLabel = caInfo?.healthScoreLabel || 'Critique';
 
     // Tendance basée sur variation vs mois précédent
     let tendance = 'Stable';
@@ -250,12 +251,12 @@ export default function CabinetManagement() {
     }
 
     let status = 'performant';
-    if (score < 30) status = 'verifier';
-    else if (score < 40) status = 'surveiller';
+    if (score < 50) status = 'verifier';
+    else if (score < 65) status = 'surveiller';
 
     return {
       code: p.code, name: p.name, email: p.email,
-      ca: totalCA, encaisse: totalEncaisse, score,
+      ca: totalCA, encaisse: totalEncaisse, score, healthScoreLabel,
       patients, status, tendance, tendanceValue
     };
   });

@@ -6,7 +6,7 @@ import { Line, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import { FiCpu, FiBarChart2, FiTrendingUp, FiDollarSign, FiCheckCircle, FiUsers, FiPercent, FiActivity, FiZap, FiCalendar, FiXCircle, FiFileText, FiClock, FiAlertCircle, FiAward } from 'react-icons/fi';
 import { useCountUp } from '../../utils/useCountUp';
-import { generateTrendLineDataset, generateAIInsight, detectAnomalies, cabinetHealthScore } from '../../utils/aiModels';
+import { generateTrendLineDataset, generateAIInsight, detectAnomalies } from '../../utils/aiModels';
 import { streamingLinePlugin, startChartAnimation } from '../../utils/chartPlugins';
 import { useDynamic } from '../../context/DynamicContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -184,14 +184,12 @@ export default function Statistics() {
   const caAnomalies = detectAnomalies(monthlyCA);
   const patientAnomalies = detectAnomalies(monthlyPatients);
 
-  // Health score
-  const healthScore = cabinetHealthScore({
-    tauxEncaissement: scoreMoyen,
-    evolutionCA: aiCA.trend === 'upward' ? aiCA.confidence * 0.5 : aiCA.trend === 'downward' ? -aiCA.confidence * 0.5 : 0,
-    tauxAbsence,
-    productionHoraire: totalFacture > 0 && totalPatients > 0 ? totalFacture / totalPatients : 0,
-    tauxNouveauxPatients: 10,
-  });
+  // Health score global — moyenne des scores par praticien (source unique : healthScore.js backend)
+  const avgHealthScore = perPractitionerSummary.length > 0
+    ? Math.round(perPractitionerSummary.reduce((s, p) => s + (p.healthScore || 0), 0) / perPractitionerSummary.length)
+    : 0;
+  const avgHealthScoreLabel = avgHealthScore >= 80 ? 'Excellent' : avgHealthScore >= 65 ? 'Bon' : avgHealthScore >= 50 ? 'Moyen' : 'Critique';
+  const healthScore = { score: avgHealthScore, label: avgHealthScoreLabel };
 
   // Line chart config for CA mensuel
   const caLineData = {
