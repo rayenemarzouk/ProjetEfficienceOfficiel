@@ -13,6 +13,7 @@ const Encours = require('../models/Encours');
 const Report = require('../models/Report');
 const User = require('../models/User');
 const AppSettings = require('../models/AppSettings');
+const { calculateHealthScore } = require('../utils/healthScore');
 
 // Helper: get practitioner identifier (code if set, otherwise use name or email)
 const getPraticienId = (user) => user.practitionerCode || user.name || user.email;
@@ -242,6 +243,44 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
     const totalAbsences = Math.max(0, totalRdvAll - totalPatientsRdv);
     const totalPresences = totalPatientsRdv;
 
+    // Enrichir caByPractitioner avec le score de santé (source unique : healthScore.js)
+    const caByPractitionerEnriched = caByPractitioner.map(p => {
+      const rdv = rdvByPractitionerFixed.find(r => r._id === p._id) || {};
+      const heures = heuresByPractitioner.find(h => h._id === p._id) || {};
+      const totalH = (heures.totalMinutes || 0) / 60;
+      const totalRdv = rdv.totalRdv || 0;
+
+      const tauxEncaissement = p.totalFacture > 0 ? (p.totalEncaisse / p.totalFacture) * 100 : 0;
+      const productionHoraire = totalH > 0 ? p.totalFacture / totalH : 0;
+      const tauxAbsence = totalRdv > 0 ? ((rdv.totalRdvManques || 0) / totalRdv) * 100 : 0;
+      const tauxNouveauxPatients = totalRdv > 0 ? ((rdv.totalNouveaux || 0) / totalRdv) * 100 : 0;
+
+      // Évolution CA : premier → dernier mois disponible pour ce praticien
+      const praticienMonths = caMensuel
+        .filter(c => c._id.praticien === p._id)
+        .sort((a, b) => String(a._id.mois).localeCompare(String(b._id.mois)));
+      let evolutionCA = 0;
+      if (praticienMonths.length >= 2) {
+        const firstCA = praticienMonths[0].totalFacture || 0;
+        const lastCA = praticienMonths[praticienMonths.length - 1].totalFacture || 0;
+        evolutionCA = firstCA > 0 ? ((lastCA - firstCA) / firstCA) * 100 : 0;
+      }
+
+      const { score: healthScore, label: healthScoreLabel } = calculateHealthScore({
+        tauxEncaissement,
+        evolutionCA,
+        tauxAbsence,
+        productionHoraire,
+        tauxNouveauxPatients,
+      });
+
+      return { ...p.toObject ? p.toObject() : p, healthScore, healthScoreLabel };
+    });
+
+    const performanceMoyenne = caByPractitionerEnriched.length > 0
+      ? Math.round(caByPractitionerEnriched.reduce((s, p) => s + p.healthScore, 0) / caByPractitionerEnriched.length)
+      : 0;
+
     res.json({
       practitioners: practitioners.map(p => ({
         id: p._id,
@@ -249,7 +288,7 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
         code: getPraticienId(p),
         email: p.email
       })),
-      caByPractitioner,
+      caByPractitioner: caByPractitionerEnriched,
       rdvByPractitioner: rdvByPractitionerFixed,
       heuresByPractitioner,
       encours,
@@ -262,7 +301,8 @@ router.get('/dashboard', auth, adminOnly, async (req, res) => {
       trendCA,
       trendPatients,
       totalAbsences,
-      totalPresences
+      totalPresences,
+      performanceMoyenne
     });
   } catch (error) {
     console.error('Erreur dashboard admin:', error);
@@ -504,7 +544,7 @@ router.get('/statistics', auth, adminOnly, async (req, res) => {
       AnalyseRendezVous.aggregate([
         { $match: { praticien: { $in: codes } } },
         ...rdvInferStages,
-        { $group: { _id: '$praticien', totalRdv: { $sum: '$nbRdv' }, totalPatients: { $sum: '$nbPatients' }, totalHonores: { $sum: '$_inferHonores' }, totalManques: { $sum: '$_inferManques' }, totalAnnulations: { $sum: '$_inferAnnulations' } } }
+        { $group: { _id: '$praticien', totalRdv: { $sum: '$nbRdv' }, totalPatients: { $sum: '$nbPatients' }, totalNouveaux: { $sum: '$nbNouveauxPatients' }, totalHonores: { $sum: '$_inferHonores' }, totalManques: { $sum: '$_inferManques' }, totalAnnulations: { $sum: '$_inferAnnulations' } } }
       ]),
       AnalyseDevis.aggregate([
         { $match: { praticien: { $in: codes } } },
@@ -541,6 +581,31 @@ router.get('/statistics', auth, adminOnly, async (req, res) => {
         totalManques = Math.max(0, totalRdv - totalPatients);
       }
 
+      // Évolution CA : premier → dernier mois disponible pour ce praticien (depuis perPractitioner)
+      const praticienMonthsStat = perPractitioner
+        .filter(m => m.praticien === code)
+        .sort((a, b) => String(a._id).localeCompare(String(b._id)));
+      let evolutionCAStat = 0;
+      if (praticienMonthsStat.length >= 2) {
+        const firstCA = praticienMonthsStat[0].totalFacture || 0;
+        const lastCA = praticienMonthsStat[praticienMonthsStat.length - 1].totalFacture || 0;
+        evolutionCAStat = firstCA > 0 ? ((lastCA - firstCA) / firstCA) * 100 : 0;
+      }
+
+      const totalNouveaux = rdv.totalNouveaux || 0;
+      const tauxEncaissementStat = (ca.totalFacture || 0) > 0 ? ((ca.totalEncaisse || 0) / ca.totalFacture) * 100 : 0;
+      const tauxAbsenceStat = totalRdv > 0 ? (totalManques / totalRdv) * 100 : 0;
+      const tauxNouveauxPatientsStat = totalRdv > 0 ? (totalNouveaux / totalRdv) * 100 : 0;
+      const productivite = totalH > 0 ? Math.round((ca.totalFacture || 0) / totalH) : 0;
+
+      const { score: healthScore, label: healthScoreLabel } = calculateHealthScore({
+        tauxEncaissement: tauxEncaissementStat,
+        evolutionCA: evolutionCAStat,
+        tauxAbsence: tauxAbsenceStat,
+        productionHoraire: productivite,
+        tauxNouveauxPatients: tauxNouveauxPatientsStat,
+      });
+
       return {
         code,
         name: practMap[code] || code,
@@ -554,7 +619,9 @@ router.get('/statistics', auth, adminOnly, async (req, res) => {
         totalNbDevis: dev.totalNbDevis || 0,
         totalNbAcceptes: dev.totalNbAcceptes || 0,
         totalMontantRealise: dev.totalMontantRealise || 0,
-        productivite: totalH > 0 ? Math.round((ca.totalFacture || 0) / totalH) : 0,
+        productivite,
+        healthScore,
+        healthScoreLabel,
       };
     }).sort((a, b) => b.totalFacture - a.totalFacture);
 
