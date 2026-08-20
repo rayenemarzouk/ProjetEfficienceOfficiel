@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/package.json",
   "name": "efficience-analytics-backend",
   "version": "1.0.0",
   "description": "Backend API pour Efficience Analytics - Plateforme d'analyse de cabinets dentaires",

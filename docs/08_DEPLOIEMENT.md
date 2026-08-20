@@ -21,10 +21,10 @@
 │                              │ HTTPS (API Calls)                │
 │                              ▼                                  │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │                       RENDER                             │   │
+│  │                 BACKEND NODE HOST                       │   │
 │  │              (Backend - Node.js/Express)                 │   │
 │  │                                                          │   │
-│  │  URL: https://projetefficienceofficiel-mk01.onrender.com │   │
+│  │  URL: https://votre-backend-domain.com                    │   │
 │  │                                                          │   │
 │  │  ┌──────────────────────────────────────────────────┐   │   │
 │  │  │    server.js    │   routes/   │   services/      │   │   │
@@ -45,73 +45,48 @@
 
 ---
 
-## Déploiement Backend sur Render
+## Déploiement Backend sur un hébergement Node.js
 
-### 1. Configuration `render.yaml`
+### 1. Hébergement backend Node.js
 
-**Fichier** : `render.yaml`
+Ce projet peut être déployé sur n'importe quel service Node.js compatible. Le backend utilise :
 
-```yaml
-services:
-  - type: web
-    name: efficience-backend
-    env: node
-    region: frankfurt  # ou autre région
-    plan: free         # ou starter, standard
-    buildCommand: cd backend && npm install
-    startCommand: cd backend && node server.js
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: MONGODB_URI
-        sync: false  # Variable secrète à définir manuellement
-      - key: JWT_SECRET
-        sync: false
-      - key: EMAIL_USER
-        sync: false
-      - key: EMAIL_PASS
-        sync: false
-```
+- `backend/server.js` comme point d'entrée
+- `express.json()` et `express.urlencoded()` pour parser les requêtes
+- `cors()` pour autoriser les requêtes depuis Hostinger et les environnements locaux
+- un fallback SPA pour servir `backend/public/index.html` lorsque la route ne commence pas par `/api`
 
-### 2. Déploiement Manuel
+### 2. Déploiement manuel
 
-1. **Créer un compte Render** : [render.com](https://render.com)
-
-2. **Connecter GitHub** :
-   - Dashboard → New Web Service
-   - Connect your GitHub repository
-
-3. **Configurer le service** :
+1. Héberger le backend sur un service Node.js (Hostinger, Railway, Heroku, etc.)
+2. Configurer la commande de démarrage :
+   ```bash
+   node backend/server.js
    ```
-   Name: efficience-backend
-   Environment: Node
-   Build Command: cd backend && npm install
-   Start Command: cd backend && node server.js
+3. Installer les dépendances :
+   ```bash
+   cd backend
+   npm install
    ```
-
-4. **Variables d'environnement** (Environment tab) :
+4. Configurer les variables d'environnement :
+   ```env
+   MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/efficience
+   JWT_SECRET=votre_clé_secrète_très_longue
+   EMAIL_USER=votre.email@gmail.com
+   EMAIL_PASS=app_password_gmail
+   NODE_ENV=production
+   PORT=5000
+   PUPPETEER_ENABLED=false
    ```
-   MONGODB_URI = mongodb+srv://user:pass@cluster.mongodb.net/efficience
-   JWT_SECRET = votre_clé_secrète_très_longue
-   EMAIL_USER = votre.email@gmail.com
-   EMAIL_PASS = app_password_gmail
-   NODE_ENV = production
-   PORT = 10000
-   ```
+5. Déployer et démarrer l'application.
 
-5. **Déployer** :
-   - Render déploie automatiquement sur chaque `git push`
-
-### 3. Commandes Git pour Déployer
+### 3. Commandes Git pour déployer
 
 ```bash
 # Depuis la racine du projet
 git add -A
 git commit -m "Mise à jour backend"
 git push origin main
-
-# Si remote render configuré séparément
-git push render main
 ```
 
 ---
@@ -217,7 +192,7 @@ git pull origin main
 
 **Network Access** → Add IP Address :
 ```
-0.0.0.0/0  (Autoriser depuis n'importe où - pour Render)
+0.0.0.0/0  (Autoriser depuis n'importe où - pour hébergement cloud)
 ```
 
 ### 3. Créer un Utilisateur
@@ -284,7 +259,7 @@ async function sendMail({ to, subject, html }) {
 **Fichier** : `.github/workflows/deploy.yml`
 
 ```yaml
-name: Deploy to Render
+name: Deploy to Node Host
 
 on:
   push:
@@ -316,10 +291,10 @@ jobs:
           rm -rf backend/public/*
           cp -r frontend/dist/* backend/public/
       
-      # Render webhook trigger (optional)
-      - name: Trigger Render Deploy
+      # Déclencheur de déploiement optionnel
+      - name: Trigger Deploy
         run: |
-          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+          curl -X POST ${{ secrets.DEPLOY_HOOK }}
 ```
 
 ---
@@ -347,7 +322,7 @@ Write-Host "Pushing to Git..." -ForegroundColor Cyan
 git add -A
 git commit -m "Deploy: $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
 git push origin main
-git push render main
+# git push <remote> main  # Optionnel selon configuration remote
 
 Write-Host "Deployment complete!" -ForegroundColor Green
 ```
@@ -372,7 +347,7 @@ echo "Pushing to Git..."
 git add -A
 git commit -m "Deploy: $(date '+%Y-%m-%d %H:%M')"
 git push origin main
-git push render main
+# git push <remote> main  # Optionnel selon configuration remote
 
 echo "Deployment complete!"
 ```
@@ -385,15 +360,15 @@ echo "Deployment complete!"
 
 ```bash
 # Health check
-curl https://projetefficienceofficiel-mk01.onrender.com/api/health
+curl https://votre-backend-domain.com/api/health
 
 # Réponse attendue :
 { "status": "OK", "message": "Efficience Analytics API opérationnelle" }
 ```
 
-### Logs Render
+### Logs du service
 
-Dashboard Render → Service → Logs pour voir :
+Dashboard du service → Logs pour voir :
 - Démarrage du serveur
 - Connexion MongoDB
 - Erreurs éventuelles
@@ -413,7 +388,7 @@ POST /api/admin/settings
 
 ### 2. Monitoring Uptime
 
-- **Render** : Monitoring intégré (plan payant)
+- **Hébergement Node.js** : monitoring intégré selon le fournisseur
 - **UptimeRobot** : Gratuit, ping toutes les 5 min
 - **Sentry** : Error tracking (optionnel)
 
@@ -428,8 +403,8 @@ POST /api/admin/settings
 
 | Service | Plan | Coût Mensuel |
 |---------|------|--------------|
-| Render | Free | 0 € (spin down après 15 min) |
-| Render | Starter | ~7 € |
+| Hébergement Node.js | Free | 0 € (optionnel, selon offre) |
+| Hébergement Node.js | Starter | ~7 € |
 | Hostinger | Single | ~3-5 €/mois |
 | MongoDB Atlas | M0 | 0 € (512 MB) |
 | MongoDB Atlas | M10 | ~10 €/mois |

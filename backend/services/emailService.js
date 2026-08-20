@@ -358,7 +358,6 @@ async function sendReportEmail({ to, subject, practitionerName, mois, kpi, pdfBu
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`Email envoye a ${to}: ${info.messageId}`);
     return info;
   } catch (error) {
     console.error('Erreur envoi email:', error);

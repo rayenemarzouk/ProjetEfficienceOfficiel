@@ -11,8 +11,7 @@ export default function Register() {
     email: '',
     password: '',
     confirmPassword: '',
-    cabinetName: '',
-    practitionerCode: ''
+    cabinetName: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -50,13 +49,12 @@ export default function Register() {
         name: form.name,
         email: form.email,
         password: form.password,
-        cabinetName: form.cabinetName,
-        practitionerCode: form.role === 'practitioner' ? (form.practitionerCode || undefined) : undefined
+        cabinetName: form.cabinetName
       });
       
       // Afficher message de succès
       setSuccess('Inscription enregistrée. Votre compte est en attente de validation par un administrateur. Vous recevrez un accès une fois validé.');
-      setForm({ role: form.role, name: '', email: '', password: '', confirmPassword: '', cabinetName: '', practitionerCode: '' });
+      setForm({ role: form.role, name: '', email: '', password: '', confirmPassword: '', cabinetName: '' });
       
       // Rediriger vers la page de connexion après 3 secondes
       setTimeout(() => {
@@ -158,7 +156,7 @@ export default function Register() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setForm({ ...form, role: 'consultant', practitionerCode: '' })}
+                    onClick={() => setForm({ ...form, role: 'consultant' })}
                     className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${form.role === 'consultant' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'}`}
                   >
                     Inscription consultant
@@ -225,27 +223,7 @@ export default function Register() {
                 </div>
               </div>
 
-              {/* Code praticien */}
-              {form.role === 'practitioner' && (
-              <div>
-                <label className="block text-[10px] font-bold tracking-[0.15em] text-gray-400 uppercase mb-2">
-                  Code praticien <span className="text-gray-300 normal-case">(ex: JC, DV — votre identifiant LogosW)</span>
-                </label>
-                <div className="relative">
-                  <FiShield className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    name="register-code-field"
-                    value={form.practitionerCode}
-                    onChange={(e) => setForm({...form, practitionerCode: e.target.value})}
-                    placeholder="Entrez votre code praticien"
-                    maxLength={10}
-                    autoComplete="off"
-                    className="w-full pl-12 pr-4 py-3.5 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none transition-all focus:ring-2 focus:ring-blue-500 bg-gray-50 border border-gray-200 uppercase"
-                  />
-                </div>
-              </div>
-              )}
+              {/* Champ 'Code praticien' supprimé de l'inscription */}
 
               {/* Row: Password + Confirm */}
               <div className="grid grid-cols-2 gap-3">

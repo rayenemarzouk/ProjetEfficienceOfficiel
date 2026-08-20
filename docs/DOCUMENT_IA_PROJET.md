@@ -139,19 +139,9 @@ Ce fichier contient **10 fonctions exportées** regroupant **7 modèles ML disti
 
 ---
 
-### 2. Admin — Analyse des Cabinets (`pages/admin/CabinetAnalysis.jsx`)
+### 2. Admin — Analyse et comparaison des cabinets
 
-| Élément | Modèle IA utilisé |
-|---------|-------------------|
-| Graphique Bar "Patients par Cabinet" | Ligne de tendance OLS + Anomalies Z-Score (croix rouges) |
-| Graphique Bar "Activité par Cabinet" | Ligne de tendance OLS + Anomalies Z-Score |
-| Badge R² sur chaque graphique | Coefficient de détermination affiché |
-| Panel "Analyse IA — Patients" | `generateAIInsight()` avec confiance % |
-| Panel "Analyse IA — Activité" | `generateAIInsight()` avec confiance % |
-| Scoring Performance | Remplacé par Score Santé IA Multi-KPI /100 avec barres gradient |
-| Panel "Analyse IA Globale" | Score santé par cabinet + résumé |
-
-**Fonctions importées :** `linearRegression`, `detectAnomalies`, `cabinetHealthScore`, `generateAIInsight`, `analyzeTrend`
+Les analyses administrateur sont maintenant réparties entre `pages/admin/Comparison.jsx`, `pages/admin/CabinetsUnified.jsx` et `pages/admin/Statistics.jsx`. Elles utilisent notamment le score de santé, l’analyse de tendance, la détection d’anomalies et les prévisions.
 
 ---
 

@@ -1,17 +1,18 @@
 {
+  "$schema": "https://json.schemastore.org/package.json",
   "name": "efficience-analytics",
   "version": "1.0.0",
   "description": "Efficience Analytics - Plateforme d'analyse de cabinets dentaires",
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd backend && node server.js",
-    "dev:frontend": "cd frontend && npm run dev",
-    "build": "cd frontend && npm install && npm run build",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "build": "cd frontend && npm ci && npm run build",
     "start": "cd backend && node server.js",
     "seed": "cd backend && npm run seed",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "8.2.2"
   }
 }

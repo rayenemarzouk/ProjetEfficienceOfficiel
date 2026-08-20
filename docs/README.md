@@ -15,7 +15,7 @@
 ```
 ProjetEfficienceOfficiel/
 │
-├── 📂 DOCUMENTATION/           # Documentation technique (ce dossier)
+├── 📂 docs/                    # Documentation technique (ce dossier)
 │   ├── README.md               # Vue d'ensemble (ce fichier)
 │   ├── 01_ARCHITECTURE.md      # Architecture globale
 │   ├── 02_TECHNOLOGIES.md      # Stack technologique
@@ -92,10 +92,15 @@ ProjetEfficienceOfficiel/
 │       │   │   ├── Dashboard.jsx
 │       │   │   ├── Statistics.jsx
 │       │   │   ├── Comparison.jsx
-│       │   │   ├── CabinetAnalysis.jsx
 │       │   │   ├── CabinetManagement.jsx
 │       │   │   ├── Reports.jsx
 │       │   │   └── Settings.jsx
+│       │   ├── 📂 consultant/   # Pages consultant
+│       │   │   ├── Dashboard.jsx
+│       │   │   ├── Analyses.jsx
+│       │   │   ├── Clients.jsx
+│       │   │   ├── Reports.jsx
+│       │   │   └── SaisieData.jsx
 │       │   └── 📂 practitioner/ # Pages praticien
 │       │       ├── Dashboard.jsx
 │       │       ├── MyStats.jsx
@@ -111,9 +116,7 @@ ProjetEfficienceOfficiel/
 │           ├── chartPlugins.js # Plugins Chart.js
 │           └── useCountUp.js   # Hook animation compteur
 │
-├── package.json                # Scripts racine
-├── render.yaml                 # Configuration Render
-└── DOCUMENT_IA_PROJET.md       # Notes IA
+└── package.json                # Scripts racine
 ```
 
 ---
