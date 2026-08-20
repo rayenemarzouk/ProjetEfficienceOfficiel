@@ -1,5 +1,5 @@
 # 📐 Architecture du Projet
-DOCUMENTATION/
+docs/
 ├── README.md               # Vue d'ensemble + arborescence projet
 ├── 01_ARCHITECTURE.md      # Architecture Client-Serveur + diagrammes
 ├── 02_TECHNOLOGIES.md      # Stack MERN, packages, versions
@@ -8,7 +8,7 @@ DOCUMENTATION/
 ├── 05_MODELES_IA.md        # 16 modèles IA/ML avec formules mathématiques
 ├── 06_FRONTEND.md          # React components, contexts, routing
 ├── 07_AUTHENTIFICATION.md  # JWT, bcrypt, RBAC, flux complet
-├── 08_DEPLOIEMENT.md       # Render, Hostinger, MongoDB Atlas, CI/CD
+├── 08_DEPLOIEMENT.md       # Hostinger, Node host, MongoDB Atlas, CI/CD
 └── 09_FONCTIONNALITES.md   # Liste complète des features par rôle
 
 ## Vue d'ensemble
@@ -142,7 +142,6 @@ App.jsx
 │   │   │       │           ├── Dashboard.jsx
 │   │   │       │           ├── Statistics.jsx
 │   │   │       │           ├── Comparison.jsx
-│   │   │       │           ├── CabinetAnalysis.jsx
 │   │   │       │           ├── CabinetManagement.jsx
 │   │   │       │           ├── Reports.jsx
 │   │   │       │           └── Settings.jsx
@@ -251,7 +250,7 @@ NODE_ENV=production
 
 ```env
 # API URL (optionnel, défaut: /api)
-VITE_API_URL=https://backend-url.onrender.com/api
+VITE_API_URL=https://votre-backend-domain.com/api
 ```
 
 ---

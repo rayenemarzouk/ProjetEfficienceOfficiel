@@ -317,6 +317,7 @@ export default function CabinetsUnified() {
       }
     }
 
+    
     // Health Score — lu depuis data.dashboard.caByPractitioner (non filtré par période)
     const health = { score: caRaw?.healthScore || 0, label: caRaw?.healthScoreLabel || 'Critique' };
 

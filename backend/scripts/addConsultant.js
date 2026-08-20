@@ -5,20 +5,19 @@
 
 require('dotenv').config();
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/efficience';
+const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/efficience';
 
 const consultantData = {
   email: 'younis@efficience.fr',
   password: 'Consultant2024!',
   name: 'Younis Consultant',
-  nom: 'Consultant',
-  prenom: 'Younis',
   role: 'consultant',
   practitionerCode: 'CONSULTANT_YOUNIS',
-  isActive: true
+  cabinetName: 'Efficience Dentaire',
+  isActive: true,
+  isVerified: true
 };
 
 async function addConsultant() {
@@ -32,27 +31,24 @@ async function addConsultant() {
       console.log('⚠ Un utilisateur avec cet email existe déjà');
       console.log('  Email:', existingUser.email);
       console.log('  Rôle:', existingUser.role);
-      
-      // Mettre à jour le rôle si nécessaire
-      if (existingUser.role !== 'consultant') {
-        existingUser.role = 'consultant';
-        await existingUser.save();
-        console.log('✓ Rôle mis à jour en consultant');
-      }
+
+      // Remettre les informations du compte consultant
+      existingUser.password = consultantData.password;
+      existingUser.name = consultantData.name;
+      existingUser.role = consultantData.role;
+      existingUser.practitionerCode = consultantData.practitionerCode;
+      existingUser.cabinetName = consultantData.cabinetName;
+      existingUser.isActive = consultantData.isActive;
+      existingUser.isVerified = consultantData.isVerified;
+      await existingUser.save();
+      console.log('✓ Compte consultant mis à jour');
       
       await mongoose.disconnect();
       return;
     }
 
-    // Hasher le mot de passe
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(consultantData.password, salt);
-
     // Créer le consultant
-    const consultant = new User({
-      ...consultantData,
-      password: hashedPassword
-    });
+    const consultant = new User(consultantData);
 
     await consultant.save();
     console.log('✓ Compte consultant créé avec succès!');

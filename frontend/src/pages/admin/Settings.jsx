@@ -939,7 +939,7 @@ export default function Settings() {
               <span className="ml-auto text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 px-2 py-0.5 rounded-full">Bientôt disponible</span>
             </h3>
             <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-sm text-amber-800 dark:text-amber-300">
-              L'automatisation sera activée après l'intégration du workflow n8n. Les options de génération et d'envoi automatique seront disponibles à ce moment.
+              L'automatisation sera activée prochainement. Les options de génération et d'envoi automatique seront disponibles à ce moment.
             </div>
           </div>
 

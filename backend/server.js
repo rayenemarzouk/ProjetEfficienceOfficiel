@@ -13,10 +13,6 @@ connectDB();
 // Headers CORS manuels pour toutes les requêtes
 app.use((req, res, next) => {
   const allowedOrigins = [
-    'https://efficience-analytics-eu-783177.hostingersite.com',
-    'https://efficience-analytics.onrender.com',
-    'https://projetefficienceofficiel.onrender.com',
-    'https://projetefficienceofficiel-mk01.onrender.com',
     'http://localhost:5173',
     'http://localhost:5000',
     'http://localhost:3000',
@@ -38,13 +34,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// Middleware CORS - Allow Hostinger frontend
+// Middleware CORS - Origines autorisees
 app.use(cors({
   origin: [
     'https://efficience-analytics-eu-783177.hostingersite.com',
-    'https://efficience-analytics.onrender.com',
-    'https://projetefficienceofficiel.onrender.com',
-    'https://projetefficienceofficiel-mk01.onrender.com',
     'http://localhost:5173',
     'http://localhost:5000',
     'http://localhost:3000',
@@ -66,7 +59,6 @@ app.use('/api/data', require('./routes/data'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/practitioner', require('./routes/practitioner'));
 app.use('/api/consultant', require('./routes/consultant'));
-app.use('/api/webhook', require('./routes/webhook')); // Webhook pour n8n
 
 // Public settings endpoint (no auth required — for maintenance mode check)
 const AppSettings = require('./models/AppSettings');

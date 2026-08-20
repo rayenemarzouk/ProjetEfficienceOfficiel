@@ -25,6 +25,7 @@
  *  Aucune dépendance externe requise — 100% JavaScript natif.
  */
 
+
 // ─── KILL SWITCH GLOBAL — Désactive tous les modèles IA ─────────
 let _aiEnabled = true;
 export function setAIEnabled(val) { _aiEnabled = !!val; }

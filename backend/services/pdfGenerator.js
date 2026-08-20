@@ -1,7 +1,6 @@
 // Génération de rapports PDF avec Puppeteer
 const { buildEmailHTML } = require('./emailService');
 
-// Puppeteer désactivé sur Render (timeout HTTP 30s incompatible avec Chrome headless)
 // Pour activer localement : PUPPETEER_ENABLED=true dans .env
 const PUPPETEER_ENABLED = process.env.PUPPETEER_ENABLED === 'true';
 
